@@ -1,3 +1,6 @@
 /node_modules
 Gruntfile.js
 package.json
+.sass-cache/
+css/
+dist/
