@@ -419,7 +419,7 @@ const mainLoop = (timestamp) => {
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
         
-        cleanupRequest();
+        // cleanupRequest();
         // console.log('previousPlayerActions', previousPlayerActions);
         // console.log('completedActions', completedActions);
 
