@@ -194,12 +194,16 @@ const update = (delta) => { // new delta parameter
     // tiles = newTiles;
     // players = newPlayers;
 
+    // Loops through
+
 
     if(newPlayers !== null){
         for(let i = 0; i < newPlayers.length; i++){
-            if(!previousPlayerActions.includes(newPlayers[i].requestId)){
+            if(!previousPlayerActions.includes(newPlayers[i].requestId) && newPlayers[i] !== players[i] && newPlayers[i].requestId !== undefined){
+                // console.log("New player", newPlayers[i].requestId,  players[i]);
                 players[i] = newPlayers[i];
-                completedActions.push(newPlayers[i].requestId);
+                previousPlayerActions.push(newPlayers[i].requestId);
+                // console.log(newPlayers[i].requestId);
             } else {
                 // let index = previousPlayerActions.indexOf(newPlayers[i].requestId);
                 // previousPlayerActions.splice(index, 1);
@@ -210,20 +214,40 @@ const update = (delta) => { // new delta parameter
         newPlayers = null;
     }
    
-    
+    // This will be triggered each time the player moves, because both are being updated.
+
     if(newTiles !== null){
         for(let i = 0; i < newTiles.length; i++){
-            if(!previousPlayerActions.includes(newTiles[i].requestId)){
+
+            // The issue that is happening:  Data is being recieved, and that data says x block is gone, but the rest are still there. So, it puts rest there and deletes block.  Does that all the way through.
+
+            // Need to only update the new blocks, not the old blocks.
+            
+
+            // See if you can see only the changed data.  The new data.
+
+
+            // if(!previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i] !== tiles[i]){
+            //     // console.log("New tile", newTiles[i].requestId,  newTiles[i].hard);
+            //     tiles[i] = newTiles[i];
+            //     completedActions.push(newTiles[i].requestId);
+            // } else {
+            //     completedActions.push(newTiles[i].requestId);
+            // }
+
+            
+            if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
                 tiles[i] = newTiles[i];
-                completedActions.push(newTiles[i].requestId);
-            } else {
-                completedActions.push(newTiles[i].requestId);
+                previousPlayerActions.push(newTiles[i].requestId);
+                // console.log(newTiles[i].requestId);
             }
+            
         }
         newTiles = null;
+        // initialTileDraw = false;
     }
 
-
+    
     /*
         Controls
     */
