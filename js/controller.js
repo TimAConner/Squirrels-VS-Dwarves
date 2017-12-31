@@ -261,11 +261,12 @@ const update = (delta) => { // new delta parameter
            
             // The saving here is not the jerky issue.  THe issue is the loading.
             let requestId = `${Date.now()}-${playerId}`;
-           
+        //    console.log(requestId);
 
             if(keys.up && canMove("up", player, delta)){
                 players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
-                requestId += `01`;
+                players[players.indexOf(player)].dir = "up";
+                // requestId += `01`;
                 previousPlayerActions.push(requestId);
                 players[players.indexOf(player)].requestId = requestId;
                 
@@ -273,6 +274,7 @@ const update = (delta) => { // new delta parameter
                 model.savePlayerData(players[players.indexOf(player)]);
             } else if (keys.down && canMove("down", player, delta)){
                 players[players.indexOf(player)].pos.y += speedMultiplier * delta;
+                players[players.indexOf(player)].dir = "down";
                 previousPlayerActions.push(requestId);
                 players[players.indexOf(player)].requestId = requestId;
                 
@@ -280,7 +282,8 @@ const update = (delta) => { // new delta parameter
                 model.savePlayerData(players[players.indexOf(player)]);
             } else if(keys.left && canMove("left", player, delta)){
                 players[players.indexOf(player)].pos.x -= speedMultiplier * delta;
-                requestId += `02`;
+                players[players.indexOf(player)].dir = "left";
+                // requestId += `02`;
                 previousPlayerActions.push(requestId);
                 players[players.indexOf(player)].requestId = requestId;
                 
@@ -288,7 +291,8 @@ const update = (delta) => { // new delta parameter
                 model.savePlayerData(players[players.indexOf(player)]);
             } else if(keys.right && canMove("right", player, delta)){
                 players[players.indexOf(player)].pos.x += speedMultiplier * delta;
-                requestId += `03`;
+                players[players.indexOf(player)].dir = "right";
+                // requestId += `03`;
                 previousPlayerActions.push(requestId);
                 players[players.indexOf(player)].requestId = requestId;
                 
