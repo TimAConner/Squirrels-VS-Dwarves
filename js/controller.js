@@ -55,6 +55,8 @@ let keys = {
 };
 
 
+let initialTileDraw = true;
+let initialPlayerDraw = true;
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -124,7 +126,7 @@ Number.prototype.clamp = function(min, max) {
 };
 
 
-const findTileInFront = (player) => {
+const findTileInDirection = (player) => {
 
     // let tile = tiles.find(x => {
     //     let leftSide = (x.pos.x*x.size.w),
@@ -136,8 +138,24 @@ const findTileInFront = (player) => {
 
     // console.log(tile.pos.x, " ", tile.pos.y);
 
-    let tileX = Math.floor(player.pos.x / tileSize),
-    tileY = Math.floor(player.pos.y /tileSize)-1;
+    let direction = player.dir;
+
+    // Find tile based on middle of player.
+
+    let tileX = Math.floor((player.pos.x+player.size.w/2) / tileSize),
+    tileY = Math.floor((player.pos.y+player.size.h/2) / tileSize);
+
+    console.log(tileX, tileY);
+    if(direction === "up"){
+        tileY -= 1;
+    } else if(direction === "down"){
+        tileY += 1;
+    } else if(direction === "left"){
+        tileX -= 1;
+    } else if(direction === "right"){
+        tileX += 1;
+    }
+
     // console.log(tileX, tileY);
     let tile = tiles.find(t => t.pos.x === tileX && t.pos.y === tileY);
     // console.log(tile);
@@ -425,21 +443,33 @@ module.exports.startGame = () => {
 };
 
 const activateServerListener = () => {
-    c.addEventListener("serverUpdate", (e) => {
-        // console.log('e.snapshot', e.detail);
-        for(let i = 0; i < e.detail.tiles.tiles.length; i++){
-            e.detail.tiles.tiles[i].id = i;
+    c.addEventListener("serverUpdatePlayer", (e) => {
+
+        // console.log("player", e.detail);
+        if(initialPlayerDraw === true){
+            players = e.detail.players;
+            initialPlayerDraw = false;
+        } else {
+            newPlayers = e.detail.players;
+        }
+        
+        // console.log('players', newPlayers);
+        // console.log('tiles', newTiles);
+
+    });
+    c.addEventListener("serverUpdateTiles", (e) => {
+        console.log("tile", e.detail);
+        for(let i = 0; i < e.detail.tiles.length; i++){
+            e.detail.tiles[i].id = i;
         }
 
-        newPlayers = e.detail.players.players;
-        newTiles = e.detail.tiles.tiles;
-        console.log('players', newPlayers);
-        console.log('tiles', newTiles);
-        
+        if(initialTileDraw === true){
+            tiles = e.detail.tiles;
+            initialTileDraw = false;
+        } else {
+            newTiles = e.detail.tiles;
+        }
 
-
-        // console.log('players[0].id', newPlayers[0].id);
-        // console.log('players[1].id', newPlayers[1].id);
     });
 };
 
