@@ -4,28 +4,56 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
+const loadAPI = () => {
+    return new Promise(function (resolve, reject){
+        let apiRequest = new XMLHttpRequest();
+        apiRequest.addEventListener("load", () => {
+            resolve(JSON.parse(apiRequest.responseText));
+        });
+        apiRequest.addEventListener("error", () => {
+            console.log("The files weren't loaded correctly!");
+        });
+        apiRequest.open("GET", "../js/apiKey.json");
+        apiRequest.send();
+    });
+};
+
 module.exports.fetchData = () => {
     let config = {
-        apiKey: "AIzaSyBCXZz3201ouzE1QkjIYi6oHaZK7tXZLMw",
+        apiKey: "",
         authDomain: "squirrelsvsdwarves.firebaseapp.com",
         databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
         projectId: "squirrelsvsdwarves",
         storageBucket: "squirrelsvsdwarves.appspot.com",
-        messagingSenderId: "585991040011"
+        messagingSenderId: ""
     };
-      firebase.initializeApp(config);
-      
-      let ref  = firebase.database().ref("tiles");
 
-    //   module.exports.getTiles("https://squirrelsvsdwarves.firebaseio.com/tiles.json").then((data) => {
-    //       return convertObjectsToArray(data);
-    //   });
+    loadAPI().then(data => {
+        config.apiKey = data.apiKey;
+        config.messagingSenderId = data.messagingSenderId;
+        firebase.initializeApp(config);
+        
+        
+  
+      //   module.exports.getTiles("https://squirrelsvsdwarves.firebaseio.com/tiles.json").then((data) => {
+      //       return convertObjectsToArray(data);
+      //   });
+  
+  
+      // Try listening to only one of them.  One listens to tiles one listens to other.
+        firebase.database().ref("tiles").on('value', function(snapshot) {
+          //   console.log("Update");
+            let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
+        firebase.database().ref("players").on('value', function(snapshot) {
+          //   console.log("Update");
+            let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
+    });
 
-      firebase.database().ref().on('value', function(snapshot) {
-          console.log("Update");
-          let serverUpdate = new CustomEvent("serverUpdate", {'detail': snapshot.val()});
-          c.dispatchEvent(serverUpdate);
-      });
+
 };
 
 
