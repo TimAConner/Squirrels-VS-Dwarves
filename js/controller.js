@@ -357,7 +357,7 @@ const drawTiles = () => {
                     
                 // console.log("b",  distance);
                 } else {
-                    ctx.fillStyle = "white"; 
+                    ctx.fillStyle = "blue"; 
                     
                 // console.log("w", distance);
                 }
