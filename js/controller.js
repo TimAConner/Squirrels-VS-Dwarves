@@ -300,17 +300,25 @@ const update = (delta) => { // new delta parameter
                 model.savePlayerData(players[players.indexOf(player)]);
             } else if(keys.space){
                 // If there is an object in front of you
-                let selectedTile = findTileInFront(player);
+                let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
-                    requestId += `04`;
-                previousPlayerActions.push(requestId);
-                tiles[tiles.indexOf(selectedTile)].requestId = requestId;
-               
-                // Take away hardness of object.
+                        // requestId += `04`;
+                    
+                    // console.log(requestId);
+                    // console.log(previousPlayerActions);
+                    
                 
-                    tiles[tiles.indexOf(selectedTile)].hard -= 0.5;
-                    console.log(selectedTile);
-                    model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
+                // Take away hardness of object.
+
+                // New data is saved even if it is not being set hardness to -1.  Now changing this.
+                    if(selectedTile.hard !== -1){
+                        tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
+                        // console.log(selectedTile);
+                        previousPlayerActions.push(requestId);
+                        tiles[tiles.indexOf(selectedTile)].requestId = requestId;
+                        model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
+                    }
+                   
                 }
                 
             }
