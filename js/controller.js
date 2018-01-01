@@ -27,12 +27,14 @@ let playerId = "0";
 
 let players = [];
 let tiles = [];
+let gems = [];
 
 let previousPlayerActions = [];
 let completedActions = [];
 
 let newPlayers = [];
 let newTiles = [];
+let newGems = [];
 
 let c = document.getElementById('game-canvas');
 var ctx = c.getContext("2d");
@@ -43,6 +45,7 @@ ctx.canvas.height = 500;
 let speedMultiplier = 0.1;
 
 let sightDistance = 2.25;
+
 
 
 //  Use timestamp instead?
@@ -57,6 +60,7 @@ let keys = {
 
 let initialTileDraw = true;
 let initialPlayerDraw = true;
+let initialGemDraw = true;
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -145,7 +149,7 @@ const findTileInDirection = (player) => {
     let tileX = Math.floor((player.pos.x+player.size.w/2) / tileSize),
     tileY = Math.floor((player.pos.y+player.size.h/2) / tileSize);
 
-    console.log(tileX, tileY);
+    // console.log(tileX, tileY);
     if(direction === "up"){
         tileY -= 1;
     } else if(direction === "down"){
@@ -225,16 +229,6 @@ const update = (delta) => { // new delta parameter
             
 
             // See if you can see only the changed data.  The new data.
-
-
-            // if(!previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i] !== tiles[i]){
-            //     // console.log("New tile", newTiles[i].requestId,  newTiles[i].hard);
-            //     tiles[i] = newTiles[i];
-            //     completedActions.push(newTiles[i].requestId);
-            // } else {
-            //     completedActions.push(newTiles[i].requestId);
-            // }
-
             
             if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
                 tiles[i] = newTiles[i];
@@ -247,6 +241,19 @@ const update = (delta) => { // new delta parameter
         // initialTileDraw = false;
     }
 
+    
+    if(newGems !== null){
+        for(let i = 0; i < newGems.length; i++){
+            if(newGems[i] !== gems[i] && !previousPlayerActions.includes(newGems[i].requestId) && newGems[i].requestId !== undefined){
+                gems[i] = newGems[i];
+                previousPlayerActions.push(newGems[i].requestId);
+                // console.log(newGems[i].requestId);
+            }
+            
+        }
+        newGems = null;
+        // initialTileDraw = false;
+    }
     
     /*
         Controls
@@ -397,7 +404,7 @@ const drawPlayers = () => {
         // let playerDirection = (players[i].dir*30);
         // ctx.rotate(playerDirection * Math.PI / 180);
         if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
-            ctx.fillStyle = "#FF0000"; 
+            ctx.fillStyle = "red"; 
             ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             ctx.stroke();
         }
@@ -406,9 +413,19 @@ const drawPlayers = () => {
     }
 };
 
+const drawGems = () => {
+
+    for(let i = 0; i < gems.length; i++){
+            ctx.fillStyle = "green"; 
+            ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+            ctx.stroke();
+    }
+};
+
 const draw = () => {
     ctx.clearRect(0, 0, c.width, c.height);
     drawTiles();
+    drawGems();
     drawPlayers();
 };
 
@@ -479,6 +496,15 @@ module.exports.startGame = () => {
 };
 
 const activateServerListener = () => {
+    c.addEventListener("serverUpdateGems", (e) => {
+        if(initialGemDraw === true){
+            gems = e.detail.gems;
+            initialGemDraw = false;
+        } else {
+            newGems = e.detail.gemse;
+        }        
+    });
+
     c.addEventListener("serverUpdatePlayer", (e) => {
 
         // console.log("player", e.detail);
