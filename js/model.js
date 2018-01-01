@@ -92,6 +92,15 @@ module.exports.saveTileData = (tile) => {
     });
 };
 
+module.exports.saveGemData = (gem) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(gem);
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
 // module.exports.getTiles = (url) => {
 //     return new Promise(function (resolve, reject){
 //         let JSONRequest = new XMLHttpRequest();
