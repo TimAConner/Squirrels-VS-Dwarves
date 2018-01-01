@@ -51,6 +51,11 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
+        firebase.database().ref("gems").on('value', function(snapshot) {
+        //   console.log("Update");
+            let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
     });
 
 
