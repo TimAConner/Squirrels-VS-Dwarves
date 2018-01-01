@@ -27,12 +27,14 @@ let playerId = "0";
 
 let players = [];
 let tiles = [];
+let gems = [];
 
 let previousPlayerActions = [];
 let completedActions = [];
 
 let newPlayers = [];
 let newTiles = [];
+let newGems = [];
 
 let c = document.getElementById('game-canvas');
 var ctx = c.getContext("2d");
@@ -43,6 +45,7 @@ ctx.canvas.height = 500;
 let speedMultiplier = 0.1;
 
 let sightDistance = 2.25;
+
 
 
 //  Use timestamp instead?
@@ -57,6 +60,7 @@ let keys = {
 
 let initialTileDraw = true;
 let initialPlayerDraw = true;
+let initialGemDraw = true;
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -145,7 +149,7 @@ const findTileInDirection = (player) => {
     let tileX = Math.floor((player.pos.x+player.size.w/2) / tileSize),
     tileY = Math.floor((player.pos.y+player.size.h/2) / tileSize);
 
-    console.log(tileX, tileY);
+    // console.log(tileX, tileY);
     if(direction === "up"){
         tileY -= 1;
     } else if(direction === "down"){
@@ -174,6 +178,22 @@ const findPlayerTile = (player) => {
     };
 };
 
+const getGemOnTile = (tile) => {
+        let gem = gems.find((gem) => {
+            let tileXPosition = (tile.pos.x*tile.size.w),
+            tileYPosition = (tile.pos.y*tile.size.h);
+    
+            let tileRightPoint = tileXPosition + tile.size.w,
+            tileLeftPoint = tileXPosition,
+            tileBottomPoint = tileYPosition + tile.size.h,
+            tileTopPoint = tileYPosition;        
+
+            return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
+        });
+
+        console.log('gem', gem);
+        return gem;
+};
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
     // console.log(keys);
@@ -225,16 +245,6 @@ const update = (delta) => { // new delta parameter
             
 
             // See if you can see only the changed data.  The new data.
-
-
-            // if(!previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i] !== tiles[i]){
-            //     // console.log("New tile", newTiles[i].requestId,  newTiles[i].hard);
-            //     tiles[i] = newTiles[i];
-            //     completedActions.push(newTiles[i].requestId);
-            // } else {
-            //     completedActions.push(newTiles[i].requestId);
-            // }
-
             
             if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
                 tiles[i] = newTiles[i];
@@ -247,6 +257,19 @@ const update = (delta) => { // new delta parameter
         // initialTileDraw = false;
     }
 
+    
+    if(newGems !== null && newGems !== undefined){
+        for(let i = 0; i < newGems.length; i++){
+            if(newGems[i] !== gems[i] && !previousPlayerActions.includes(newGems[i].requestId) && newGems[i].requestId !== undefined){
+                gems[i] = newGems[i];
+                previousPlayerActions.push(newGems[i].requestId);
+                // console.log(newGems[i].requestId);
+            }
+            
+        }
+        newGems = null;
+        // initialTileDraw = false;
+    }
     
     /*
         Controls
@@ -302,6 +325,22 @@ const update = (delta) => { // new delta parameter
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
+                    let gemOnTile = getGemOnTile(selectedTile);
+                    // console.log('gemOnTile', gemOnTile);
+                    if(gemOnTile !== undefined && gemOnTile.carrier === -1){
+                        gemOnTile.carrier = player.id;
+                        previousPlayerActions.push(requestId);
+                        gems[gems.indexOf(gemOnTile)].requestId = requestId;
+                        model.saveGemData(gems[gems.indexOf(gemOnTile)]); 
+                    } else {
+                        if(selectedTile.hard !== -1){
+                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
+                            // console.log(selectedTile);
+                            previousPlayerActions.push(requestId);
+                            tiles[tiles.indexOf(selectedTile)].requestId = requestId;
+                            model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
+                        }
+                    }
                         // requestId += `04`;
                     
                     // console.log(requestId);
@@ -311,13 +350,7 @@ const update = (delta) => { // new delta parameter
                 // Take away hardness of object.
 
                 // New data is saved even if it is not being set hardness to -1.  Now changing this.
-                    if(selectedTile.hard !== -1){
-                        tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                        // console.log(selectedTile);
-                        previousPlayerActions.push(requestId);
-                        tiles[tiles.indexOf(selectedTile)].requestId = requestId;
-                        model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
-                    }
+
                    
                 }
                 
@@ -397,7 +430,7 @@ const drawPlayers = () => {
         // let playerDirection = (players[i].dir*30);
         // ctx.rotate(playerDirection * Math.PI / 180);
         if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
-            ctx.fillStyle = "#FF0000"; 
+            ctx.fillStyle = "red"; 
             ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             ctx.stroke();
         }
@@ -406,10 +439,24 @@ const drawPlayers = () => {
     }
 };
 
+const drawGems = () => {
+    for(let i = 0; i < gems.length; i++){
+            ctx.fillStyle = "green"; 
+            if(gems[i].carrier === -1){
+                ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+            } else {
+                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
+                ctx.fillRect(carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            }
+            ctx.stroke();
+    }
+};
+
 const draw = () => {
     ctx.clearRect(0, 0, c.width, c.height);
     drawTiles();
     drawPlayers();
+    drawGems();
 };
 
 const mainLoop = (timestamp) => {
@@ -479,6 +526,15 @@ module.exports.startGame = () => {
 };
 
 const activateServerListener = () => {
+    c.addEventListener("serverUpdateGems", (e) => {
+        if(initialGemDraw === true){
+            gems = e.detail.gems;
+            initialGemDraw = false;
+        } else {
+            newGems = e.detail.gems;
+        }        
+    });
+
     c.addEventListener("serverUpdatePlayer", (e) => {
 
         // console.log("player", e.detail);
@@ -494,7 +550,7 @@ const activateServerListener = () => {
 
     });
     c.addEventListener("serverUpdateTiles", (e) => {
-        console.log("tile", e.detail);
+        // console.log("tile", e.detail);
         for(let i = 0; i < e.detail.tiles.length; i++){
             e.detail.tiles[i].id = i;
         }

@@ -51,6 +51,11 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
+        firebase.database().ref("gems").on('value', function(snapshot) {
+        //   console.log("Update");
+            let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
     });
 
 
@@ -83,6 +88,15 @@ module.exports.saveTileData = (tile) => {
         let jsonString = JSON.stringify(tile);
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.saveGemData = (gem) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(gem);
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
         JSONRequest.send(jsonString);
     });
 };
