@@ -17,6 +17,8 @@ const view = require("./view");
 const g = require("./game");
 
 let gameState = 1;
+let winner = 0;
+
 let playerId = "0";
 
 
@@ -181,6 +183,16 @@ const getGemOnTile = (tile) => {
         // console.log('gem', gem);
         return gem;
 };
+
+const setWinner = (teamId) => {
+    console.log("set winner");
+    let winningObject = {
+        gameState: 2,
+        winningTeam: teamId
+    };
+    model.saveGameState(winningObject);
+};
+
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
 
@@ -333,7 +345,8 @@ const update = (delta) => { // new delta parameter
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
                             if(selectedTile.teamBase === player.team){
-                                console.log("victory!");
+                                console.log("here");
+                                setWinner(player.team);
                             }
                             model.saveGem(gems[gems.indexOf(carriedGem)]); 
                         }
@@ -347,9 +360,11 @@ const update = (delta) => { // new delta parameter
 
 
 
+
+
 const mainLoop = (timestamp) => {
     
-    if(gameState === 1){
+    if(gameState === 1){  // Game Playing
         // Track the accumulated time that hasn't been simulated yet
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
@@ -369,8 +384,15 @@ const mainLoop = (timestamp) => {
         // 
 
         requestAnimationFrame(mainLoop);
+    } else if (gameState === 0){ // Menu
+
+    } else if (gameState === 2){ // Winner
+        g.c.classList.add("hide");
+        document.getElementById("victory").classList.remove("hide");
+        document.getElementById("winner").textContent = winner;
     }
 };
+
 
 
 const cleanupRequest = () => {
@@ -456,7 +478,9 @@ const activateServerListener = () => {
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
         gameState = e.detail.gameState; 
+        winner = e.detail.winningTeam; 
     });
+
 };
 
 
