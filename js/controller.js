@@ -16,7 +16,9 @@ const model = require("./model");
 const view = require("./view");
 const g = require("./game");
 
-let gameState = 1;
+let onlineGameState = 1;
+let  localGameState = 2;
+
 let winner = 0;
 
 let playerId = "0";
@@ -364,7 +366,11 @@ const update = (delta) => { // new delta parameter
 
 const mainLoop = (timestamp) => {
     
-    if(gameState === 1){  // Game Playing
+    if (onlineGameState === 2){ // Winner
+        g.c.classList.add("hide");
+        document.getElementById("victory").classList.remove("hide");
+        document.getElementById("winner").textContent = winner;
+    } else if(localGameState === 1){  // Game Playing
         // Track the accumulated time that hasn't been simulated yet
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
@@ -383,14 +389,11 @@ const mainLoop = (timestamp) => {
 
         // 
 
-        requestAnimationFrame(mainLoop);
-    } else if (gameState === 0){ // Menu
+        
+    } else if (localGameState === 0){ // Menu
 
-    } else if (gameState === 2){ // Winner
-        g.c.classList.add("hide");
-        document.getElementById("victory").classList.remove("hide");
-        document.getElementById("winner").textContent = winner;
-    }
+    }  
+    requestAnimationFrame(mainLoop);
 };
 
 
@@ -428,12 +431,19 @@ const cleanupRequest = () => {
 module.exports.startGame = () => {
     model.fetchData();
     activateServerListener();
+    activateButtons();
     requestAnimationFrame(mainLoop);
 
     document.getElementById('player-id').addEventListener("change", function(){
         playerId = this.value;
     });
 
+};
+
+const activateButtons = () => {
+    document.getElementById("main-menu").addEventListener("click", () => {
+        console.log("clicked");
+    });
 };
 
 const activateServerListener = () => {
@@ -477,7 +487,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
-        gameState = e.detail.gameState; 
+        onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
 
