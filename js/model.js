@@ -125,6 +125,22 @@ module.exports.saveGameState = (state) => {
     });
 };
 
+module.exports.addNewPlayer = (id, team, x, y) => {
+    let player = {
+        "id": id,
+        "team": team,
+        "pos": {
+            "x": x,
+            "y": y,
+            "z": "0"
+        }
+    };
+    let jsonString = JSON.stringify(player);
+    let JSONRequest = new XMLHttpRequest();
+    JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+    JSONRequest.send(jsonString);
+};
+
 // module.exports.getTiles = (url) => {
 //     return new Promise(function (resolve, reject){
 //         let JSONRequest = new XMLHttpRequest();
