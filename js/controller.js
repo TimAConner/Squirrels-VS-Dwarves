@@ -453,6 +453,10 @@ const activateServerListener = () => {
         }
 
     });
+
+    g.c.addEventListener("serverUpdateGameState", (e) => {
+        gameState = e.detail.gameState; 
+    });
 };
 
 
