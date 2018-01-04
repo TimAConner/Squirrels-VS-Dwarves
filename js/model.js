@@ -61,6 +61,7 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
+
     });
 
 
@@ -93,6 +94,15 @@ module.exports.saveTile = (tile) => {
         let jsonString = JSON.stringify(tile);
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.saveNewTileSet = (tiles) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(tiles);
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
         JSONRequest.send(jsonString);
     });
 };
