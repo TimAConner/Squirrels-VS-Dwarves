@@ -1,7 +1,4 @@
 "use strict";
-
-
-
 /*
 Using information by :
 
@@ -15,11 +12,9 @@ Bahlor
 https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 
 */
-
-let tileSize = 25;
-
-let model = require("./model");
-let view = require("./view");
+const model = require("./model");
+const view = require("./view");
+const g = require("./game");
 
 let gameState = 0;
 let playerId = "0";
@@ -36,15 +31,10 @@ let newPlayers = [];
 let newTiles = [];
 let newGems = [];
 
-let c = document.getElementById('game-canvas');
-var ctx = c.getContext("2d");
 
-ctx.canvas.width  = 500;
-ctx.canvas.height = 500;
 
 let speedMultiplier = 0.1;
 
-let sightDistance = 2.25;
 
 
 
@@ -146,8 +136,8 @@ const findTileInDirection = (player) => {
 
     // Find tile based on middle of player.
 
-    let tileX = Math.floor((player.pos.x+player.size.w/2) / tileSize),
-    tileY = Math.floor((player.pos.y+player.size.h/2) / tileSize);
+    let tileX = Math.floor((player.pos.x+player.size.w/2) / g.tileSize),
+    tileY = Math.floor((player.pos.y+player.size.h/2) / g.tileSize);
 
     // console.log(tileX, tileY);
     if(direction === "up"){
@@ -167,16 +157,6 @@ const findTileInDirection = (player) => {
     return tile;
 };
 
-const findPlayerTile = (player) => {
-    let tileX = Math.round(player.pos.x / tileSize),
-    tileY = Math.round(player.pos.y /tileSize);
-    return {
-        pos: {
-            x: tileX,
-            y: tileY
-        }
-    };
-};
 
 const getGemOnTile = (tile) => {
         let gem = gems.find((gem) => {
@@ -362,102 +342,6 @@ const update = (delta) => { // new delta parameter
     }
 };
 
-const drawTiles = () => {
-    let player = players.find(x => x.id === playerId);
-
-    for(let i = 0; i < tiles.length; i++){
-
-        // console.log(`${tiles[i].pos.x} - ${tiles[i].pos.y}`);
-        // ctx.fillStyle = "green";
-        // ctx.font = "10px Arial";
-        // ctx.fillText(`${tiles[i].pos.x} - ${tiles[i].pos.y}`,tiles[i].pos.x*25, tiles[i].pos.y*25);
-
-
-        
-        let playerTile;
-        if(player !== undefined){
-            playerTile = findPlayerTile(player);
-        }
-        
-        if(playerTile !== undefined){
-
-            let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
-            b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
-            distance = Math.sqrt(a*a + b*b);
-            if(Math.abs(distance) <= sightDistance){
-                if(tiles[i].hard > 0){
-                    ctx.fillStyle = "brown"; 
-                    
-                // console.log("b",  distance);
-                } else {
-                    ctx.fillStyle = "blue"; 
-                    
-                // console.log("w", distance);
-                }
-            } else {
-                ctx.fillStyle = "black";
-                // console.log("b", distance);
-            }   
-            
-        } else {
-            ctx.fillStyle = "black";
-        }   
-
-       
-        ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
-        ctx.stroke();
-    }
-};
-
-const canSeePlayer = (p1, p2, sightDistance) => {
-
-    let player1 = findPlayerTile(p1);
-    let player2 = findPlayerTile(p2);
-
-    let a = (player1.pos.x+0.5) - (player2.pos.x+0.5),
-    b = (player1.pos.y+0.5) - (player2.pos.y+0.5),
-    distance = Math.sqrt(a*a + b*b);
-
-    return Math.abs(distance) <= sightDistance;
-};
-
-const drawPlayers = () => {
-    
-
-    let thisPlayer = players.find(x => x.id === playerId);
-    
-    for(let i = 0; i < players.length; i++){
-        // let playerDirection = (players[i].dir*30);
-        // ctx.rotate(playerDirection * Math.PI / 180);
-        if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
-            ctx.fillStyle = "red"; 
-            ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
-            ctx.stroke();
-        }
-        
-        // ctx.rotate(-playerDirection * Math.PI / 180);
-    }
-};
-
-const drawGems = () => {
-    for(let i = 0; i < gems.length; i++){
-            ctx.fillStyle = "green"; 
-            if(gems[i].carrier === -1){
-                ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-            } else {
-                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-                ctx.fillRect(carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
-            }
-            ctx.stroke();
-    }
-};
-
-const draw = () => {
-    ctx.clearRect(0, 0, c.width, c.height);
-    drawTiles();
-    drawPlayers();
-    drawGems();
-};
 
 const mainLoop = (timestamp) => {
     
@@ -475,7 +359,8 @@ const mainLoop = (timestamp) => {
             update(timestep);
             delta -= timestep;
         }
-        draw();
+
+        view.draw(playerId, tiles, players, gems);
 
         // 
 
@@ -526,7 +411,8 @@ module.exports.startGame = () => {
 };
 
 const activateServerListener = () => {
-    c.addEventListener("serverUpdateGems", (e) => {
+    
+    g.c.addEventListener("serverUpdateGems", (e) => {
         if(initialGemDraw === true){
             gems = e.detail.gems;
             initialGemDraw = false;
@@ -535,7 +421,7 @@ const activateServerListener = () => {
         }        
     });
 
-    c.addEventListener("serverUpdatePlayer", (e) => {
+    g.c.addEventListener("serverUpdatePlayer", (e) => {
 
         // console.log("player", e.detail);
         if(initialPlayerDraw === true){
@@ -549,7 +435,7 @@ const activateServerListener = () => {
         // console.log('tiles', newTiles);
 
     });
-    c.addEventListener("serverUpdateTiles", (e) => {
+    g.c.addEventListener("serverUpdateTiles", (e) => {
         // console.log("tile", e.detail);
         for(let i = 0; i < e.detail.tiles.length; i++){
             e.detail.tiles[i].id = i;
