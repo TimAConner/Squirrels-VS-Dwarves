@@ -79,7 +79,7 @@ const convertObjectsToArray = (object) => {
     return objectArray;
 };
 
-module.exports.savePlayerData = (player) => {
+module.exports.savePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(player);
         let JSONRequest = new XMLHttpRequest();
@@ -88,7 +88,7 @@ module.exports.savePlayerData = (player) => {
     });
 };
 
-module.exports.saveTileData = (tile) => {
+module.exports.saveTile = (tile) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tile);
         let JSONRequest = new XMLHttpRequest();
@@ -97,7 +97,7 @@ module.exports.saveTileData = (tile) => {
     });
 };
 
-module.exports.saveGemData = (gem) => {
+module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(gem);
         let JSONRequest = new XMLHttpRequest();
