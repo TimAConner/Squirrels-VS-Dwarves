@@ -13,7 +13,11 @@ let sightDistance = 2.25;
 let unknownColor = "black",
 minedColor = "blue",
 rockColor = "brown",
-baseColor = "orange";
+baseColor = "orange",
+allyColor = "green",
+enemyColor = "red",
+allyGemColor = "yellow",
+enemyGemColor = "yellow";
 
 // Set by draw()
 let thisPlayer;
@@ -119,8 +123,12 @@ const drawPlayers = (players) => {
 
 
             // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
-
-            g.ctx.fillStyle = "red"; 
+            if(players[i].team === thisPlayer.team){
+                g.ctx.fillStyle = allyColor; 
+            } else {
+                g.ctx.fillStyle  = enemyColor;
+            }
+            
             g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             g.ctx.stroke();
 
@@ -133,14 +141,22 @@ const drawPlayers = (players) => {
 
 const drawGems = (gems, players) => {
     for(let i = 0; i < gems.length; i++){
-            g.ctx.fillStyle = "green"; 
-            if(gems[i].carrier === -1){
-                g.ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-            } else {
-                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-                g.ctx.fillRect(carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
-            }
-            g.ctx.stroke();
+
+        if(thisPlayer.team === gems[i].team){
+            g.ctx.fillStyle = allyGemColor; 
+        } else {
+            g.ctx.fillStyle  = enemyGemColor;
+        }
+           
+
+
+        if(gems[i].carrier === -1){
+            g.ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+        } else {
+            let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
+            g.ctx.fillRect(carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+        }
+        g.ctx.stroke();
     }
 };
 
