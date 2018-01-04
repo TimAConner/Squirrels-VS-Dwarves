@@ -44,7 +44,8 @@ let keys = {
     right:false,
     up: false, 
     down: false,
-    space: false
+    space: false,
+    d: false
 };
 
 
@@ -176,26 +177,6 @@ const getGemOnTile = (tile) => {
 };
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
-    // console.log(keys);
-
-    // console.log('previousPlayerActions', previousPlayerActions);
-    // console.log('completedActions', completedActions);
-
-    //  Set player and tiles to new values recieved from listener
-
-    // let actionList = 
-    // document.getElementById('actions');
-    // actionList.innerHTML = "";
-    // for(let i = 0; i < previousPlayerActions.length; i++){
-    //     actionList.innerHTML += `<br/>${previousPlayerActions[i]}`;
-    //     actionList.scrollTop = actionList.scrollHeight;
-    // }
-  
-    // tiles = newTiles;
-    // players = newPlayers;
-
-    // Loops through
-
 
     if(newPlayers !== null){
         for(let i = 0; i < newPlayers.length; i++){
@@ -321,18 +302,43 @@ const update = (delta) => { // new delta parameter
                             model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
-                        // requestId += `04`;
-                    
-                    // console.log(requestId);
-                    // console.log(previousPlayerActions);
-                    
-                
-                // Take away hardness of object.
-
-                // New data is saved even if it is not being set hardness to -1.  Now changing this.
-
                    
                 }
+                
+            } else if(keys.d){
+                // If there is an object in front of you
+                let selectedTile = findTileInDirection(player);
+                // If there is a tile that it can be dropped on,
+                if(selectedTile !== undefined){
+
+                    let gemOnTile = getGemOnTile(selectedTile);
+                    
+                    // if the gem is not on a tile
+                    if(gemOnTile === undefined ){
+
+                         // If player has gem,
+                        let carriedGem = gems.find(x => x.carrier === playerId);
+
+                        if(carriedGem !== undefined){
+                            // Drop gems
+                            carriedGem.carrier = -1;
+                            carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
+                            carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
+                            previousPlayerActions.push(requestId);
+                            gems[gems.indexOf(carriedGem)].requestId = requestId;
+                            
+                            model.saveGemData(gems[gems.indexOf(carriedGem)]); 
+                        }
+                        
+                    }
+
+                   
+                 
+                   
+                }
+                
+
+               
                 
             }
 
@@ -462,7 +468,7 @@ const activateServerListener = () => {
 
 // Disable keydow defaults
 window.addEventListener("keydown", function(e) {
-    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+    if([32, 37, 38, 39, 40, 68].indexOf(e.keyCode) > -1) {
         e.preventDefault();
     }
 }, false);
@@ -484,6 +490,9 @@ window.onkeydown = function() {
         case 32:    
             keys.space = true;
         break;
+        case 68:    
+            keys.d = true;
+        break;
 	}
 };
 
@@ -503,6 +512,9 @@ window.onkeyup = function() {
         break;
         case 32:
             keys.space = false;
+        break;
+        case 68:    
+            keys.d = false;
         break;
 	}
 };
