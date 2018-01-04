@@ -261,7 +261,7 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
+                model.savePlayer(players[players.indexOf(player)]);
             } else if (isKeyOn("down") && canMove("down", player, delta)){
                 players[players.indexOf(player)].pos.y += speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "down";
@@ -269,7 +269,7 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
+                model.savePlayer(players[players.indexOf(player)]);
             } else if(isKeyOn("left") && canMove("left", player, delta)){
                 players[players.indexOf(player)].pos.x -= speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "left";
@@ -278,7 +278,7 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
+                model.savePlayer(players[players.indexOf(player)]);
             } else if(isKeyOn("right") && canMove("right", player, delta)){
                 players[players.indexOf(player)].pos.x += speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "right";
@@ -287,7 +287,7 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
+                model.savePlayer(players[players.indexOf(player)]);
             } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
@@ -298,14 +298,14 @@ const update = (delta) => { // new delta parameter
                         gemOnTile.carrier = player.id;
                         previousPlayerActions.push(requestId);
                         gems[gems.indexOf(gemOnTile)].requestId = requestId;
-                        model.saveGemData(gems[gems.indexOf(gemOnTile)]); 
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]); 
                     } else {
                         if(selectedTile.hard !== -1){
                             tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
                             // console.log(selectedTile);
                             previousPlayerActions.push(requestId);
                             tiles[tiles.indexOf(selectedTile)].requestId = requestId;
-                            model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
+                            model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
                    
@@ -335,7 +335,7 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 console.log("victory!");
                             }
-                            model.saveGemData(gems[gems.indexOf(carriedGem)]); 
+                            model.saveGem(gems[gems.indexOf(carriedGem)]); 
                         }
                     }
                 }      
