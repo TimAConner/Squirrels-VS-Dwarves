@@ -58,8 +58,8 @@ module.exports.fetchData = () => {
         });
         firebase.database().ref("gameState").on('value', function(snapshot) {
             //   console.log("Update");
-                let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-                c.dispatchEvent(serverUpdate);
+            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
         });
     });
 
@@ -110,7 +110,7 @@ module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(state);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
+        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
         JSONRequest.send(jsonString);
     });
 };
