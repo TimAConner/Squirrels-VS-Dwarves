@@ -16,7 +16,7 @@ const model = require("./model");
 const view = require("./view");
 const g = require("./game");
 
-let gameState = 0;
+let gameState = 1;
 let playerId = "0";
 
 
@@ -178,7 +178,7 @@ const getGemOnTile = (tile) => {
             return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
         });
 
-        console.log('gem', gem);
+        // console.log('gem', gem);
         return gem;
 };
 const update = (delta) => { // new delta parameter
@@ -332,25 +332,15 @@ const update = (delta) => { // new delta parameter
                             carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
-                            
+                            if(selectedTile.teamBase === player.team){
+                                console.log("victory!");
+                            }
                             model.saveGemData(gems[gems.indexOf(carriedGem)]); 
                         }
-                        
                     }
-
-                   
-                 
-                   
-                }
-                
-
-               
-                
+                }      
             }
-
-            
         }
-
     }
 };
 
@@ -359,7 +349,7 @@ const update = (delta) => { // new delta parameter
 
 const mainLoop = (timestamp) => {
     
-    if(gameState === 0){
+    if(gameState === 1){
         // Track the accumulated time that hasn't been simulated yet
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
