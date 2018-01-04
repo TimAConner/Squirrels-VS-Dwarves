@@ -106,6 +106,15 @@ module.exports.saveGemData = (gem) => {
     });
 };
 
+module.exports.saveGameState = (state) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(state);
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
 // module.exports.getTiles = (url) => {
 //     return new Promise(function (resolve, reject){
 //         let JSONRequest = new XMLHttpRequest();
