@@ -23,8 +23,6 @@ let localGameState = 0;
 let waitingForGame = false;
 
 
-
-
 let winner = 0;
 
 let playerId = "0";
@@ -57,6 +55,9 @@ let keys = {
     space: { active: false, id: 32},
     d: { active: false, id: 68}
 };
+
+// Generated on runtime
+let keyIds = [];
 
 
 let initialTileDraw = true;
@@ -167,21 +168,22 @@ const isKeyOn = (prop) => {
         return false;
     }
 };
+
 const getGemOnTile = (tile) => {
-        let gem = gems.find((gem) => {
-            let tileXPosition = (tile.pos.x*tile.size.w),
-            tileYPosition = (tile.pos.y*tile.size.h);
-    
-            let tileRightPoint = tileXPosition + tile.size.w,
-            tileLeftPoint = tileXPosition,
-            tileBottomPoint = tileYPosition + tile.size.h,
-            tileTopPoint = tileYPosition;        
+    let gem = gems.find((gem) => {
+        let tileXPosition = (tile.pos.x*tile.size.w),
+        tileYPosition = (tile.pos.y*tile.size.h);
 
-            return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
-        });
+        let tileRightPoint = tileXPosition + tile.size.w,
+        tileLeftPoint = tileXPosition,
+        tileBottomPoint = tileYPosition + tile.size.h,
+        tileTopPoint = tileYPosition;        
 
-        // console.log('gem', gem);
-        return gem;
+        return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
+    });
+
+    // console.log('gem', gem);
+    return gem;
 };
 
 const setWinner = (teamId) => {
@@ -368,11 +370,6 @@ const update = (delta) => { // new delta parameter
     }
 };
 
-
-
-
-
-
 const mainLoop = (timestamp) => {
     
     
@@ -411,8 +408,6 @@ const mainLoop = (timestamp) => {
     requestAnimationFrame(mainLoop);
 };
 
-
-
 const cleanupRequest = () => {
     for(let i = 0; i < completedActions.length; i++){
         let index = previousPlayerActions.indexOf(completedActions[i]);
@@ -443,7 +438,14 @@ const cleanupRequest = () => {
     // New player is being updated before it can be run through to check if there is new data. 
 };
 
+const populateKeyIds = ()  => {
+    for(let key in keys){
+        keyIds.push(keys[key].id);
+    }
+};
+
 module.exports.startGame = () => {
+    populateKeyIds();
     model.fetchData();
     activateServerListener();
     activateButtons();
@@ -518,21 +520,14 @@ const activateServerListener = () => {
 };
 
 
-// const clearKeyPress = () => {
-//     keys.left = false;
-//     keys.right = false;
-//     keys.up = false;
-//     keys.down = false;
-//     keys.space = false;
-// };
-
-// Disable keydow defaults
+// Prevent key defaults
 window.addEventListener("keydown", function(e) {
-    if([32, 37, 38, 39, 40, 68].indexOf(e.keyCode) > -1) {
+    if(keyIds.indexOf(e.keyCode) > -1) {
         e.preventDefault();
     }
 }, false);
 
+// When a key is pressed, set it to true.
 window.onkeydown = function() {
     for(let prop in keys){
         if(keys[prop].id == event.keyCode){
@@ -541,8 +536,7 @@ window.onkeydown = function() {
     }
 };
 
-
-
+// When a key is up, set it to false.
 window.onkeyup = function() {
     for(let prop in keys){
         if(keys[prop].id == event.keyCode){
