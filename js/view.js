@@ -19,6 +19,17 @@ enemyColor = "red",
 allyGemColor = "yellow",
 enemyGemColor = "yellow";
 
+
+let dwarfImage = new Image(); 
+dwarfImage.src = '../img/dwarf.png'; 
+
+let dirtImage = new Image();
+dirtImage.src = "../img/dirt.png";
+
+let stoneImage = new Image();
+stoneImage.src = "../img/stone.jpeg";
+
+
 // Set by draw()
 let thisPlayer;
 
@@ -57,13 +68,18 @@ const drawTiles = (tiles) => {
             if(Math.abs(distance) <= sightDistance){
                 if(tiles[i].hard > 0){
                     g.ctx.fillStyle = rockColor; 
+                    g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 // console.log("b",  distance);
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = baseColor;
+                        g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                        
                     } else {
                         g.ctx.fillStyle = minedColor; 
+                        g.ctx.drawImage( dirtImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                        
                     }
                    
                     
@@ -72,18 +88,23 @@ const drawTiles = (tiles) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = baseColor;
+                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    
                 } else {
                     g.ctx.fillStyle = unknownColor;
+                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    
                 }
                 // console.log("b", distance);
             }   
             
         } else {
             g.ctx.fillStyle = unknownColor;
+            g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+            
         }   
 
        
-        g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
         g.ctx.stroke();
     }
 };
@@ -123,13 +144,17 @@ const drawPlayers = (players) => {
 
 
             // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
+
+           
             if(players[i].team === thisPlayer.team){
                 g.ctx.fillStyle = allyColor; 
             } else {
                 g.ctx.fillStyle  = enemyColor;
             }
             
-            g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+            
+            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             g.ctx.stroke();
 
             // g.ctx.restore();
