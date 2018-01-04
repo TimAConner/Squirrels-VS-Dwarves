@@ -14,6 +14,7 @@ let thisPlayer;
 
 
 
+
 const findPlayerTile = (player) => {
     let tileX = Math.round(player.pos.x / g.tileSize),
     tileY = Math.round(player.pos.y / g.tileSize);
@@ -88,10 +89,30 @@ const drawPlayers = (players) => {
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
+
         if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
+            // g.ctx.save();
+
+            // // if(players[i].dir === "right"){
+            //     // g.ctx.rotate(1);
+            // // }
+
+            // // if(players[i].dir === "left"){
+            //     g.ctx.rotate(10*Math.PI/180);
+            // // }
+            // // if(players[i].dir === "up"){
+            // //     g.ctx.rotate(0*Math.PI/180);
+            // // }
+            
+
+
+            // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
+
             g.ctx.fillStyle = "red"; 
             g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             g.ctx.stroke();
+
+            // g.ctx.restore();
         }
         
         // g.ctx.rotate(-playerDirection * Math.PI / 180);
@@ -114,8 +135,37 @@ const drawGems = (gems, players) => {
 module.exports.draw = (playerId, tiles, players, gems) => {
     thisPlayer = players.find(x => x.id === playerId);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    
+
     drawTiles(tiles);
     drawPlayers(players);
     drawGems(gems, players);
+};
+
+
+module.exports.viewMainMenu = () => {
+    hideAllMenus();
+
+    document.getElementById("main-menu-screen").classList.remove("hide");
+};
+
+module.exports.viewWinnerScreen =  (winnerId) => {
+    hideAllMenus();
+
+    document.getElementById("victory-screen").classList.remove("hide");
+    document.getElementById("winner").textContent = winnerId;
+};  
+
+module.exports.viewGame = () => {
+    hideAllMenus();
+
+    document.getElementById("player-id").classList.remove("hide");
+    g.c.classList.remove("hide");
+};
+
+const hideAllMenus = () => {
+
+    document.getElementById("victory-screen").classList.add("hide");
+    document.getElementById("player-id").classList.add("hide");
+    document.getElementById("main-menu-screen").classList.add("hide");
+    g.c.classList.add("hide");
 };
