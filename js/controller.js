@@ -16,8 +16,12 @@ const model = require("./model");
 const view = require("./view");
 const g = require("./game");
 
+// 0 menu, 1 game, 2 winner
+
 let onlineGameState = 1;
-let  localGameState = 2;
+let localGameState = 0;
+
+
 
 let winner = 0;
 
@@ -116,14 +120,6 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-/* 
-    By Daniel X Moore
-    http://strd6.com/2010/08/useful-javascript-game-extensions-clamp/
-*/
-Number.prototype.clamp = function(min, max) {
-    return Math.min(Math.max(this, min), max);
-};
-
 
 const findTileInDirection = (player) => {
 
@@ -191,6 +187,14 @@ const setWinner = (teamId) => {
     let winningObject = {
         gameState: 2,
         winningTeam: teamId
+    };
+    model.saveGameState(winningObject);
+};
+
+const startGameState = () => {
+    let winningObject = {
+        gameState: 1,
+        winningTeam: 0
     };
     model.saveGameState(winningObject);
 };
@@ -366,11 +370,10 @@ const update = (delta) => { // new delta parameter
 
 const mainLoop = (timestamp) => {
     
-    if (onlineGameState === 2){ // Winner
-        g.c.classList.add("hide");
-        document.getElementById("victory").classList.remove("hide");
-        document.getElementById("winner").textContent = winner;
-    } else if(localGameState === 1){  // Game Playing
+    if (onlineGameState === 2 && localGameState === 1){ // Winner
+        view.viewWinnerScreen(winner);
+    } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
+        view.viewGame();
         // Track the accumulated time that hasn't been simulated yet
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
@@ -391,7 +394,7 @@ const mainLoop = (timestamp) => {
 
         
     } else if (localGameState === 0){ // Menu
-
+        view.viewMainMenu();
     }  
     requestAnimationFrame(mainLoop);
 };
@@ -441,8 +444,17 @@ module.exports.startGame = () => {
 };
 
 const activateButtons = () => {
-    document.getElementById("main-menu").addEventListener("click", () => {
-        console.log("clicked");
+    document.getElementById("back-to-main-menu").addEventListener("click", () => {
+        // view.viewMainMenu();
+        localGameState = 0;
+        // console.log("clicked");
+    });
+    document.getElementById("main-menu-play").addEventListener("click", () => {
+        view.viewGame();
+        startGameState();
+        onlineGameState = 1;
+        localGameState = 1;
+        // console.log("clicked");
     });
 };
 
