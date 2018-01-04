@@ -56,6 +56,11 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
+        firebase.database().ref("gameState").on('value', function(snapshot) {
+            //   console.log("Update");
+                let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+                c.dispatchEvent(serverUpdate);
+        });
     });
 
 
@@ -74,7 +79,7 @@ const convertObjectsToArray = (object) => {
     return objectArray;
 };
 
-module.exports.savePlayerData = (player) => {
+module.exports.savePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(player);
         let JSONRequest = new XMLHttpRequest();
@@ -83,7 +88,7 @@ module.exports.savePlayerData = (player) => {
     });
 };
 
-module.exports.saveTileData = (tile) => {
+module.exports.saveTile = (tile) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tile);
         let JSONRequest = new XMLHttpRequest();
@@ -92,11 +97,20 @@ module.exports.saveTileData = (tile) => {
     });
 };
 
-module.exports.saveGemData = (gem) => {
+module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(gem);
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.saveGameState = (state) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(state);
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
         JSONRequest.send(jsonString);
     });
 };

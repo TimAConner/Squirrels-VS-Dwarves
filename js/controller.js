@@ -16,7 +16,7 @@ const model = require("./model");
 const view = require("./view");
 const g = require("./game");
 
-let gameState = 0;
+let gameState = 1;
 let playerId = "0";
 
 
@@ -40,12 +40,12 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    left:false,
-    right:false,
-    up: false, 
-    down: false,
-    space: false,
-    d: false
+    left: { active: false, id: 37},
+    right: { active: false, id: 39},
+    up: { active: false, id: 38}, 
+    down: { active: false, id: 40},
+    space: { active: false, id: 32},
+    d: { active: false, id: 68}
 };
 
 
@@ -158,7 +158,13 @@ const findTileInDirection = (player) => {
     return tile;
 };
 
-
+const isKeyOn = (prop) => {
+    if(keys[prop].active === true){
+        return true;
+    } else {
+        return false;
+    }
+};
 const getGemOnTile = (tile) => {
         let gem = gems.find((gem) => {
             let tileXPosition = (tile.pos.x*tile.size.w),
@@ -172,7 +178,7 @@ const getGemOnTile = (tile) => {
             return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
         });
 
-        console.log('gem', gem);
+        // console.log('gem', gem);
         return gem;
 };
 const update = (delta) => { // new delta parameter
@@ -247,7 +253,7 @@ const update = (delta) => { // new delta parameter
             let requestId = `${Date.now()}-${playerId}`;
         //    console.log(requestId);
 
-            if(keys.up && canMove("up", player, delta)){
+            if(isKeyOn("up") && canMove("up", player, delta)){
                 players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "up";
                 // requestId += `01`;
@@ -255,16 +261,16 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
-            } else if (keys.down && canMove("down", player, delta)){
+                model.savePlayer(players[players.indexOf(player)]);
+            } else if (isKeyOn("down") && canMove("down", player, delta)){
                 players[players.indexOf(player)].pos.y += speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "down";
                 previousPlayerActions.push(requestId);
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
-            } else if(keys.left && canMove("left", player, delta)){
+                model.savePlayer(players[players.indexOf(player)]);
+            } else if(isKeyOn("left") && canMove("left", player, delta)){
                 players[players.indexOf(player)].pos.x -= speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "left";
                 // requestId += `02`;
@@ -272,8 +278,8 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
-            } else if(keys.right && canMove("right", player, delta)){
+                model.savePlayer(players[players.indexOf(player)]);
+            } else if(isKeyOn("right") && canMove("right", player, delta)){
                 players[players.indexOf(player)].pos.x += speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "right";
                 // requestId += `03`;
@@ -281,31 +287,31 @@ const update = (delta) => { // new delta parameter
                 players[players.indexOf(player)].requestId = requestId;
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayerData(players[players.indexOf(player)]);
-            } else if(keys.space){
+                model.savePlayer(players[players.indexOf(player)]);
+            } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
                     let gemOnTile = getGemOnTile(selectedTile);
                     // console.log('gemOnTile', gemOnTile);
-                    if(gemOnTile !== undefined && gemOnTile.carrier === -1){
+                    if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         previousPlayerActions.push(requestId);
                         gems[gems.indexOf(gemOnTile)].requestId = requestId;
-                        model.saveGemData(gems[gems.indexOf(gemOnTile)]); 
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]); 
                     } else {
                         if(selectedTile.hard !== -1){
                             tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
                             // console.log(selectedTile);
                             previousPlayerActions.push(requestId);
                             tiles[tiles.indexOf(selectedTile)].requestId = requestId;
-                            model.saveTileData(tiles[tiles.indexOf(selectedTile)]); 
+                            model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
                    
                 }
                 
-            } else if(keys.d){
+            } else if(isKeyOn("d")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 // If there is a tile that it can be dropped on,
@@ -326,32 +332,24 @@ const update = (delta) => { // new delta parameter
                             carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
-                            
-                            model.saveGemData(gems[gems.indexOf(carriedGem)]); 
+                            if(selectedTile.teamBase === player.team){
+                                console.log("victory!");
+                            }
+                            model.saveGem(gems[gems.indexOf(carriedGem)]); 
                         }
-                        
                     }
-
-                   
-                 
-                   
-                }
-                
-
-               
-                
+                }      
             }
-
-            
         }
-
     }
 };
 
 
+
+
 const mainLoop = (timestamp) => {
     
-    if(gameState === 0){
+    if(gameState === 1){
         // Track the accumulated time that hasn't been simulated yet
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
@@ -455,6 +453,10 @@ const activateServerListener = () => {
         }
 
     });
+
+    g.c.addEventListener("serverUpdateGameState", (e) => {
+        gameState = e.detail.gameState; 
+    });
 };
 
 
@@ -474,47 +476,19 @@ window.addEventListener("keydown", function(e) {
 }, false);
 
 window.onkeydown = function() {
-	switch(event.keyCode) {
-		case 37:
-			keys.left = true;
-		break;
-		case 39:
-			keys.right = true;
-        break;
-        case 38:
-            keys.up = true;
-        break;
-        case 40:
-            keys.down = true;
-        break;
-        case 32:    
-            keys.space = true;
-        break;
-        case 68:    
-            keys.d = true;
-        break;
-	}
+    for(let prop in keys){
+        if(keys[prop].id == event.keyCode){
+            keys[prop].active = true;
+        }
+    }
 };
 
+
+
 window.onkeyup = function() {
-	switch(event.keyCode) {
-		case 37:
-			keys.left = false;
-		break;
-		case 39:
-			keys.right = false;
-        break;
-        case 38:
-            keys.up = false;
-        break;
-        case 40:
-            keys.down = false;
-        break;
-        case 32:
-            keys.space = false;
-        break;
-        case 68:    
-            keys.d = false;
-        break;
-	}
+    for(let prop in keys){
+        if(keys[prop].id == event.keyCode){
+            keys[prop].active = false;
+        }
+    }
 };
