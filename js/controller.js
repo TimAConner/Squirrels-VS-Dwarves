@@ -15,6 +15,7 @@ https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 const model = require("./model");
 const view = require("./view");
 const g = require("./game");
+const mapMaker = require("./mapMaker");
 
 // 0 menu, 1 game, 2 winner
 
@@ -463,11 +464,29 @@ const activateButtons = () => {
         localGameState = 0;
         // console.log("clicked");
     });
+
+    document.getElementById("add-player").addEventListener("click", () => {
+        // view.viewMainMenu();
+        
+        // console.log("clicked");
+
+        model.addNewPlayer(players.length, 0, 25, 25);
+    });
+
     document.getElementById("main-menu-play").addEventListener("click", () => {
         view.viewGame();
         initiateGameState();
         // onlineGameState = 1;
         localGameState = 1;
+        // console.log("clicked");
+    });
+
+    document.getElementById("main-menu-new").addEventListener("click", () => {
+        console.log(mapMaker.generateTiles(100, 50));
+        // view.viewGame();s
+        // initiateGameState();
+        // // onlineGameState = 1;
+        // localGameState = 1;
         // console.log("clicked");
     });
 };
@@ -488,6 +507,7 @@ const activateServerListener = () => {
         // console.log("player", e.detail);
         if(initialPlayerDraw === true){
             players = e.detail.players;
+            console.log(players);
             initialPlayerDraw = false;
         } else {
             newPlayers = e.detail.players;
