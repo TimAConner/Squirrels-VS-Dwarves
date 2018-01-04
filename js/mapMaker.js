@@ -1,6 +1,6 @@
   "use strict";
 
-  const generateTiles = (w, h) => {
+  module.exports.generateTiles = (w, h) => {
     let tiles = [];
         let id = 0;
         for(let x = 0; x < w; x++){
