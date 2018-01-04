@@ -56,6 +56,11 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
+        firebase.database().ref("gameState").on('value', function(snapshot) {
+            //   console.log("Update");
+                let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+                c.dispatchEvent(serverUpdate);
+        });
     });
 
 
