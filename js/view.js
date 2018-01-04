@@ -53,12 +53,21 @@ const drawTiles = (tiles) => {
                     
                 // console.log("b",  distance);
                 } else {
-                    g.ctx.fillStyle = "blue"; 
+                    if(tiles[i].teamBase === thisPlayer.team){
+                        g.ctx.fillStyle = "orange";
+                    } else {
+                        g.ctx.fillStyle = "blue"; 
+                    }
+                   
                     
                 // console.log("w", distance);
                 }
             } else {
-                g.ctx.fillStyle = "black";
+                if(tiles[i].teamBase === thisPlayer.team){
+                    g.ctx.fillStyle = "orange";
+                } else {
+                    g.ctx.fillStyle = "black";
+                }
                 // console.log("b", distance);
             }   
             
