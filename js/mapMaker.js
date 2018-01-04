@@ -1,39 +1,38 @@
   "use strict";
 
-        
-
+  const generateTiles = (w, h) => {
     let tiles = [];
-
-    let id = 0;
-    for(let x = 0; x < 100; x++){
-        
-        for(let y = 0; y < 80; y++){
-            let obj = {
-                "id": id,
-                "pos": {
-                    "x": x,
-                    "y": y,
-                    "z": 0
-                },
-                "size": {
-                    "w": 25,
-                    "h": 25
-                },
-                "hard": 1,
-            };
-            if(x >=  5 && x <= 10 && y >= 36 && y <= 41){
-                obj.hard = 0;
-                obj.teamBase = 0;
+        let id = 0;
+        for(let x = 0; x < w; x++){
+            for(let y = 0; y < h; y++){
+                let obj = {
+                    "id": id,
+                    "pos": {
+                        "x": x,
+                        "y": y,
+                        "z": 0
+                    },
+                    "size": {
+                        "w": 25,
+                        "h": 25
+                    },
+                    "hard": 1,
+                };
+                if(x >=  5 && x <= 10 && y >= h/2 && y <= (h/2)+5){
+                    obj.hard = 0;
+                    obj.teamBase = 0;
+                }
+    
+                if(x >=  w-15 && x <= w-5 && y >= h/2 && y <= (h/2)+5){
+                    obj.hard = 0;
+                    obj.teamBase = 0;
+                }
+    
+                id ++;
+                tiles.push(obj);
             }
-
-            if(x >=  95 && x <= 85 && y >= 36 && y <= 41){
-                obj.hard = 0;
-                obj.teamBase = 0;
-            }
-
-            id ++;
-            tiles.push()
         }
-    }
+        return tiles;
+  };
 
-    console.log(tiles);
+ 
