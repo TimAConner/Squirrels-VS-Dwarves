@@ -9,11 +9,14 @@ const g = require("./game");
 
 let sightDistance = 2.25;
 
+// Square colors
+let unknownColor = "black",
+minedColor = "blue",
+rockColor = "brown",
+baseColor = "orange";
+
+// Set by draw()
 let thisPlayer;
-
-
-
-
 
 const findPlayerTile = (player) => {
     let tileX = Math.round(player.pos.x / g.tileSize),
@@ -49,14 +52,14 @@ const drawTiles = (tiles) => {
             distance = Math.sqrt(a*a + b*b);
             if(Math.abs(distance) <= sightDistance){
                 if(tiles[i].hard > 0){
-                    g.ctx.fillStyle = "brown"; 
+                    g.ctx.fillStyle = rockColor; 
                     
                 // console.log("b",  distance);
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
-                        g.ctx.fillStyle = "orange";
+                        g.ctx.fillStyle = baseColor;
                     } else {
-                        g.ctx.fillStyle = "blue"; 
+                        g.ctx.fillStyle = minedColor; 
                     }
                    
                     
@@ -64,15 +67,15 @@ const drawTiles = (tiles) => {
                 }
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
-                    g.ctx.fillStyle = "orange";
+                    g.ctx.fillStyle = baseColor;
                 } else {
-                    g.ctx.fillStyle = "black";
+                    g.ctx.fillStyle = unknownColor;
                 }
                 // console.log("b", distance);
             }   
             
         } else {
-            g.ctx.fillStyle = "black";
+            g.ctx.fillStyle = unknownColor;
         }   
 
        
