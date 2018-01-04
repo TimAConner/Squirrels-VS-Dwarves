@@ -19,6 +19,12 @@ enemyColor = "red",
 allyGemColor = "yellow",
 enemyGemColor = "yellow";
 
+
+let dwarfImage = new Image();   // Create new img element
+dwarfImage.src = '../img/dwarf.png'; // Set source path
+
+
+
 // Set by draw()
 let thisPlayer;
 
@@ -123,13 +129,17 @@ const drawPlayers = (players) => {
 
 
             // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
+
+           
             if(players[i].team === thisPlayer.team){
                 g.ctx.fillStyle = allyColor; 
             } else {
                 g.ctx.fillStyle  = enemyColor;
             }
             
-            g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+            
+            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             g.ctx.stroke();
 
             // g.ctx.restore();
