@@ -44,7 +44,8 @@ let keys = {
     right:false,
     up: false, 
     down: false,
-    space: false
+    space: false,
+    d: false
 };
 
 
@@ -462,7 +463,7 @@ const activateServerListener = () => {
 
 // Disable keydow defaults
 window.addEventListener("keydown", function(e) {
-    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+    if([32, 37, 38, 39, 40, 67].indexOf(e.keyCode) > -1) {
         e.preventDefault();
     }
 }, false);
@@ -484,6 +485,9 @@ window.onkeydown = function() {
         case 32:    
             keys.space = true;
         break;
+        case 67:    
+            keys.d = true;
+        break;
 	}
 };
 
@@ -503,6 +507,9 @@ window.onkeyup = function() {
         break;
         case 32:
             keys.space = false;
+        break;
+        case 67:    
+            keys.d = false;
         break;
 	}
 };
