@@ -127,17 +127,24 @@ module.exports.saveGameState = (state) => {
 
 module.exports.addNewPlayer = (id, team, x, y) => {
     let player = {
-        "id": id,
+        "id": `${id}`,
         "team": team,
         "pos": {
             "x": x,
             "y": y,
-            "z": "0"
-        }
+            "z": '0'
+        },
+        "size": {
+            "w": 25,
+            "h": 25
+        },
+        "requestId": "1515101455241-1",
+        "dir": "up"
     };
+
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+    JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${id}.json`);
     JSONRequest.send(jsonString);
 };
 
