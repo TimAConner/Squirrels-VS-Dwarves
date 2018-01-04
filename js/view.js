@@ -141,10 +141,15 @@ module.exports.draw = (playerId, tiles, players, gems) => {
     drawGems(gems, players);
 };
 
+module.exports.showLoadingScreen = () => {
+    hideAllMenus();
+    
+    document.getElementById("loading-screen").classList.remove("hide");
+};
 
 module.exports.viewMainMenu = () => {
     hideAllMenus();
-
+    
     document.getElementById("main-menu-screen").classList.remove("hide");
 };
 
@@ -158,6 +163,7 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 module.exports.viewGame = () => {
     hideAllMenus();
 
+
     document.getElementById("player-id").classList.remove("hide");
     g.c.classList.remove("hide");
 };
@@ -167,5 +173,6 @@ const hideAllMenus = () => {
     document.getElementById("victory-screen").classList.add("hide");
     document.getElementById("player-id").classList.add("hide");
     document.getElementById("main-menu-screen").classList.add("hide");
+    document.getElementById("loading-screen").classList.add("hide");
     g.c.classList.add("hide");
 };
