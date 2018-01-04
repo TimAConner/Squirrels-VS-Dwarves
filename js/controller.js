@@ -20,6 +20,8 @@ const g = require("./game");
 
 let onlineGameState = 1;
 let localGameState = 0;
+let waitingForGame = false;
+
 
 
 
@@ -191,12 +193,15 @@ const setWinner = (teamId) => {
     model.saveGameState(winningObject);
 };
 
-const startGameState = () => {
+const initiateGameState = () => {
+    waitingForGame = true;
+    
     let winningObject = {
         gameState: 1,
         winningTeam: 0
     };
     model.saveGameState(winningObject);
+    
 };
 
 const update = (delta) => { // new delta parameter
@@ -370,10 +375,13 @@ const update = (delta) => { // new delta parameter
 
 const mainLoop = (timestamp) => {
     
+    
     if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
         view.viewGame();
+        waitingForGame = false;
+
         // Track the accumulated time that hasn't been simulated yet
         delta += timestamp - lastFrameTimeMs; // note += here
         lastFrameTimeMs = timestamp;
@@ -396,6 +404,10 @@ const mainLoop = (timestamp) => {
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
     }  
+
+    if(waitingForGame === true){
+        view.showLoadingScreen();
+    }
     requestAnimationFrame(mainLoop);
 };
 
@@ -451,8 +463,8 @@ const activateButtons = () => {
     });
     document.getElementById("main-menu-play").addEventListener("click", () => {
         view.viewGame();
-        startGameState();
-        onlineGameState = 1;
+        initiateGameState();
+        // onlineGameState = 1;
         localGameState = 1;
         // console.log("clicked");
     });
