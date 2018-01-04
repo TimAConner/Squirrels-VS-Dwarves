@@ -288,7 +288,7 @@ const update = (delta) => { // new delta parameter
                 if(selectedTile !== undefined){
                     let gemOnTile = getGemOnTile(selectedTile);
                     // console.log('gemOnTile', gemOnTile);
-                    if(gemOnTile !== undefined && gemOnTile.carrier === -1){
+                    if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         previousPlayerActions.push(requestId);
                         gems[gems.indexOf(gemOnTile)].requestId = requestId;
