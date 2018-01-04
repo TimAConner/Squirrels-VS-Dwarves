@@ -40,12 +40,12 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    left:false,
-    right:false,
-    up: false, 
-    down: false,
-    space: false,
-    d: false
+    left: { active: false, id: 37},
+    right: { active: false, id: 39},
+    up: { active: false, id: 38}, 
+    down: { active: false, id: 40},
+    space: { active: false, id: 32},
+    d: { active: false, id: 68}
 };
 
 
@@ -158,7 +158,13 @@ const findTileInDirection = (player) => {
     return tile;
 };
 
-
+const isKeyOn = (prop) => {
+    if(keys[prop].active === true){
+        return true;
+    } else {
+        return false;
+    }
+};
 const getGemOnTile = (tile) => {
         let gem = gems.find((gem) => {
             let tileXPosition = (tile.pos.x*tile.size.w),
@@ -247,7 +253,7 @@ const update = (delta) => { // new delta parameter
             let requestId = `${Date.now()}-${playerId}`;
         //    console.log(requestId);
 
-            if(keys.up && canMove("up", player, delta)){
+            if(isKeyOn("up") && canMove("up", player, delta)){
                 players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "up";
                 // requestId += `01`;
@@ -256,7 +262,7 @@ const update = (delta) => { // new delta parameter
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
                 model.savePlayerData(players[players.indexOf(player)]);
-            } else if (keys.down && canMove("down", player, delta)){
+            } else if (isKeyOn("down") && canMove("down", player, delta)){
                 players[players.indexOf(player)].pos.y += speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "down";
                 previousPlayerActions.push(requestId);
@@ -264,7 +270,7 @@ const update = (delta) => { // new delta parameter
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
                 model.savePlayerData(players[players.indexOf(player)]);
-            } else if(keys.left && canMove("left", player, delta)){
+            } else if(isKeyOn("left") && canMove("left", player, delta)){
                 players[players.indexOf(player)].pos.x -= speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "left";
                 // requestId += `02`;
@@ -273,7 +279,7 @@ const update = (delta) => { // new delta parameter
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
                 model.savePlayerData(players[players.indexOf(player)]);
-            } else if(keys.right && canMove("right", player, delta)){
+            } else if(isKeyOn("right") && canMove("right", player, delta)){
                 players[players.indexOf(player)].pos.x += speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "right";
                 // requestId += `03`;
@@ -282,7 +288,7 @@ const update = (delta) => { // new delta parameter
                 
                 // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
                 model.savePlayerData(players[players.indexOf(player)]);
-            } else if(keys.space){
+            } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
@@ -305,7 +311,7 @@ const update = (delta) => { // new delta parameter
                    
                 }
                 
-            } else if(keys.d){
+            } else if(isKeyOn("d")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 // If there is a tile that it can be dropped on,
@@ -347,6 +353,8 @@ const update = (delta) => { // new delta parameter
 
     }
 };
+
+
 
 
 const mainLoop = (timestamp) => {
@@ -474,47 +482,19 @@ window.addEventListener("keydown", function(e) {
 }, false);
 
 window.onkeydown = function() {
-	switch(event.keyCode) {
-		case 37:
-			keys.left = true;
-		break;
-		case 39:
-			keys.right = true;
-        break;
-        case 38:
-            keys.up = true;
-        break;
-        case 40:
-            keys.down = true;
-        break;
-        case 32:    
-            keys.space = true;
-        break;
-        case 68:    
-            keys.d = true;
-        break;
-	}
+    for(let prop in keys){
+        if(keys[prop].id == event.keyCode){
+            keys[prop].active = true;
+        }
+    }
 };
 
+
+
 window.onkeyup = function() {
-	switch(event.keyCode) {
-		case 37:
-			keys.left = false;
-		break;
-		case 39:
-			keys.right = false;
-        break;
-        case 38:
-            keys.up = false;
-        break;
-        case 40:
-            keys.down = false;
-        break;
-        case 32:
-            keys.space = false;
-        break;
-        case 68:    
-            keys.d = false;
-        break;
-	}
+    for(let prop in keys){
+        if(keys[prop].id == event.keyCode){
+            keys[prop].active = false;
+        }
+    }
 };
