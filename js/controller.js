@@ -54,7 +54,8 @@ let keys = {
     up: { active: false, id: 38}, 
     down: { active: false, id: 40},
     space: { active: false, id: 32},
-    d: { active: false, id: 68}
+    d: { active: false, id: 68},
+    s: { active: false, id: 83}
 };
 
 // Generated on runtime
@@ -368,8 +369,20 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
-                console.log(selectedTile);
                 if(selectedTile !== undefined){
+                    if(selectedTile.hard !== -1){
+                        tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
+                        // console.log(selectedTile);
+                        previousPlayerActions.push(requestId);
+                        tiles[tiles.indexOf(selectedTile)].requestId = requestId;
+                        model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
+                    }
+                }
+                
+            } else if(isKeyOn("s")){
+                let selectedTile = findTileBelowPlayer(player);
+
+                if(selectedTile  !== undefined){
                     let gemOnTile = findCloseGem(player);
                     // console.log('gemOnTile', gemOnTile);
                     if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
@@ -377,18 +390,9 @@ const update = (delta) => { // new delta parameter
                         previousPlayerActions.push(requestId);
                         gems[gems.indexOf(gemOnTile)].requestId = requestId;
                         model.saveGem(gems[gems.indexOf(gemOnTile)]); 
-                    } else {
-                        if(selectedTile.hard !== -1){
-                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                            // console.log(selectedTile);
-                            previousPlayerActions.push(requestId);
-                            tiles[tiles.indexOf(selectedTile)].requestId = requestId;
-                            model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
-                        }
                     }
-                   
-                }
-                
+                } 
+            
             } else if(isKeyOn("d")){
                 // If there is an object in front of you
                 let selectedTile = findTileBelowPlayer(player);
