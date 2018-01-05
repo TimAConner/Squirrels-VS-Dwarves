@@ -30,6 +30,17 @@ let stoneImage = new Image();
 stoneImage.src = "../img/stone.jpeg";
 
 
+// Gems
+
+// https://opengameart.org/content/32x32-pixel-gems
+// Copyright/Attribution Notice: 
+// Credit:Jianhui999 https://www.patreon.com/GamePixelArt Credit: http://opengameart.org/users/jianhui999
+
+let gemImage = new Image();
+gemImage.src = "../img/gems.png";
+
+
+
 // Set by draw()
 let thisPlayer;
 
@@ -167,20 +178,34 @@ const drawPlayers = (players) => {
 const drawGems = (gems, players) => {
     for(let i = 0; i < gems.length; i++){
 
-        if(thisPlayer.team === gems[i].team){
-            g.ctx.fillStyle = allyGemColor; 
-        } else {
-            g.ctx.fillStyle  = enemyGemColor;
+        if(thisPlayer.team === gems[i].team){ // Your team
+            
+            if(gems[i].carrier === -1){
+                // g.ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                
+    
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                
+            } else {
+                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
+                // g.ctx.fillRect();
+            
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            }
+        } else { // Enemy team
+
+            if(gems[i].carrier === -1){
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                
+            } else {
+                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            }
         }
            
 
 
-        if(gems[i].carrier === -1){
-            g.ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-        } else {
-            let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-            g.ctx.fillRect(carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
-        }
+        
         g.ctx.stroke();
     }
 };

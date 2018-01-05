@@ -61,6 +61,7 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
+
     });
 
 
@@ -97,6 +98,15 @@ module.exports.saveTile = (tile) => {
     });
 };
 
+module.exports.saveNewTileSet = (tiles) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(tiles);
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
 module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(gem);
@@ -113,6 +123,29 @@ module.exports.saveGameState = (state) => {
         JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
         JSONRequest.send(jsonString);
     });
+};
+
+module.exports.addNewPlayer = (id, team, x, y) => {
+    let player = {
+        "id": `${id}`,
+        "team": team,
+        "pos": {
+            "x": x,
+            "y": y,
+            "z": '0'
+        },
+        "size": {
+            "w": 25,
+            "h": 25
+        },
+        "requestId": "1515101455241-1",
+        "dir": "up"
+    };
+
+    let jsonString = JSON.stringify(player);
+    let JSONRequest = new XMLHttpRequest();
+    JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${id}.json`);
+    JSONRequest.send(jsonString);
 };
 
 // module.exports.getTiles = (url) => {
