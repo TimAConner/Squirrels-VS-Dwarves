@@ -124,6 +124,41 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
+const findTileBelowPlayer = (player) => {
+
+    let playerX = (player.pos.x+player.size.w/2),
+    playerY = (player.pos.y+player.size.h/2);    
+
+    let sortedTiles = tiles.slice().sort((a, b) => {
+        let tileAX= a.pos.x*a.size.w,
+        tileAY = a.pos.y*a.size.h;
+        
+        let tileBX= b.pos.x*b.size.w,
+        tileBY = b.pos.y*b.size.h;
+
+        let tileAXDifference = (player.pos.x) - (tileAX),
+        playerAYDIfference = (player.pos.y) - (tileAY),
+        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
+
+        let tileBXDifference = (player.pos.x) - (tileBX),
+        playerBYDIfference = (player.pos.y) - (tileBY),
+        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
+        
+        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+    });
+
+    // let tile = tiles.find(t => {
+    //     let tileLeftPoint = t.pos.x*t.size.w,
+    //     tileTopPoint = t.pos.y*t.size.h;
+
+    //     let tileRightPoint = tileLeftPoint + t.size.w,
+    //     tileBottomPoint = tileTopPoint + t.size.h;
+        
+    //     return playerX >= tileLeftPoint && playerX <= tileRightPoint && playerY >= tileTopPoint && playerY <= tileBottomPoint;
+    // });
+
+    return sortedTiles[0];
+};
 
 const findTileInDirection = (player) => {
 
@@ -159,6 +194,7 @@ const findTileInDirection = (player) => {
     let tile = tiles.find(t => t.pos.x === tileX && t.pos.y === tileY);
     // console.log(tile);
 
+
     return tile;
 };
 
@@ -168,6 +204,20 @@ const isKeyOn = (prop) => {
     } else {
         return false;
     }
+};
+
+const findCloseGem = (player) => {
+    let gem = gems.find((gem) => {
+
+        let a = (player.pos.x) - (gem.pos.x),
+        b = (player.pos.y) - (gem.pos.y),
+
+        distance = Math.sqrt(a*a + b*b);
+        console.log(Math.abs(distance));
+        return Math.abs(distance) <= 15; // 10 Pixels
+    });
+
+    return gem;
 };
 
 const getGemOnTile = (tile) => {
@@ -180,6 +230,7 @@ const getGemOnTile = (tile) => {
         tileBottomPoint = tileYPosition + tile.size.h,
         tileTopPoint = tileYPosition;        
 
+        // console.log(gem.team, tileLeftPoint, gem.pos.x, tileRightPoint, tileTopPoint, gem.pos.y, tileBottomPoint);
         return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
     });
 
@@ -317,8 +368,9 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
+                console.log(selectedTile);
                 if(selectedTile !== undefined){
-                    let gemOnTile = getGemOnTile(selectedTile);
+                    let gemOnTile = findCloseGem(player);
                     // console.log('gemOnTile', gemOnTile);
                     if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
@@ -339,7 +391,8 @@ const update = (delta) => { // new delta parameter
                 
             } else if(isKeyOn("d")){
                 // If there is an object in front of you
-                let selectedTile = findTileInDirection(player);
+                let selectedTile = findTileBelowPlayer(player);
+                console.log(selectedTile);
                 // If there is a tile that it can be dropped on,
                 if(selectedTile !== undefined){
 
@@ -354,8 +407,10 @@ const update = (delta) => { // new delta parameter
                         if(carriedGem !== undefined){
                             // Drop gems
                             carriedGem.carrier = -1;
-                            carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
-                            carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
+                            // carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
+                            // carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
+                            carriedGem.pos.x = player.pos.x;
+                            carriedGem.pos.y = player.pos.y;
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
                             if(selectedTile.teamBase === player.team){
@@ -512,6 +567,8 @@ const activateServerListener = () => {
         } else {
             newPlayers = e.detail.players;
         }
+
+        // Update list of players
         
         // console.log('players', newPlayers);
         // console.log('tiles', newTiles);
