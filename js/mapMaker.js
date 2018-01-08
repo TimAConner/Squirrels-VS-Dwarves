@@ -18,14 +18,14 @@
                     },
                     "hard": 1,
                 };
-                if(x >=  5 && x <= 10 && y >= h/2 && y <= (h/2)+5){
+                if(x >=  0 && x <= 5 && y >= h/2 && y <= (h/2)+5){
                     obj.hard = 0;
                     obj.teamBase = 0;
                 }
     
-                if(x >=  w-15 && x <= w-5 && y >= h/2 && y <= (h/2)+5){
+                if(x >=  w-5 && x <= w && y >= h/2 && y <= (h/2)+5){
                     obj.hard = 0;
-                    obj.teamBase = 0;
+                    obj.teamBase = 1;
                 }
     
                 id ++;

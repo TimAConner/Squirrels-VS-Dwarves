@@ -331,6 +331,8 @@ const update = (delta) => { // new delta parameter
             let requestId = `${Date.now()}-${playerId}`;
         //    console.log(requestId);
 
+        console.log(findTileBelowPlayer(player).id);
+
             if(isKeyOn("up") && canMove("up", player, delta)){
                 players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
                 players[players.indexOf(player)].dir = "up";
@@ -512,7 +514,12 @@ module.exports.startGame = () => {
     requestAnimationFrame(mainLoop);
 
     document.getElementById('player-id').addEventListener("change", function(){
-        playerId = this.value;
+
+        if(players.length > this.value && this.value >= 0){
+            playerId = this.value;
+        } else {
+            window.alert("Player does not exist.");
+        }
     });
 
 };
@@ -529,7 +536,20 @@ const activateButtons = () => {
         
         // console.log("clicked");
 
-        model.addNewPlayer(players.length, 0, 25, 25);
+        let spawnPoint = tiles.find(x => x.teamBase === 0);
+        console.log(spawnPoint);
+        model.addNewPlayer(players.length, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+    });
+
+    document.getElementById("add-player-2").addEventListener("click", () => {
+        // view.viewMainMenu();
+        
+        // console.log("clicked");
+        
+        
+        let spawnPoint = tiles.find(x => x.teamBase === 1);
+        console.log(spawnPoint);
+        model.addNewPlayer(players.length, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
     });
 
     document.getElementById("main-menu-play").addEventListener("click", () => {
@@ -541,22 +561,63 @@ const activateButtons = () => {
     });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
-        console.log(mapMaker.generateTiles(100, 50));
-        // view.viewGame();s
-        // initiateGameState();
-        // // onlineGameState = 1;
-        // localGameState = 1;
-        // console.log("clicked");
+        newGame();
     });
+};
+
+const newGame = () => {
+    let createdTiles = mapMaker.generateTiles(20, 20);
+    tiles = createdTiles;
+    // console.log(createdTiles);
+    
+    let teamBaseZero = createdTiles.find(x => x.teamBase === 0);
+    let teamBaseOne = createdTiles.find(x => x.teamBase === 1);
+
+    let newGems = [
+        {
+            "pos": {
+                "x": teamBaseZero.pos.x*teamBaseZero.size.w,
+                "y": teamBaseZero.pos.y*teamBaseZero.size.h
+            },
+            "size": {
+                "h": 25,
+                "w": 25
+            },
+            "carrier": -1,
+            "team": 0,
+            "type": "gem",
+            "id": 0
+        },
+        {
+            "pos": {
+                "x": teamBaseOne.pos.x*teamBaseOne.size.w,
+                "y": teamBaseOne.pos.y*teamBaseOne.size.h
+            },
+            "size": {
+                "h": 25,
+                "w": 25
+            },
+            "carrier": -1,
+            "team": 1,
+            "type": "gem",
+            "id": 1
+        }
+    ];
+
+    model.saveGem(newGems[0]);  
+    model.saveGem(newGems[1]);
+    model.saveNewMap(createdTiles);
 };
 
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
         if(initialGemDraw === true){
+            console.log(gems);
             gems = e.detail.gems;
             initialGemDraw = false;
         } else {
+            console.log(gems);
             newGems = e.detail.gems;
         }        
     });
