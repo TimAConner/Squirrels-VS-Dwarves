@@ -4,4 +4,3 @@ package.json
 .sass-cache/
 css/
 dist/
-js/apiKey.json
