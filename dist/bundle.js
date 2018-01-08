@@ -939,13 +939,13 @@ enemyGemColor = "yellow";
 
 
 let dwarfImage = new Image(); 
-dwarfImage.src = '../img/dwarf.png'; 
+dwarfImage.src = './img/dwarf.png'; 
 
 let dirtImage = new Image();
-dirtImage.src = "/img/dirt.png";
+dirtImage.src = "./img/dirt.png";
 
 let stoneImage = new Image();
-stoneImage.src = "img/stone.jpeg";
+stoneImage.src = "./img/stone.jpeg";
 
 
 // Gems
