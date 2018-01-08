@@ -13,7 +13,7 @@ const loadAPI = () => {
         apiRequest.addEventListener("error", () => {
             console.log("The files weren't loaded correctly!");
         });
-        apiRequest.open("GET", "../js/apiKey.json");
+        apiRequest.open("GET", "./js/apiKey.json");
         apiRequest.send();
     });
 };
