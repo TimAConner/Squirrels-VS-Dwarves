@@ -512,7 +512,12 @@ module.exports.startGame = () => {
     requestAnimationFrame(mainLoop);
 
     document.getElementById('player-id').addEventListener("change", function(){
-        playerId = this.value;
+
+        if(players.length > this.value && this.value >= 0){
+            playerId = this.value;
+        } else {
+            window.alert("Player does not exist.");
+        }
     });
 
 };
