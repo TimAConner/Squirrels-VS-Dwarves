@@ -332,7 +332,7 @@ const update = (delta) => { // new delta parameter
             let requestId = `${Date.now()}-${playerId}`;
         //    console.log(requestId);
 
-        console.log(findTileBelowPlayer(player).id);
+        // console.log(findTileBelowPlayer(player).id);
 
             if(isKeyOn("up") && canMove("up", player, delta)){
                 players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
