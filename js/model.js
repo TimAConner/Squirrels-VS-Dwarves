@@ -148,6 +148,14 @@ module.exports.addNewPlayer = (id, team, x, y) => {
     JSONRequest.send(jsonString);
 };
 
+
+module.exports.saveNewMap = (data) => {
+    let jsonString = JSON.stringify(data);
+    let JSONRequest = new XMLHttpRequest();
+    JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+    JSONRequest.send(jsonString);
+};
+
 // module.exports.getTiles = (url) => {
 //     return new Promise(function (resolve, reject){
 //         let JSONRequest = new XMLHttpRequest();
