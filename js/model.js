@@ -135,8 +135,8 @@ module.exports.addNewPlayer = (id, team, x, y) => {
             "z": '0'
         },
         "size": {
-            "w": 25,
-            "h": 25
+            "w": 20,
+            "h": 20
         },
         "requestId": "1515101455241-1",
         "dir": "up"
