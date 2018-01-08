@@ -942,10 +942,10 @@ let dwarfImage = new Image();
 dwarfImage.src = '../img/dwarf.png'; 
 
 let dirtImage = new Image();
-dirtImage.src = "../img/dirt.png";
+dirtImage.src = "/img/dirt.png";
 
 let stoneImage = new Image();
-stoneImage.src = "../img/stone.jpeg";
+stoneImage.src = "img/stone.jpeg";
 
 
 // Gems
@@ -955,7 +955,7 @@ stoneImage.src = "../img/stone.jpeg";
 // Credit:Jianhui999 https://www.patreon.com/GamePixelArt Credit: http://opengameart.org/users/jianhui999
 
 let gemImage = new Image();
-gemImage.src = "../img/gems.png";
+gemImage.src = "./img/gems.png";
 
 
 
