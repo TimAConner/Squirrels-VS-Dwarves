@@ -126,6 +126,7 @@ module.exports.saveGameState = (state) => {
 };
 
 module.exports.addNewPlayer = (id, team, x, y) => {
+    console.log(x, y);
     let player = {
         "id": `${id}`,
         "team": team,

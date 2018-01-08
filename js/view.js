@@ -58,15 +58,8 @@ const findPlayerTile = (player) => {
 
 const drawTiles = (tiles) => {
     for(let i = 0; i < tiles.length; i++){
-
-        // console.log(`${tiles[i].pos.x} - ${tiles[i].pos.y}`);
-        // g.ctx.fillStyle = "green";
-        // g.ctx.font = "10px Arial";
-        // g.ctx.fillText(`${tiles[i].pos.x} - ${tiles[i].pos.y}`,tiles[i].pos.x*25, tiles[i].pos.y*25);
-
-
-        
         let playerTile;
+
         if(thisPlayer !== undefined){
             playerTile = findPlayerTile(thisPlayer);
         }
@@ -76,6 +69,7 @@ const drawTiles = (tiles) => {
             let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
             distance = Math.sqrt(a*a + b*b);
+
             if(Math.abs(distance) <= sightDistance){
                 if(tiles[i].hard > 0){
                     g.ctx.fillStyle = rockColor; 
@@ -133,12 +127,15 @@ const canSeePlayer = (p1, p2, sightDistance) => {
 };
 
 const drawPlayers = (players) => {
-        
+    // console.log("players", players); 
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
-
+        // console.log("playeri", players[i], thisPlayer);
+         
         if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
+            // console.log("in here", players[i]);
+            
             // g.ctx.save();
 
             // // if(players[i].dir === "right"){
@@ -157,11 +154,11 @@ const drawPlayers = (players) => {
             // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
 
            
-            if(players[i].team === thisPlayer.team){
-                g.ctx.fillStyle = allyColor; 
-            } else {
-                g.ctx.fillStyle  = enemyColor;
-            }
+            // if(players[i].team === thisPlayer.team){
+            //     g.ctx.fillStyle = allyColor; 
+            // } else {
+            //     g.ctx.fillStyle  = enemyColor;
+            // }
             
             g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
             
@@ -228,8 +225,15 @@ module.exports.showLoadingScreen = () => {
 module.exports.viewMainMenu = () => {
     hideAllMenus();
     
+
     document.getElementById("main-menu-screen").classList.remove("hide");
 };
+
+// module.exports.viewSelectPlayerScreen = () => {
+//     hideAllMenus();
+
+//     document.getElementById("select-player-screen").classList.remove("hide");
+// };
 
 module.exports.viewWinnerScreen =  (winnerId) => {
     hideAllMenus();
