@@ -45,8 +45,6 @@ let newGems = [];
 let speedMultiplier = 0.1;
 
 
-
-
 //  Use timestamp instead?
 let keys = {
     left: { active: false, id: 37},
@@ -332,42 +330,21 @@ const update = (delta) => { // new delta parameter
         //    console.log(requestId);
 
         // console.log(findTileBelowPlayer(player).id);
+            let playerUpdateObject = {
+                player: players[players.indexOf(player)],
+                requestId,
+                delta,
+                speedMultiplier,
+            };
 
             if(isKeyOn("up") && canMove("up", player, delta)){
-                players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "up";
-                // requestId += `01`;
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
+                updatePlayerState("up", "y", playerUpdateObject);
             } else if (isKeyOn("down") && canMove("down", player, delta)){
-                players[players.indexOf(player)].pos.y += speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "down";
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
+                updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("left") && canMove("left", player, delta)){
-                players[players.indexOf(player)].pos.x -= speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "left";
-                // requestId += `02`;
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
+                updatePlayerState("left", "x", playerUpdateObject);
             } else if(isKeyOn("right") && canMove("right", player, delta)){
-                players[players.indexOf(player)].pos.x += speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "right";
-                // requestId += `03`;
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
+                updatePlayerState("right", "x", playerUpdateObject);
             } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
@@ -415,8 +392,7 @@ const update = (delta) => { // new delta parameter
                             carriedGem.carrier = -1;
                             // carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
                             // carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
-                            carriedGem.pos.x = player.pos.x;
-                            carriedGem.pos.y = player.pos.y;
+                            carriedGem.pos  = player.pos;
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
                             if(selectedTile.teamBase === player.team){
@@ -432,8 +408,26 @@ const update = (delta) => { // new delta parameter
     }
 };
 
+const addRequestId = (player, requestId) => {
+    previousPlayerActions.push(requestId);
+    player.requestId = requestId;
+};
+
+const updatePlayerState = (direction,  changeIn, options) => {
+    if(direction === "up" || direction === "left"){
+        options.speedMultiplier = -options.speedMultiplier;
+    }
+
+    options.player.pos[changeIn] += options.speedMultiplier * options.delta;
+    options.player.dir = options.direction;
+    addRequestId(options.player, options.requestId);
+    model.savePlayer(options.player);
+};
+
+
+
+
 const mainLoop = (timestamp) => {
-    
     
     if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -670,18 +664,20 @@ window.addEventListener("keydown", function(e) {
 }, false);
 
 // When a key is pressed, set it to true.
-window.onkeydown = function() {
+window.onkeydown = function(event) {
     for(let prop in keys){
         if(keys[prop].id == event.keyCode){
+        console.log("event.keycode", event.keycode);
             keys[prop].active = true;
         }
     }
 };
 
 // When a key is up, set it to false.
-window.onkeyup = function() {
+window.onkeyup = function(event) {
     for(let prop in keys){
         if(keys[prop].id == event.keyCode){
+            console.log("event.keycode", event.keycode);
             keys[prop].active = false;
         }
     }
