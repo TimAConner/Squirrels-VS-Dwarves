@@ -532,6 +532,14 @@ const activateButtons = () => {
         model.addNewPlayer(players.length, 0, 25, 25);
     });
 
+    document.getElementById("add-player-2").addEventListener("click", () => {
+        // view.viewMainMenu();
+        
+        // console.log("clicked");
+        
+        model.addNewPlayer(players.length, 1, 25, 25);
+    });
+
     document.getElementById("main-menu-play").addEventListener("click", () => {
         view.viewGame();
         initiateGameState();
@@ -541,7 +549,7 @@ const activateButtons = () => {
     });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
-        console.log(mapMaker.generateTiles(100, 50));
+        console.log(mapMaker.generateTiles(20, 20));
         // view.viewGame();s
         // initiateGameState();
         // // onlineGameState = 1;
