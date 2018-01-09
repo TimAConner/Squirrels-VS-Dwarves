@@ -300,7 +300,7 @@ const updateGemPosition = () => {
 
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
-
+    
     proccessNewData(players, newPlayers);
     proccessNewData(tiles, newTiles);
     proccessNewData(gems, newGems);
@@ -455,6 +455,8 @@ const mainLoop = (timestamp) => {
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
+        view.createPlayerButton(players);
+    
     }  
 
     if(waitingForGame === true){  // Load screen
@@ -517,6 +519,10 @@ const activateButtons = () => {
     });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
+        newGame();
+    });
+
+     document.getElementById("main-menu-new").addEventListener("click", () => {
         newGame();
     });
 };

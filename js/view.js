@@ -216,8 +216,11 @@ module.exports.draw = (playerId, tiles, players, gems) => {
     drawGems(gems, players);
 };
 
-module.exports.createPlayerButton = (id) => {
-    $("#player-lobby").append($(`<button playerId=${id}>Select Player ${id}</button></br>`));
+module.exports.createPlayerButton = (players) => {
+    $("#player-lobby").empty();
+    for(let i = 0; i < players.length; i ++){
+        $("#player-lobby").append($(`<button playerId=${players[i].id}>Select Player ${players[i].id}</button></br>`));
+    }
 };  
 
 module.exports.showLoadingScreen = () => {
