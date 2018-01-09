@@ -15,6 +15,7 @@ https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 const model = require("./model");
 const view = require("./view");
 const g = require("./game");
+const $ = require("jquery");
 const mapMaker = require("./mapMaker");
 
 // 0 menu, 1 game, 2 winner
@@ -301,9 +302,7 @@ const updateGemPosition = () => {
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
     
-    proccessNewData(players, newPlayers);
-    proccessNewData(tiles, newTiles);
-    proccessNewData(gems, newGems);
+ 
     // console.log("gems", gems);
     
     updateGemPosition();
@@ -447,7 +446,13 @@ const mainLoop = (timestamp) => {
         lastFrameTimeMs = timestamp;
 
         while (delta >= timestep) {
+
+            proccessNewData(players, newPlayers);
+            proccessNewData(tiles, newTiles);
+            proccessNewData(gems, newGems);
+            
             update(timestep);
+
             delta -= timestep;
         }
 
@@ -455,8 +460,12 @@ const mainLoop = (timestamp) => {
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
-        view.createPlayerButton(players);
-    
+        if($("#player-lobby button").length === 0){
+            view.createPlayerButton(players);
+        } 
+        // else if($("#player-lobby button").length !== newPlayers.length){
+        //     view.createPlayerButton(newPlayers);
+        // }
     }  
 
     if(waitingForGame === true){  // Load screen
@@ -525,6 +534,11 @@ const activateButtons = () => {
      document.getElementById("main-menu-new").addEventListener("click", () => {
         newGame();
     });
+
+    $("#player-lobby").on("click", "button", function(){
+        playerId = this.attr("playerId");
+        console.log(playerId);
+    });
 };
 
 const newGame = () => {
@@ -592,6 +606,7 @@ const activateServerListener = () => {
                 console.log(players);
                 initialPlayerDraw = false;
             } else {
+                console.log("new data");
                 newPlayers = e.detail.players;
             }
         }
