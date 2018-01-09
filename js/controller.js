@@ -381,30 +381,32 @@ const update = (delta) => { // new delta parameter
                         }
                     }
                 }      
-            } else if(isKeyOn("up") && canMove("up", player, delta)){
+            } 
+            
+            if(isKeyOn("up") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if(isKeyOn("up")){
+            } else if(isKeyOn("up") && player.dir !== "up"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if (isKeyOn("down") && canMove("down", player, delta)){
 
                 updatePlayerState("down", "y", playerUpdateObject);
 
-            } else if(isKeyOn("down")){
+            } else if(isKeyOn("down") && player.dir !== "down"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("left") && canMove("left", player, delta)){
 
                 updatePlayerState("left", "x", playerUpdateObject);
 
-            } else if(isKeyOn("left")){
+            } else if(isKeyOn("left") && player.dir !== "left"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("left", "x", playerUpdateObject);
             } else if(isKeyOn("right") && canMove("right", player, delta)){
 
                 updatePlayerState("right", "x", playerUpdateObject);
             
-            } else if(isKeyOn("right")){
+            } else if(isKeyOn("right") && player.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
             }
