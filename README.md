@@ -7,7 +7,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [ ] Streamline adding a player and starting game as player
 - [ ] Ability to kill enemey
 - [ ] Player lobby
-- [ ] Smaller Modules / Refactor code
+- [x] Smaller Modules / Refactor code
 - [ ] See vision around allys
 - [ ] Squirrel & Nut image
 - [ ] See direction player is facing
