@@ -257,62 +257,57 @@ const initiateGameState = () => {
     
 };
 
-const update = (delta) => { // new delta parameter
-    // boxPos += boxVelocity * delta; // velocity is now time-sensitive
-
+const processPlayers = () => {
     if(newPlayers !== null){
         for(let i = 0; i < newPlayers.length; i++){
             if(!previousPlayerActions.includes(newPlayers[i].requestId) && newPlayers[i] !== players[i] && newPlayers[i].requestId !== undefined){
-                // console.log("New player", newPlayers[i].requestId,  players[i]);
                 players[i] = newPlayers[i];
                 previousPlayerActions.push(newPlayers[i].requestId);
-                // console.log(newPlayers[i].requestId);
             } else {
-                // let index = previousPlayerActions.indexOf(newPlayers[i].requestId);
-                // previousPlayerActions.splice(index, 1);
-                // console.log(previousPlayerActions);
                 completedActions.push(newPlayers[i].requestId);
             }
         }
         newPlayers = null;
     }
-   
-    // This will be triggered each time the player moves, because both are being updated.
+};
 
+const processTiles = () => {
     if(newTiles !== null){
         for(let i = 0; i < newTiles.length; i++){
-
-            // The issue that is happening:  Data is being recieved, and that data says x block is gone, but the rest are still there. So, it puts rest there and deletes block.  Does that all the way through.
-
-            // Need to only update the new blocks, not the old blocks.
-            
-
-            // See if you can see only the changed data.  The new data.
-            
             if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
                 tiles[i] = newTiles[i];
                 previousPlayerActions.push(newTiles[i].requestId);
-                // console.log(newTiles[i].requestId);
             }
             
         }
         newTiles = null;
-        // initialTileDraw = false;
     }
+};
 
-    
+const processGems = () => {
     if(newGems !== null && newGems !== undefined){
         for(let i = 0; i < newGems.length; i++){
             if(newGems[i] !== gems[i] && !previousPlayerActions.includes(newGems[i].requestId) && newGems[i].requestId !== undefined){
                 gems[i] = newGems[i];
                 previousPlayerActions.push(newGems[i].requestId);
-                // console.log(newGems[i].requestId);
             }
             
         }
         newGems = null;
-        // initialTileDraw = false;
     }
+};
+
+
+
+const update = (delta) => { // new delta parameter
+    // boxPos += boxVelocity * delta; // velocity is now time-sensitive
+
+
+    processPlayers();
+    processTiles();
+    processGems();
+    
+
     
     /*
         Controls
@@ -321,15 +316,11 @@ const update = (delta) => { // new delta parameter
     if(playerId !== undefined){
 
         let player = players.find(x => x.id === playerId);
-        // console.log(player);
-        // console.log(playerId);
-        if(player !== undefined){
-           
-            // The saving here is not the jerky issue.  THe issue is the loading.
-            let requestId = `${Date.now()}-${playerId}`;
-        //    console.log(requestId);
 
-        // console.log(findTileBelowPlayer(player).id);
+        if(player !== undefined){
+
+            let requestId = `${Date.now()}-${playerId}`;
+
             let playerUpdateObject = {
                 player: players[players.indexOf(player)],
                 requestId,
@@ -338,13 +329,21 @@ const update = (delta) => { // new delta parameter
             };
 
             if(isKeyOn("up") && canMove("up", player, delta)){
+
                 updatePlayerState("up", "y", playerUpdateObject);
+
             } else if (isKeyOn("down") && canMove("down", player, delta)){
+
                 updatePlayerState("down", "y", playerUpdateObject);
+
             } else if(isKeyOn("left") && canMove("left", player, delta)){
+
                 updatePlayerState("left", "x", playerUpdateObject);
+
             } else if(isKeyOn("right") && canMove("right", player, delta)){
+
                 updatePlayerState("right", "x", playerUpdateObject);
+            
             } else if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
@@ -396,7 +395,6 @@ const update = (delta) => { // new delta parameter
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
                             if(selectedTile.teamBase === player.team){
-                                console.log("here");
                                 setWinner(player.team);
                             }
                             model.saveGem(gems[gems.indexOf(carriedGem)]); 
