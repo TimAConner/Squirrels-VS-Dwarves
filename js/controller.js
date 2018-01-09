@@ -257,65 +257,54 @@ const initiateGameState = () => {
     
 };
 
-const processPlayers = () => {
-    if(newPlayers !== null){
-        for(let i = 0; i < newPlayers.length; i++){
-            if(!previousPlayerActions.includes(newPlayers[i].requestId) && newPlayers[i] !== players[i] && newPlayers[i].requestId !== undefined){
-                players[i] = newPlayers[i];
-                previousPlayerActions.push(newPlayers[i].requestId);
-            } else {
-                completedActions.push(newPlayers[i].requestId);
+const proccessNewData = (currentData, newData) => {
+    if(newData !== null && newData !== undefined){
+        for(let i = 0; i < newData.length; i++){
+            if(newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId) && newData[i].requestId !== undefined){
+                currentData[i] = newData[i];
+                previousPlayerActions.push(newData[i].requestId);
             }
         }
-        newPlayers = null;
+        newData = null;
     }
 };
 
-const processTiles = () => {
-    if(newTiles !== null){
-        console.log("new tiles");
-        for(let i = 0; i < newTiles.length; i++){
-            console.log("checkint", newTiles[i]);
-            if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
-                console.log("new tile", tiles[i].id);
-                tiles[i] = newTiles[i];
-                previousPlayerActions.push(newTiles[i].requestId);
-            }
-            
+// const updateGemPosition = () => {   
+//     gems = gems.map(gem => {
+//         if(gem.carrier !== -1){
+//             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
+//             gem.pos.x = carrier.pos.x+(gem.size.w/4);
+//             gem.pos.y = carrier.pos.y+(gem.size.h/4);
+//         }
+//         return gem;
+//     });gems[gems.indexOf(carriedGem)]
+// };
+
+
+const updateGemPosition = () => {
+    for(let i = 0; i < gems.length; i++){
+        if(gems[i].carrier !== -1){
+            let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
+            gems[i].pos.x = carrier.pos.x+(gems[i].size.w/4);
+            gems[i].pos.y = carrier.pos.y+(gems[i].size.h/4);
         }
-        newTiles = null;
     }
 };
-
-const processGems = () => {
-    if(newGems !== null && newGems !== undefined){
-        for(let i = 0; i < newGems.length; i++){
-            if(newGems[i] !== gems[i] && !previousPlayerActions.includes(newGems[i].requestId) && newGems[i].requestId !== undefined){
-                gems[i] = newGems[i];
-                previousPlayerActions.push(newGems[i].requestId);
-            }
-            
-        }
-        newGems = null;
-    }
-};
-
 
 
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
 
-
-    processPlayers();
-    processTiles();
-    processGems();
+    proccessNewData(players, newPlayers);
+    proccessNewData(tiles, newTiles);
+    proccessNewData(gems, newGems);
+    // console.log("gems", gems);
     
-    
-
-    
+    updateGemPosition();
     /*
         Controls
     */
+
 
     if(playerId !== undefined){
 
@@ -376,9 +365,10 @@ const update = (delta) => { // new delta parameter
                 } 
             
             } else if(isKeyOn("d")){
+                console.log("d has been pressed");
                 // If there is an object in front of you
                 let selectedTile = findTileBelowPlayer(player);
-                console.log(selectedTile);
+                // console.log(selectedTile);
                 // If there is a tile that it can be dropped on,
                 if(selectedTile !== undefined){
 
@@ -393,14 +383,15 @@ const update = (delta) => { // new delta parameter
                         if(carriedGem !== undefined){
                             // Drop gems
                             carriedGem.carrier = -1;
-                            // carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
-                            // carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
-                            carriedGem.pos  = player.pos;
+                            carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
+                            carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
+                            // carriedGem.pos  = player.pos;
                             previousPlayerActions.push(requestId);
                             gems[gems.indexOf(carriedGem)].requestId = requestId;
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
+                            console.log("gem being sent", gems[gems.indexOf(carriedGem)]);
                             model.saveGem(gems[gems.indexOf(carriedGem)]); 
                         }
                     }

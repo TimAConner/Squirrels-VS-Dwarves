@@ -176,33 +176,22 @@ const drawGems = (gems, players) => {
     for(let i = 0; i < gems.length; i++){
 
         if(thisPlayer.team === gems[i].team){ // Your team
-            
-            if(gems[i].carrier === -1){
-                // g.ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-                
-    
+            // console.log(gems[i].carrier === -1);
+            if(gems[i].carrier === -1){ 
                 g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-                
-            } else {
-                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-                // g.ctx.fillRect();
-            
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            }
+             else {
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
             }
         } else { // Enemy team
 
             if(gems[i].carrier === -1){
                 g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-                
-            } else {
-                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            } 
+            else {
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
             }
         }
-           
-
-
-        
         g.ctx.stroke();
     }
 };
