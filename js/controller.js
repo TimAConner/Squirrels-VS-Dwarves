@@ -273,8 +273,11 @@ const processPlayers = () => {
 
 const processTiles = () => {
     if(newTiles !== null){
+        console.log("new tiles");
         for(let i = 0; i < newTiles.length; i++){
+            console.log("checkint", newTiles[i]);
             if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
+                console.log("new tile", tiles[i].id);
                 tiles[i] = newTiles[i];
                 previousPlayerActions.push(newTiles[i].requestId);
             }
@@ -306,6 +309,7 @@ const update = (delta) => { // new delta parameter
     processPlayers();
     processTiles();
     processGems();
+    
     
 
     
@@ -417,7 +421,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     }
 
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
-    options.player.dir = options.direction;
+    options.player.dir = direction;
     addRequestId(options.player, options.requestId);
     model.savePlayer(options.player);
 };
