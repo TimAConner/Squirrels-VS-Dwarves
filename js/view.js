@@ -5,6 +5,7 @@
 // };
 
 const g = require("./game");
+const $ = require("jquery");
 
 
 let sightDistance = 2.25;
@@ -214,6 +215,10 @@ module.exports.draw = (playerId, tiles, players, gems) => {
     drawPlayers(players, playerId);
     drawGems(gems, players);
 };
+
+module.exports.createPlayerButton = (id) => {
+    $("player-lobby").append($(`<button playerId=${id}>${id}</button>`));
+};  
 
 module.exports.showLoadingScreen = () => {
     hideAllMenus();
