@@ -126,13 +126,14 @@ const canSeePlayer = (p1, p2, sightDistance) => {
     return Math.abs(distance) <= sightDistance;
 };
 
-const drawPlayers = (players) => {
+const drawPlayers = (players, playerId) => {
     // console.log("players", players); 
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
-         
+      
+
         if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
             // console.log("in here", players[i]);
             
@@ -197,11 +198,11 @@ const drawGems = (gems, players) => {
 };
 
 module.exports.draw = (playerId, tiles, players, gems) => {
-    thisPlayer = players.find(x => x.id === playerId);
+    thisPlayer = players.find(x => x.id == playerId);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
     drawTiles(tiles);
-    drawPlayers(players);
+    drawPlayers(players, playerId);
     drawGems(gems, players);
 };
 

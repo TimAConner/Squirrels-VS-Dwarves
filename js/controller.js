@@ -26,7 +26,7 @@ let waitingForGame = false;
 
 let winner = 0;
 
-let playerId = "0";
+let playerId = 0;
 
 
 let players = [];
@@ -260,7 +260,7 @@ const initiateGameState = () => {
 const proccessNewData = (currentData, newData) => {
     if(newData !== null && newData !== undefined){
         for(let i = 0; i < newData.length; i++){
-            if(newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId) && newData[i].requestId !== undefined){
+            if(newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
                 currentData[i] = newData[i];
                 previousPlayerActions.push(newData[i].requestId);
             }
@@ -285,8 +285,8 @@ const updateGemPosition = () => {
     for(let i = 0; i < gems.length; i++){
         if(gems[i].carrier !== -1){
             let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-            gems[i].pos.x = carrier.pos.x+(gems[i].size.w/4);
-            gems[i].pos.y = carrier.pos.y+(gems[i].size.h/4);
+            gems[i].pos.x = carrier.pos.x;
+            gems[i].pos.y = carrier.pos.y;
         }
     }
 };
@@ -308,7 +308,7 @@ const update = (delta) => { // new delta parameter
 
     if(playerId !== undefined){
 
-        let player = players.find(x => x.id === playerId);
+        let player = players.find(x => x.id == playerId);
 
         if(player !== undefined){
 
@@ -423,15 +423,9 @@ const mainLoop = (timestamp) => {
         view.viewGame();
         waitingForGame = false;
 
-        // Track the accumulated time that hasn't been simulated yet
-        delta += timestamp - lastFrameTimeMs; // note += here
+        delta += timestamp - lastFrameTimeMs;
         lastFrameTimeMs = timestamp;
-        
-        // cleanupRequest();
-        // console.log('previousPlayerActions', previousPlayerActions);
-        // console.log('completedActions', completedActions);
 
-        // Simulate the total elapsed time in fixed-size chunks
         while (delta >= timestep) {
             update(timestep);
             delta -= timestep;
@@ -439,47 +433,14 @@ const mainLoop = (timestamp) => {
 
         view.draw(playerId, tiles, players, gems);
 
-        // 
-
-        
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
     }  
 
-    if(waitingForGame === true){
+    if(waitingForGame === true){  // Load screen
         view.showLoadingScreen();
     }
     requestAnimationFrame(mainLoop);
-};
-
-const cleanupRequest = () => {
-    for(let i = 0; i < completedActions.length; i++){
-        let index = previousPlayerActions.indexOf(completedActions[i]);
-        if(index !== -1){
-            previousPlayerActions.splice(index, 1);
-
-        //      /* jshint ignore:start */
-        // if(index !== -1){
-        //     previousPlayerActions.splice(index, 1);
-        //     previousPlayerActions = previousPlayerActions.filter((x) => { 
-        //         let idFormat = /(.*)-(.*)/;
-
-        //         let xSubstring = x.match(idFormat);
-        //         let completedActionSubstring = completedActions[i].match(idFormat);
-
-        //         console.log(+completedActionSubstring[1], +xSubstring[1]);
-        //         return (xSubstring[2] !== completedActionSubstring[2]) || ((xSubstring[2] == completedActionSubstring[2]) && (+xSubstring[1] - +completedActionSubstring[1] >= 0));
-        //     });
-        // }
-        // /* jshint ignore:end */
-
-
-        }
-    }
-    completedActions = [];
-    // console.log(previousPlayerActions.length);
-
-    // New player is being updated before it can be run through to check if there is new data. 
 };
 
 const populateKeyIds = ()  => {
@@ -506,40 +467,33 @@ module.exports.startGame = () => {
 
 };
 
+const startPlay = () => {
+    view.viewGame();
+    initiateGameState();
+    localGameState = 1;
+};
+
 const activateButtons = () => {
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
-        // view.viewMainMenu();
         localGameState = 0;
-        // console.log("clicked");
     });
 
     document.getElementById("add-player").addEventListener("click", () => {
-        // view.viewMainMenu();
-        
-        // console.log("clicked");
-
-        let spawnPoint = tiles.find(x => x.teamBase === 0);
-        console.log(spawnPoint);
-        model.addNewPlayer(players.length, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+        let spawnPoint = tiles.find(x => x.teamBase === 0); 
+        let newPlayerId = players.length !== undefined ? players.length : 0;
+        model.addNewPlayer(newPlayerId, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
+        playerId = newPlayerId;
     });
 
     document.getElementById("add-player-2").addEventListener("click", () => {
-        // view.viewMainMenu();
-        
-        // console.log("clicked");
-        
-        
         let spawnPoint = tiles.find(x => x.teamBase === 1);
-        console.log(spawnPoint);
-        model.addNewPlayer(players.length, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+        let newPlayerId = players.length !== undefined ? players.length : 0;
+        model.addNewPlayer(newPlayerId, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+        playerId = newPlayerId;
     });
 
     document.getElementById("main-menu-play").addEventListener("click", () => {
-        view.viewGame();
-        initiateGameState();
-        // onlineGameState = 1;
-        localGameState = 1;
-        // console.log("clicked");
+        startPlay();
     });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
@@ -550,7 +504,6 @@ const activateButtons = () => {
 const newGame = () => {
     let createdTiles = mapMaker.generateTiles(20, 20);
     tiles = createdTiles;
-    // console.log(createdTiles);
     
     let teamBaseZero = createdTiles.find(x => x.teamBase === 0);
     let teamBaseOne = createdTiles.find(x => x.teamBase === 1);
@@ -607,13 +560,16 @@ const activateServerListener = () => {
     g.c.addEventListener("serverUpdatePlayer", (e) => {
 
         // console.log("player", e.detail);
-        if(initialPlayerDraw === true){
-            players = e.detail.players;
-            console.log(players);
-            initialPlayerDraw = false;
-        } else {
-            newPlayers = e.detail.players;
+        if(e.detail !== null){
+            if(initialPlayerDraw === true){
+                players = e.detail.players;
+                console.log(players);
+                initialPlayerDraw = false;
+            } else {
+                newPlayers = e.detail.players;
+            }
         }
+        
 
         // Update list of players
         
