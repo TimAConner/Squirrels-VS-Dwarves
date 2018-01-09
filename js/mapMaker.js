@@ -18,12 +18,20 @@
                     },
                     "hard": 1,
                 };
-                if(x >=  0 && x <= 5 && y >= h/2 && y <= (h/2)+5){
+
+                if(x === 0 || x === w-1){
+                    obj.hard = -2;
+                }
+                if(y === 0 || y === y-1){
+                    obj.hard = -2;
+                }
+
+                if(x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2){
                     obj.hard = 0;
                     obj.teamBase = 0;
                 }
     
-                if(x >=  w-5 && x <= w && y >= h/2 && y <= (h/2)+5){
+                if(x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2){
                     obj.hard = 0;
                     obj.teamBase = 1;
                 }

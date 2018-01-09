@@ -68,6 +68,11 @@ let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
+
+const clamp = (number, min, max) => {
+    return number <= min ? min : number >= max ? max : number;
+};
+
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
     objRightPoint = obj.pos.x+obj.size.w,
@@ -86,7 +91,7 @@ const canMove = (direction, obj, delta) => {
         tileBottomPoint = tileYPosition + tiles[i].size.h,
         tileTopPoint = tileYPosition;
         
-       if(tiles[i].hard > 0 ){
+       if(tiles[i].hard > 0 || tiles[i].hard === -2){ // If it  is still hard or if hardness is -2, unbreakable.
             if(((objTopPoint > tileTopPoint && objTopPoint < tileBottomPoint) || (objBottomPoint > tileTopPoint && objBottomPoint < tileBottomPoint))){
                 if(direction === "left"){
                     if((((objLeftPoint-increment) < tileRightPoint && (objLeftPoint-increment) > tileLeftPoint))){
@@ -257,6 +262,7 @@ const initiateGameState = () => {
     
 };
 
+
 const proccessNewData = (currentData, newData) => {
     if(newData !== null && typeof newData !== undefined){
         for(let i = 0; i < newData.length; i++){
@@ -341,7 +347,7 @@ const update = (delta) => { // new delta parameter
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
-                    if(selectedTile.hard !== -1){
+                    if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
                         tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
                         addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
                         model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
@@ -406,8 +412,10 @@ const updatePlayerState = (direction,  changeIn, options) => {
         options.speedMultiplier = -options.speedMultiplier;
     }
 
+
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
     options.player.dir = direction;
+
     addRequestId(options.player, options.requestId);
     model.savePlayer(options.player);
 };
