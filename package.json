@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/TimAConner/Squirrels-VS-Dwarves/issues"
   },
-  "homepage": "https://github.com/TimAConner/Squirrels-VS-Dwarves#readme",  
+  "homepage": "https://github.com/TimAConner/Squirrels-VS-Dwarves#readme",
   "dependencies": {
     "firebase": "^4.8.1",
     "grunt": "^1.0.1",
@@ -24,6 +24,7 @@
     "grunt-contrib-jshint": "^1.1.0",
     "grunt-contrib-sass": "^1.0.0",
     "grunt-contrib-watch": "^1.0.0",
+    "jquery": "^3.2.1",
     "matchdep": "^2.0.0"
   }
 }
