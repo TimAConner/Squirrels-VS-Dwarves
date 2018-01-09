@@ -327,23 +327,7 @@ const update = (delta) => { // new delta parameter
                 speedMultiplier,
             };
 
-            if(isKeyOn("up") && canMove("up", player, delta)){
-
-                updatePlayerState("up", "y", playerUpdateObject);
-
-            } else if (isKeyOn("down") && canMove("down", player, delta)){
-
-                updatePlayerState("down", "y", playerUpdateObject);
-
-            } else if(isKeyOn("left") && canMove("left", player, delta)){
-
-                updatePlayerState("left", "x", playerUpdateObject);
-
-            } else if(isKeyOn("right") && canMove("right", player, delta)){
-
-                updatePlayerState("right", "x", playerUpdateObject);
-            
-            } else if(isKeyOn("space")){
+            if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
@@ -397,6 +381,32 @@ const update = (delta) => { // new delta parameter
                         }
                     }
                 }      
+            } else if(isKeyOn("up") && canMove("up", player, delta)){
+                updatePlayerState("up", "y", playerUpdateObject);
+            } else if(isKeyOn("up")){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("up", "y", playerUpdateObject);
+            } else if (isKeyOn("down") && canMove("down", player, delta)){
+
+                updatePlayerState("down", "y", playerUpdateObject);
+
+            } else if(isKeyOn("down")){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("down", "y", playerUpdateObject);
+            } else if(isKeyOn("left") && canMove("left", player, delta)){
+
+                updatePlayerState("left", "x", playerUpdateObject);
+
+            } else if(isKeyOn("left")){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("left", "x", playerUpdateObject);
+            } else if(isKeyOn("right") && canMove("right", player, delta)){
+
+                updatePlayerState("right", "x", playerUpdateObject);
+            
+            } else if(isKeyOn("right")){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("right", "x", playerUpdateObject);
             }
         }
     }
