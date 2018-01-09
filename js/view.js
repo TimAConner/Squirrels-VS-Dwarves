@@ -60,11 +60,11 @@ const drawTiles = (tiles) => {
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
-        if(thisPlayer !== undefined){
+        if(typeof thisPlayer !== undefined){
             playerTile = findPlayerTile(thisPlayer);
         }
         
-        if(playerTile !== undefined){
+        if(typeof playerTile !== undefined){
 
             let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),

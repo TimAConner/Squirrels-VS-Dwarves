@@ -258,9 +258,9 @@ const initiateGameState = () => {
 };
 
 const proccessNewData = (currentData, newData) => {
-    if(newData !== null && newData !== undefined){
+    if(newData !== null && typeof newData !== undefined){
         for(let i = 0; i < newData.length; i++){
-            if(newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+            if(typeof newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
                 currentData[i] = newData[i];
                 previousPlayerActions.push(newData[i].requestId);
             }
@@ -306,11 +306,11 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(playerId !== undefined){
+    if(typeof playerId !== undefined){
 
         let player = players.find(x => x.id == playerId);
 
-        if(player !== undefined){
+        if(typeof player !== undefined){
 
             let requestId = `${Date.now()}-${playerId}`;
 
@@ -480,14 +480,14 @@ const activateButtons = () => {
 
     document.getElementById("add-player").addEventListener("click", () => {
         let spawnPoint = tiles.find(x => x.teamBase === 0); 
-        let newPlayerId = players.length !== undefined ? players.length : 0;
+        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
         model.addNewPlayer(newPlayerId, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
         playerId = newPlayerId;
     });
 
     document.getElementById("add-player-2").addEventListener("click", () => {
         let spawnPoint = tiles.find(x => x.teamBase === 1);
-        let newPlayerId = players.length !== undefined ? players.length : 0;
+        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
         model.addNewPlayer(newPlayerId, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
         playerId = newPlayerId;
     });
