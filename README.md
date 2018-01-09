@@ -11,6 +11,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [ ] See vision around allys
 - [ ] Squirrel & Nut image
 - [ ] See direction player is facing
+- [ ] Face direction of keys even if cant move
 
 ## MVP Goals
 - [x] Pickup enemy gem and move it
