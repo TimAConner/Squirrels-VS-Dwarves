@@ -1,7 +1,18 @@
 # Squirrels-VS-Dwarves
 This is the testing ground for my front end capstone at the [Nashville Software School](http://nashvillesoftwareschool.com/)
 
-## MVP Requirments
+
+## Version 2.0 Goals
+- [ ] Restrict movement to map
+- [ ] Streamline adding a player and starting game as player
+- [ ] Ability to kill enemey
+- [ ] Player lobby
+- [ ] Smaller Modules
+- [ ] See vision around allys
+- [ ] Squirrel & Nut image
+- [ ] See direction player is facing
+
+## MVP Goals
 - [x] Pickup enemy gem and move it
 - [x] Drop enemy gem
 - [x] Mine through blocks
