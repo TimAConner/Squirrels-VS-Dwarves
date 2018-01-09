@@ -343,9 +343,7 @@ const update = (delta) => { // new delta parameter
                 if(selectedTile !== undefined){
                     if(selectedTile.hard !== -1){
                         tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                        // console.log(selectedTile);
-                        previousPlayerActions.push(requestId);
-                        tiles[tiles.indexOf(selectedTile)].requestId = requestId;
+                        addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
                         model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
                     }
                 }
@@ -358,8 +356,7 @@ const update = (delta) => { // new delta parameter
                     // console.log('gemOnTile', gemOnTile);
                     if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
-                        previousPlayerActions.push(requestId);
-                        gems[gems.indexOf(gemOnTile)].requestId = requestId;
+                        addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
                         model.saveGem(gems[gems.indexOf(gemOnTile)]); 
                     }
                 } 
@@ -401,9 +398,9 @@ const update = (delta) => { // new delta parameter
     }
 };
 
-const addRequestId = (player, requestId) => {
+const addRequestId = (object, requestId) => {
     previousPlayerActions.push(requestId);
-    player.requestId = requestId;
+    object.requestId = requestId;
 };
 
 const updatePlayerState = (direction,  changeIn, options) => {
