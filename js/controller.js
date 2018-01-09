@@ -362,10 +362,9 @@ const update = (delta) => { // new delta parameter
                 } 
             
             } else if(isKeyOn("d")){
-                console.log("d has been pressed");
                 // If there is an object in front of you
                 let selectedTile = findTileBelowPlayer(player);
-                // console.log(selectedTile);
+                
                 // If there is a tile that it can be dropped on,
                 if(selectedTile !== undefined){
 
@@ -378,17 +377,16 @@ const update = (delta) => { // new delta parameter
                         let carriedGem = gems.find(x => x.carrier === playerId);
 
                         if(carriedGem !== undefined){
+
                             // Drop gems
                             carriedGem.carrier = -1;
-                            carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
-                            carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
-                            // carriedGem.pos  = player.pos;
-                            previousPlayerActions.push(requestId);
-                            gems[gems.indexOf(carriedGem)].requestId = requestId;
+                            
+                            addRequestId(gems[gems.indexOf(carriedGem)], requestId);
+
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            console.log("gem being sent", gems[gems.indexOf(carriedGem)]);
+                            
                             model.saveGem(gems[gems.indexOf(carriedGem)]); 
                         }
                     }
