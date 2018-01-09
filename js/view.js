@@ -17,7 +17,8 @@ baseColor = "orange",
 allyColor = "green",
 enemyColor = "red",
 allyGemColor = "yellow",
-enemyGemColor = "yellow";
+enemyGemColor = "yellow",
+edgeColor = "gray";
 
 
 let dwarfImage = new Image(); 
@@ -76,6 +77,10 @@ const drawTiles = (tiles) => {
                     g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 // console.log("b",  distance);
+                } else if (tiles[i].hard === -2) {
+                    g.ctx.fillStyle = edgeColor;
+                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = baseColor;
@@ -93,6 +98,10 @@ const drawTiles = (tiles) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = baseColor;
+                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    
+                } else if (tiles[i].hard === -2) {
+                    g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 } else {
