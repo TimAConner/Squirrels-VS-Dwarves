@@ -19,7 +19,7 @@
                     "hard": 1,
                 };
 
-                if(x === 0 || x === w-1 || y === 0 || y === h-2){ // Set grid around map.
+                if(x === 0 || x === w-1 || y === 0 || y === h-1){ // Set grid around map.
                     obj.hard = -2;
                 }
 
