@@ -536,8 +536,8 @@ const activateButtons = () => {
     });
 
     $("#player-lobby").on("click", "button", function(){
-        playerId = this.attr("playerId");
-        console.log(playerId);
+        playerId = $(this).attr("playerId");
+        startPlay();
     });
 };
 
