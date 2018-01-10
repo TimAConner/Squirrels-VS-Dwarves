@@ -5,6 +5,7 @@
 // };
 
 const g = require("./game");
+const $ = require("jquery");
 
 
 let sightDistance = 2.25;
@@ -17,7 +18,8 @@ baseColor = "orange",
 allyColor = "green",
 enemyColor = "red",
 allyGemColor = "yellow",
-enemyGemColor = "yellow";
+enemyGemColor = "yellow",
+edgeColor = "gray";
 
 
 let dwarfImage = new Image(); 
@@ -60,11 +62,11 @@ const drawTiles = (tiles) => {
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
-        if(thisPlayer !== undefined){
+        if(typeof thisPlayer !== undefined){
             playerTile = findPlayerTile(thisPlayer);
         }
         
-        if(playerTile !== undefined){
+        if(typeof playerTile !== undefined){
 
             let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
@@ -76,6 +78,10 @@ const drawTiles = (tiles) => {
                     g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 // console.log("b",  distance);
+                } else if (tiles[i].hard === -2) {
+                    g.ctx.fillStyle = edgeColor;
+                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = baseColor;
@@ -93,6 +99,10 @@ const drawTiles = (tiles) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = baseColor;
+                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    
+                } else if (tiles[i].hard === -2) {
+                    g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 } else {
@@ -126,13 +136,14 @@ const canSeePlayer = (p1, p2, sightDistance) => {
     return Math.abs(distance) <= sightDistance;
 };
 
-const drawPlayers = (players) => {
+const drawPlayers = (players, playerId) => {
     // console.log("players", players); 
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
-         
+      
+
         if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
             // console.log("in here", players[i]);
             
@@ -176,45 +187,41 @@ const drawGems = (gems, players) => {
     for(let i = 0; i < gems.length; i++){
 
         if(thisPlayer.team === gems[i].team){ // Your team
-            
-            if(gems[i].carrier === -1){
-                // g.ctx.fillRect(gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-                
-    
+            // console.log(gems[i].carrier === -1);
+            if(gems[i].carrier === -1){ 
                 g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-                
-            } else {
-                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-                // g.ctx.fillRect();
-            
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            }
+             else {
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
             }
         } else { // Enemy team
 
             if(gems[i].carrier === -1){
                 g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
-                
-            } else {
-                let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, carrier.pos.x+(gems[i].size.w/4), carrier.pos.y+(gems[i].size.h/4), gems[i].size.w/2, gems[i].size.h/2);
+            } 
+            else {
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
             }
         }
-           
-
-
-        
         g.ctx.stroke();
     }
 };
 
 module.exports.draw = (playerId, tiles, players, gems) => {
-    thisPlayer = players.find(x => x.id === playerId);
+    thisPlayer = players.find(x => x.id == playerId);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
     drawTiles(tiles);
-    drawPlayers(players);
+    drawPlayers(players, playerId);
     drawGems(gems, players);
 };
+
+module.exports.createPlayerButton = (players) => {
+    $("#player-lobby").empty();
+    for(let i = 0; i < players.length; i ++){
+        $("#player-lobby").append($(`<button playerId=${players[i].id}>Select Player ${players[i].id}</button></br>`));
+    }
+};  
 
 module.exports.showLoadingScreen = () => {
     hideAllMenus();

@@ -15,6 +15,7 @@ https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 const model = require("./model");
 const view = require("./view");
 const g = require("./game");
+const $ = require("jquery");
 const mapMaker = require("./mapMaker");
 
 // 0 menu, 1 game, 2 winner
@@ -26,7 +27,7 @@ let waitingForGame = false;
 
 let winner = 0;
 
-let playerId = "0";
+let playerId = 0;
 
 
 let players = [];
@@ -43,8 +44,6 @@ let newGems = [];
 
 
 let speedMultiplier = 0.1;
-
-
 
 
 //  Use timestamp instead?
@@ -70,6 +69,11 @@ let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
+
+const clamp = (number, min, max) => {
+    return number <= min ? min : number >= max ? max : number;
+};
+
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
     objRightPoint = obj.pos.x+obj.size.w,
@@ -88,7 +92,7 @@ const canMove = (direction, obj, delta) => {
         tileBottomPoint = tileYPosition + tiles[i].size.h,
         tileTopPoint = tileYPosition;
         
-       if(tiles[i].hard > 0 ){
+       if(tiles[i].hard > 0 || tiles[i].hard === -2){ // If it  is still hard or if hardness is -2, unbreakable.
             if(((objTopPoint > tileTopPoint && objTopPoint < tileBottomPoint) || (objBottomPoint > tileTopPoint && objBottomPoint < tileBottomPoint))){
                 if(direction === "left"){
                     if((((objLeftPoint-increment) < tileRightPoint && (objLeftPoint-increment) > tileLeftPoint))){
@@ -259,124 +263,76 @@ const initiateGameState = () => {
     
 };
 
+
+const proccessNewData = (currentData, newData) => {
+    if(newData !== null && typeof newData !== undefined){
+        for(let i = 0; i < newData.length; i++){
+            if(typeof newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+                currentData[i] = newData[i];
+                previousPlayerActions.push(newData[i].requestId);
+            }
+        }
+        newData = null;
+    }
+};
+
+// const updateGemPosition = () => {   
+//     gems = gems.map(gem => {
+//         if(gem.carrier !== -1){
+//             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
+//             gem.pos.x = carrier.pos.x+(gem.size.w/4);
+//             gem.pos.y = carrier.pos.y+(gem.size.h/4);
+//         }
+//         return gem;
+//     });gems[gems.indexOf(carriedGem)]
+// };
+
+
+const updateGemPosition = () => {
+    for(let i = 0; i < gems.length; i++){
+        if(gems[i].carrier !== -1){
+            let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
+            gems[i].pos.x = carrier.pos.x;
+            gems[i].pos.y = carrier.pos.y;
+        }
+    }
+};
+
+
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
-
-    if(newPlayers !== null){
-        for(let i = 0; i < newPlayers.length; i++){
-            if(!previousPlayerActions.includes(newPlayers[i].requestId) && newPlayers[i] !== players[i] && newPlayers[i].requestId !== undefined){
-                // console.log("New player", newPlayers[i].requestId,  players[i]);
-                players[i] = newPlayers[i];
-                previousPlayerActions.push(newPlayers[i].requestId);
-                // console.log(newPlayers[i].requestId);
-            } else {
-                // let index = previousPlayerActions.indexOf(newPlayers[i].requestId);
-                // previousPlayerActions.splice(index, 1);
-                // console.log(previousPlayerActions);
-                completedActions.push(newPlayers[i].requestId);
-            }
-        }
-        newPlayers = null;
-    }
-   
-    // This will be triggered each time the player moves, because both are being updated.
-
-    if(newTiles !== null){
-        for(let i = 0; i < newTiles.length; i++){
-
-            // The issue that is happening:  Data is being recieved, and that data says x block is gone, but the rest are still there. So, it puts rest there and deletes block.  Does that all the way through.
-
-            // Need to only update the new blocks, not the old blocks.
-            
-
-            // See if you can see only the changed data.  The new data.
-            
-            if(newTiles[i] !== tiles[i] && !previousPlayerActions.includes(newTiles[i].requestId) && newTiles[i].requestId !== undefined){
-                tiles[i] = newTiles[i];
-                previousPlayerActions.push(newTiles[i].requestId);
-                // console.log(newTiles[i].requestId);
-            }
-            
-        }
-        newTiles = null;
-        // initialTileDraw = false;
-    }
-
     
-    if(newGems !== null && newGems !== undefined){
-        for(let i = 0; i < newGems.length; i++){
-            if(newGems[i] !== gems[i] && !previousPlayerActions.includes(newGems[i].requestId) && newGems[i].requestId !== undefined){
-                gems[i] = newGems[i];
-                previousPlayerActions.push(newGems[i].requestId);
-                // console.log(newGems[i].requestId);
-            }
-            
-        }
-        newGems = null;
-        // initialTileDraw = false;
-    }
+ 
+    // console.log("gems", gems);
     
+    updateGemPosition();
     /*
         Controls
     */
 
-    if(playerId !== undefined){
 
-        let player = players.find(x => x.id === playerId);
-        // console.log(player);
-        // console.log(playerId);
-        if(player !== undefined){
-           
-            // The saving here is not the jerky issue.  THe issue is the loading.
+    if(typeof playerId !== undefined){
+
+        let player = players.find(x => x.id == playerId);
+
+        if(typeof player !== undefined){
+
             let requestId = `${Date.now()}-${playerId}`;
-        //    console.log(requestId);
 
-        // console.log(findTileBelowPlayer(player).id);
+            let playerUpdateObject = {
+                player: players[players.indexOf(player)],
+                requestId,
+                delta,
+                speedMultiplier,
+            };
 
-            if(isKeyOn("up") && canMove("up", player, delta)){
-                players[players.indexOf(player)].pos.y -= speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "up";
-                // requestId += `01`;
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
-            } else if (isKeyOn("down") && canMove("down", player, delta)){
-                players[players.indexOf(player)].pos.y += speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "down";
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
-            } else if(isKeyOn("left") && canMove("left", player, delta)){
-                players[players.indexOf(player)].pos.x -= speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "left";
-                // requestId += `02`;
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
-            } else if(isKeyOn("right") && canMove("right", player, delta)){
-                players[players.indexOf(player)].pos.x += speedMultiplier * delta;
-                players[players.indexOf(player)].dir = "right";
-                // requestId += `03`;
-                previousPlayerActions.push(requestId);
-                players[players.indexOf(player)].requestId = requestId;
-                
-                // console.log('players[players.indexOf(player)].pos.y', players[players.indexOf(player)].pos.y);
-                model.savePlayer(players[players.indexOf(player)]);
-            } else if(isKeyOn("space")){
+            if(isKeyOn("space")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
-                    if(selectedTile.hard !== -1){
+                    if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
                         tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                        // console.log(selectedTile);
-                        previousPlayerActions.push(requestId);
-                        tiles[tiles.indexOf(selectedTile)].requestId = requestId;
+                        addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
                         model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
                     }
                 }
@@ -389,8 +345,7 @@ const update = (delta) => { // new delta parameter
                     // console.log('gemOnTile', gemOnTile);
                     if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
-                        previousPlayerActions.push(requestId);
-                        gems[gems.indexOf(gemOnTile)].requestId = requestId;
+                        addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
                         model.saveGem(gems[gems.indexOf(gemOnTile)]); 
                     }
                 } 
@@ -398,7 +353,7 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("d")){
                 // If there is an object in front of you
                 let selectedTile = findTileBelowPlayer(player);
-                console.log(selectedTile);
+                
                 // If there is a tile that it can be dropped on,
                 if(selectedTile !== undefined){
 
@@ -411,29 +366,75 @@ const update = (delta) => { // new delta parameter
                         let carriedGem = gems.find(x => x.carrier === playerId);
 
                         if(carriedGem !== undefined){
+
                             // Drop gems
                             carriedGem.carrier = -1;
-                            // carriedGem.pos.x = selectedTile.pos.x*g.tileSize;
-                            // carriedGem.pos.y = selectedTile.pos.y*g.tileSize;
-                            carriedGem.pos.x = player.pos.x;
-                            carriedGem.pos.y = player.pos.y;
-                            previousPlayerActions.push(requestId);
-                            gems[gems.indexOf(carriedGem)].requestId = requestId;
+                            
+                            addRequestId(gems[gems.indexOf(carriedGem)], requestId);
+
                             if(selectedTile.teamBase === player.team){
-                                console.log("here");
                                 setWinner(player.team);
                             }
+                            
                             model.saveGem(gems[gems.indexOf(carriedGem)]); 
                         }
                     }
                 }      
+            } 
+            
+            if(isKeyOn("up") && canMove("up", player, delta)){
+                updatePlayerState("up", "y", playerUpdateObject);
+            } else if(isKeyOn("up") && player.dir !== "up"){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("up", "y", playerUpdateObject);
+            } else if (isKeyOn("down") && canMove("down", player, delta)){
+
+                updatePlayerState("down", "y", playerUpdateObject);
+
+            } else if(isKeyOn("down") && player.dir !== "down"){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("down", "y", playerUpdateObject);
+            } else if(isKeyOn("left") && canMove("left", player, delta)){
+
+                updatePlayerState("left", "x", playerUpdateObject);
+
+            } else if(isKeyOn("left") && player.dir !== "left"){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("left", "x", playerUpdateObject);
+            } else if(isKeyOn("right") && canMove("right", player, delta)){
+
+                updatePlayerState("right", "x", playerUpdateObject);
+            
+            } else if(isKeyOn("right") && player.dir !== "right"){
+                playerUpdateObject.speedMultiplier = 0;
+                updatePlayerState("right", "x", playerUpdateObject);
             }
         }
     }
 };
 
+const addRequestId = (object, requestId) => {
+    previousPlayerActions.push(requestId);
+    object.requestId = requestId;
+};
+
+const updatePlayerState = (direction,  changeIn, options) => {
+    if(direction === "up" || direction === "left"){
+        options.speedMultiplier = -options.speedMultiplier;
+    }
+
+
+    options.player.pos[changeIn] += options.speedMultiplier * options.delta;
+    options.player.dir = direction;
+
+    addRequestId(options.player, options.requestId);
+    model.savePlayer(options.player);
+};
+
+
+
+
 const mainLoop = (timestamp) => {
-    
     
     if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -441,63 +442,36 @@ const mainLoop = (timestamp) => {
         view.viewGame();
         waitingForGame = false;
 
-        // Track the accumulated time that hasn't been simulated yet
-        delta += timestamp - lastFrameTimeMs; // note += here
+        delta += timestamp - lastFrameTimeMs;
         lastFrameTimeMs = timestamp;
-        
-        // cleanupRequest();
-        // console.log('previousPlayerActions', previousPlayerActions);
-        // console.log('completedActions', completedActions);
 
-        // Simulate the total elapsed time in fixed-size chunks
         while (delta >= timestep) {
+
+            proccessNewData(players, newPlayers);
+            proccessNewData(tiles, newTiles);
+            proccessNewData(gems, newGems);
+            
             update(timestep);
+
             delta -= timestep;
         }
 
         view.draw(playerId, tiles, players, gems);
 
-        // 
-
-        
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
+        if($("#player-lobby button").length === 0){
+            view.createPlayerButton(players);
+        } 
+        // else if($("#player-lobby button").length !== newPlayers.length){
+        //     view.createPlayerButton(newPlayers);
+        // }
     }  
 
-    if(waitingForGame === true){
+    if(waitingForGame === true){  // Load screen
         view.showLoadingScreen();
     }
     requestAnimationFrame(mainLoop);
-};
-
-const cleanupRequest = () => {
-    for(let i = 0; i < completedActions.length; i++){
-        let index = previousPlayerActions.indexOf(completedActions[i]);
-        if(index !== -1){
-            previousPlayerActions.splice(index, 1);
-
-        //      /* jshint ignore:start */
-        // if(index !== -1){
-        //     previousPlayerActions.splice(index, 1);
-        //     previousPlayerActions = previousPlayerActions.filter((x) => { 
-        //         let idFormat = /(.*)-(.*)/;
-
-        //         let xSubstring = x.match(idFormat);
-        //         let completedActionSubstring = completedActions[i].match(idFormat);
-
-        //         console.log(+completedActionSubstring[1], +xSubstring[1]);
-        //         return (xSubstring[2] !== completedActionSubstring[2]) || ((xSubstring[2] == completedActionSubstring[2]) && (+xSubstring[1] - +completedActionSubstring[1] >= 0));
-        //     });
-        // }
-        // /* jshint ignore:end */
-
-
-        }
-    }
-    completedActions = [];
-    // console.log(previousPlayerActions.length);
-
-    // New player is being updated before it can be run through to check if there is new data. 
 };
 
 const populateKeyIds = ()  => {
@@ -524,51 +498,52 @@ module.exports.startGame = () => {
 
 };
 
+const startPlay = () => {
+    view.viewGame();
+    initiateGameState();
+    localGameState = 1;
+};
+
 const activateButtons = () => {
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
-        // view.viewMainMenu();
         localGameState = 0;
-        // console.log("clicked");
     });
 
     document.getElementById("add-player").addEventListener("click", () => {
-        // view.viewMainMenu();
-        
-        // console.log("clicked");
-
-        let spawnPoint = tiles.find(x => x.teamBase === 0);
-        console.log(spawnPoint);
-        model.addNewPlayer(players.length, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+        let spawnPoint = tiles.find(x => x.teamBase === 0); 
+        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
+        model.addNewPlayer(newPlayerId, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
+        playerId = newPlayerId;
     });
 
     document.getElementById("add-player-2").addEventListener("click", () => {
-        // view.viewMainMenu();
-        
-        // console.log("clicked");
-        
-        
         let spawnPoint = tiles.find(x => x.teamBase === 1);
-        console.log(spawnPoint);
-        model.addNewPlayer(players.length, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
+        model.addNewPlayer(newPlayerId, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
+        playerId = newPlayerId;
     });
 
     document.getElementById("main-menu-play").addEventListener("click", () => {
-        view.viewGame();
-        initiateGameState();
-        // onlineGameState = 1;
-        localGameState = 1;
-        // console.log("clicked");
+        startPlay();
     });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
         newGame();
+    });
+
+     document.getElementById("main-menu-new").addEventListener("click", () => {
+        newGame();
+    });
+
+    $("#player-lobby").on("click", "button", function(){
+        playerId = $(this).attr("playerId");
+        startPlay();
     });
 };
 
 const newGame = () => {
     let createdTiles = mapMaker.generateTiles(20, 20);
     tiles = createdTiles;
-    // console.log(createdTiles);
     
     let teamBaseZero = createdTiles.find(x => x.teamBase === 0);
     let teamBaseOne = createdTiles.find(x => x.teamBase === 1);
@@ -625,13 +600,17 @@ const activateServerListener = () => {
     g.c.addEventListener("serverUpdatePlayer", (e) => {
 
         // console.log("player", e.detail);
-        if(initialPlayerDraw === true){
-            players = e.detail.players;
-            console.log(players);
-            initialPlayerDraw = false;
-        } else {
-            newPlayers = e.detail.players;
+        if(e.detail !== null){
+            if(initialPlayerDraw === true){
+                players = e.detail.players;
+                console.log(players);
+                initialPlayerDraw = false;
+            } else {
+                console.log("new data");
+                newPlayers = e.detail.players;
+            }
         }
+        
 
         // Update list of players
         
@@ -670,18 +649,20 @@ window.addEventListener("keydown", function(e) {
 }, false);
 
 // When a key is pressed, set it to true.
-window.onkeydown = function() {
+window.onkeydown = function(event) {
     for(let prop in keys){
         if(keys[prop].id == event.keyCode){
+        console.log("event.keycode", event.keycode);
             keys[prop].active = true;
         }
     }
 };
 
 // When a key is up, set it to false.
-window.onkeyup = function() {
+window.onkeyup = function(event) {
     for(let prop in keys){
         if(keys[prop].id == event.keyCode){
+            console.log("event.keycode", event.keycode);
             keys[prop].active = false;
         }
     }
