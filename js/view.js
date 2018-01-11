@@ -219,7 +219,8 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 module.exports.createPlayerButton = (players) => {
     $("#player-lobby").empty();
     for(let i = 0; i < players.length; i ++){
-        $("#player-lobby").append($(`<button playerId=${players[i].id}>Select Player ${players[i].id}</button></br>`));
+        $("#player-lobby").append($(`<button class="add"playerId=${players[i].id}>Select Player ${players[i].id}</button>`));
+        $("#player-lobby").append($(`<button class="remove" playerId=${players[i].id}>Delete Player ${players[i].id}</button></br>`));
     }
 };  
 
