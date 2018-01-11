@@ -6,8 +6,8 @@ const model = require("./model");
 module.exports.newGame = () => {
     let createdTiles = mapMaker.generateTiles(20, 20);
     
-    let teamBaseZero = createdTiles.find(x => x.teamBase === 0);
-    let teamBaseOne = createdTiles.find(x => x.teamBase === 1);
+    let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
+    teamBaseOne = createdTiles.find(x => x.teamBase === 1);
 
     let newGems = [
         {
