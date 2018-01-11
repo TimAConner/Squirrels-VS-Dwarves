@@ -461,11 +461,11 @@ const mainLoop = (timestamp) => {
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
         if($(".add").length === 0){
+            console.log("add");
             view.createPlayerButton(players);
-        } 
-        // else if($("#player-lobby button").length !== newPlayers.length){
-        //     view.createPlayerButton(newPlayers);
-        // }
+        } else if($("#player-lobby .add").length !== newPlayers.length && newPlayers.length !== 0){
+            view.createPlayerButton(newPlayers);
+        }
     }  
 
     if(waitingForGame === true){  // Load screen
