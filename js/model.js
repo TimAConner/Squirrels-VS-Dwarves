@@ -84,7 +84,7 @@ module.exports.savePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(player);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${+player.id}.json`);
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -93,7 +93,7 @@ module.exports.savePlayer = (player) => {
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `https://squirrelsvsdwarves.firebaseio.com/players/players/${+player.id}.json`);
+        JSONRequest.open("DELETE", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
         JSONRequest.send();
     });
 };
@@ -154,7 +154,7 @@ module.exports.addNewPlayer = (id, team, x, y) => {
 
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${id}.json`);
+    JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/players/players/.json`);
     JSONRequest.send(jsonString);
 };
 
