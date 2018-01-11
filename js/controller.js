@@ -592,13 +592,15 @@ const newGame = () => {
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
+        let filteredGems = _compact(e.detail.gems);
+
         if(initialGemDraw === true){
-            console.log(gems);
-            gems = e.detail.gems;
+            // console.log(gems);
+            gems = filteredGems;
             initialGemDraw = false;
         } else {
             console.log(gems);
-            newGems = e.detail.gems;
+            newGems = filteredGems;
         }        
     });
 
