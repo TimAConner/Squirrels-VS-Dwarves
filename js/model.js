@@ -67,19 +67,6 @@ module.exports.fetchData = () => {
 
 };
 
-
-const convertObjectsToArray = (object) => {
-    let objectArray = [];
-
-    for(let property in object){
-        objectArray.push(object[property]);
-    }
-
-    objectArray.sort((a, b) => a.pos.z - b.pos.z);
-
-    return objectArray;
-};
-
 module.exports.savePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(player);
