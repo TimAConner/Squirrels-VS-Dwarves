@@ -554,7 +554,7 @@ const activateServerListener = () => {
         // Filter the results, because firebase will return empty values if there are gaps in the array.
         let filteredPlayers = Object.keys(e.detail.players).map(key => {
             let player = e.detail.players[key];
-            player.addRequestId = key;
+            player.id = key;
             return player;
         });
 
