@@ -29,8 +29,6 @@ let waitingForGame = false;
 
 let winner = 0;
 
-let playerId = 0;
-
 
 let players = [];
 let tiles = [];
@@ -313,13 +311,13 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(typeof playerId !== undefined){
+    if(typeof g.playerId !== undefined){
 
-        let player = players.find(x => x.id == playerId);
+        let player = players.find(x => x.id == g.playerId);
 
         if(typeof player !== undefined){
 
-            let requestId = `${Date.now()}-${playerId}`;
+            let requestId = `${Date.now()}-${g.playerId}`;
 
             let playerUpdateObject = {
                 player: players[players.indexOf(player)],
@@ -365,7 +363,7 @@ const update = (delta) => { // new delta parameter
                     if(gemOnTile === undefined ){
 
                          // If player has gem,
-                        let carriedGem = gems.find(x => x.carrier === playerId);
+                        let carriedGem = gems.find(x => x.carrier === g.playerId);
 
                         if(carriedGem !== undefined){
 
@@ -458,7 +456,7 @@ const mainLoop = (timestamp) => {
             delta -= timestep;
         }
 
-        view.draw(playerId, tiles, players, gems);
+        view.draw(g.playerId, tiles, players, gems);
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
@@ -492,7 +490,7 @@ module.exports.startGame = () => {
     document.getElementById('player-id').addEventListener("change", function(){
 
         if(players.length > this.value && this.value >= 0){
-            playerId = this.value;
+            g.playerId = this.value;
         } else {
             window.alert("Player does not exist.");
         }
@@ -512,17 +510,11 @@ const activateButtons = () => {
     });
 
     document.getElementById("add-player").addEventListener("click", () => {
-        let spawnPoint = tiles.find(x => x.teamBase === 0); 
-        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
-        model.addNewPlayer(newPlayerId, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
-        playerId = newPlayerId;
+        gameMaker.addPlayer(0, tiles, players.length);
     });
 
     document.getElementById("add-player-2").addEventListener("click", () => {
-        let spawnPoint = tiles.find(x => x.teamBase === 1);
-        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
-        model.addNewPlayer(newPlayerId, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
-        playerId = newPlayerId;
+        gameMaker.addPlayer(1, tiles, players.length);
     });
 
     document.getElementById("main-menu-play").addEventListener("click", () => {
@@ -533,7 +525,7 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".add", function(){
-        playerId = $(this).attr("playerId");
+        g.playerId = $(this).attr("playerId");
         startPlay();
     });
     $("#player-lobby").on("click", ".remove", function(){

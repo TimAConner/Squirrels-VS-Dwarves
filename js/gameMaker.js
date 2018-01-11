@@ -2,6 +2,14 @@
 
 const mapMaker = require("./mapMaker");
 const model = require("./model");
+const g = require("./game");
+
+module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
+    let spawnPoint = tiles.find(x => x.teamBase === teamId); 
+    let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
+    model.addNewPlayer(newPlayerId, teamId, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
+    g.playerId = newPlayerId;
+};
 
 module.exports.newGame = () => {
     let createdTiles = mapMaker.generateTiles(20, 20);
