@@ -460,8 +460,8 @@ const mainLoop = (timestamp) => {
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
+
         if($(".add").length === 0){
-            console.log("add");
             view.createPlayerButton(players);
         } else if($("#player-lobby .add").length !== newPlayers.length && newPlayers.length !== 0){
             view.createPlayerButton(newPlayers);
@@ -486,15 +486,6 @@ module.exports.startGame = () => {
     activateServerListener();
     activateButtons();
     requestAnimationFrame(mainLoop);
-
-    document.getElementById('player-id').addEventListener("change", function(){
-
-        if(players.length > this.value && this.value >= 0){
-            g.playerId = this.value;
-        } else {
-            window.alert("Player does not exist.");
-        }
-    });
 
 };
 
