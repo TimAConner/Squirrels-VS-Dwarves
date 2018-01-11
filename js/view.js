@@ -254,14 +254,12 @@ module.exports.viewGame = () => {
     hideAllMenus();
 
 
-    document.getElementById("player-id").classList.remove("hide");
     g.c.classList.remove("hide");
 };
 
 const hideAllMenus = () => {
 
     document.getElementById("victory-screen").classList.add("hide");
-    document.getElementById("player-id").classList.add("hide");
     document.getElementById("main-menu-screen").classList.add("hide");
     document.getElementById("loading-screen").classList.add("hide");
     g.c.classList.add("hide");
