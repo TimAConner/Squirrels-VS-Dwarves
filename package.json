@@ -25,6 +25,7 @@
     "grunt-contrib-sass": "^1.0.0",
     "grunt-contrib-watch": "^1.0.0",
     "jquery": "^3.2.1",
+    "lodash.compact": "^3.0.1",
     "matchdep": "^2.0.0"
   }
 }
