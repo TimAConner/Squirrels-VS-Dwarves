@@ -89,6 +89,15 @@ module.exports.savePlayer = (player) => {
     });
 };
 
+
+module.exports.deletePlayer = (player) => {
+    return new Promise(function (resolve, reject){
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("DELETE", `https://squirrelsvsdwarves.firebaseio.com/players/players/${+player.id}.json`);
+        JSONRequest.send();
+    });
+};
+
 module.exports.saveTile = (tile) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tile);
