@@ -19,6 +19,8 @@ const g = require("./game");
 const $ = require("jquery");
 const mapMaker = require("./mapMaker");
 
+const _compact = require("lodash.compact");
+
 // 0 menu, 1 game, 2 winner
 
 let onlineGameState = 1;
@@ -599,16 +601,20 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
-
+        
+        // Filter the results, because firebase will return empty values if there are gaps in the array.
+        let filteredPlayers = _compact(e.detail.players);
+        
         // console.log("player", e.detail);
         if(e.detail !== null){
+            
             if(initialPlayerDraw === true){
-                players = e.detail.players;
+                players = filteredPlayers;
                 console.log(players);
                 initialPlayerDraw = false;
             } else {
                 console.log("new data");
-                newPlayers = e.detail.players;
+                newPlayers = filteredPlayers;
             }
         }
         
