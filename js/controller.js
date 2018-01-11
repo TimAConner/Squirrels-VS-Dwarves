@@ -18,7 +18,7 @@ const g = require("./game");
 const $ = require("jquery");
 const gameMaker = require("./gameMaker");
 
-const _compact = require("lodash.compact");
+const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
@@ -538,7 +538,7 @@ const activateButtons = () => {
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
-        let filteredGems = _compact(e.detail.gems);
+        let filteredGems = _.compact(e.detail.gems);
         if(initialGemDraw === true){
             // console.log(gems);
             gems = filteredGems;
@@ -552,8 +552,12 @@ const activateServerListener = () => {
     g.c.addEventListener("serverUpdatePlayer", (e) => {
         
         // Filter the results, because firebase will return empty values if there are gaps in the array.
-        let filteredPlayers = _compact(e.detail.players);
-        
+        let filteredPlayers = Object.keys(e.detail.players).map(key => {
+            let player = e.detail.players[key];
+            player.addRequestId = key;
+            return player;
+        });
+
         // console.log("player", e.detail);
         if(e.detail !== null){
             
@@ -577,7 +581,7 @@ const activateServerListener = () => {
     g.c.addEventListener("serverUpdateTiles", (e) => {
         // console.log("tile", e.detail);
 
-        let filteredTiles = _compact(e.detail.tiles);
+        let filteredTiles = _.compact(e.detail.tiles);
 
         for(let i = 0; i < filteredTiles.length; i++){
             filteredTiles[i].id = i;
