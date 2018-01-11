@@ -462,7 +462,7 @@ const mainLoop = (timestamp) => {
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
-        if($("#player-lobby button").length === 0){
+        if($(".add").length === 0){
             view.createPlayerButton(players);
         } 
         // else if($("#player-lobby button").length !== newPlayers.length){
@@ -537,9 +537,12 @@ const activateButtons = () => {
         newGame();
     });
 
-    $("#player-lobby").on("click", "button", function(){
+    $("#player-lobby").on("click", ".add", function(){
         playerId = $(this).attr("playerId");
         startPlay();
+    });
+    $("#player-lobby").on("click", ".remove", function(){
+        model.deletePlayer({id: $(this).attr("playerId")});
     });
 };
 
