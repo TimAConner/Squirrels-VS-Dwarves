@@ -4,6 +4,8 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
+const $ = ("jquery");
+
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -41,6 +43,11 @@ module.exports.fetchData = () => {
   
   
       // Try listening to only one of them.  One listens to tiles one listens to other.
+        firebase.database().ref("gameState").on('value', function(snapshot) {
+            //   console.log("-------Gem Update");
+            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
         firebase.database().ref("tiles").on('value', function(snapshot) {
           //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
@@ -56,11 +63,7 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
-        firebase.database().ref("gameState").on('value', function(snapshot) {
-            //   console.log("-------Gem Update");
-            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
+
 
     });
 
