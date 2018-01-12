@@ -32,6 +32,7 @@ dirtImage.src = "./img/dirt.png";
 let stoneImage = new Image();
 stoneImage.src = "./img/stone.jpeg";
 
+let tilesToDraw = [];
 
 // Gems
 
@@ -102,12 +103,18 @@ const isTileWithinOne = (tile, otherTiles) => {
     return false;
 };
 
-const drawTiles = (tiles) => {
-    let tilesToDraw = [];
+const drawTiles = (tiles, players) => {
+    tilesToDraw = [];
 
     let tilesToBeAddedToDraw = [];
     
     let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+
+    for(let i = 0; i < players.length; i++){
+        if(players[i].team === thisPlayer.team && players[i].health.points > 0){
+            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+        }
+    }
 
     if(playerTile !== undefined){
         tilesToDraw.push(playerTile);
@@ -207,15 +214,16 @@ const canSeePlayer = (p1, p2, sightDistance) => {
     return Math.abs(distance) <= sightDistance;
 };
 
-const drawPlayers = (players, playerId) => {
+const drawPlayers = (players, playerId, tiles) => {
     // console.log("players", players); 
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
       
+        let playerTile = findTileBelowPlayer(players[i], tiles);
 
-        if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
             
             // g.ctx.save();
@@ -278,14 +286,26 @@ const drawGems = (gems, players) => {
     }
 };
 
+const drawHealth = (health) => {
+    if(health > 0){
+        $("#player-health").html(health);
+    } else {
+        $("#player-health").html("<p>You are Dead</p>");
+    }
+};
+
 module.exports.draw = (playerId, tiles, players, gems) => {
     thisPlayer = players.find(x => x.id == playerId);
-    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
-    drawTiles(tiles);
-    drawPlayers(players, playerId);
+    drawHealth(thisPlayer.health.points);
+
+    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
+    drawTiles(tiles, players);
+    drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
+
+
 
 module.exports.createPlayerButton = (players) => {
     $("#player-lobby").empty();
@@ -308,6 +328,8 @@ module.exports.viewMainMenu = () => {
     document.getElementById("main-menu-screen").classList.remove("hide");
 };
 
+
+
 // module.exports.viewSelectPlayerScreen = () => {
 //     hideAllMenus();
 
@@ -324,14 +346,13 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 module.exports.viewGame = () => {
     hideAllMenus();
 
-
-    g.c.classList.remove("hide");
+    $("#game-screen").removeClass("hide");
 };
 
 const hideAllMenus = () => {
 
     document.getElementById("victory-screen").classList.add("hide");
     document.getElementById("main-menu-screen").classList.add("hide");
+    document.getElementById("game-screen").classList.add("hide");
     document.getElementById("loading-screen").classList.add("hide");
-    g.c.classList.add("hide");
 };

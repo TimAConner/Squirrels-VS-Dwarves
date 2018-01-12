@@ -48,13 +48,13 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    ArrowLeft: { active: false, id: 37},
-    ArrowRight: { active: false, id: 39},
-    ArrowUp: { active: false, id: 38}, 
-    ArrowDown: { active: false, id: 40},
-    " ": { active: false, id: 32},
-    d: { active: false, id: 68},
-    s: { active: false, id: 83}
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false, 
+    ArrowDown: false,
+    " ": false,
+    d: false,
+    s: false
 };
 
 
@@ -202,11 +202,31 @@ const findTileInDirection = (player) => {
 };
 
 const isKeyOn = (prop) => { 
-    if(keys[prop].active === true){
+    if(keys[prop] === true){
         return true;
     } else {
         return false;
     }
+};
+
+
+// Takes two pos and deals with distance.
+const calcDistance = (posA,  posB) => {
+    
+    let a = (posA.x) - (posB.x),
+    b = (posA.y) - (posB.y);
+
+    let distance = Math.sqrt(a*a + b*b);
+
+    return Math.abs(distance); 
+};
+
+// Returns tile position based on their x and y and tilesize
+const calcTilePos = (tile) => {
+    let x = tile.pos.x * g.tileSize,
+    y = tile.pos.y * g.tileSize;
+
+    return {x, y};
 };
 
 const findCloseGem = (player) => {
@@ -263,11 +283,19 @@ const initiateGameState = () => {
 
 
 const proccessNewData = (currentData, newData) => {
-    if(newData !== null && typeof newData !== undefined){
+    if(newData !== null && typeof newData !== "undefined"){
         for(let i = 0; i < newData.length; i++){
-            if(typeof newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                currentData[i] = newData[i];
-                previousPlayerActions.push(newData[i].requestId);
+            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+
+                if(typeof newData[i].health !== "undefined"){  // If there is a health value
+                    if(!previousPlayerActions.includes(newData[i].health.requestId)){
+                        currentData[i].health = newData[i].health;
+                    }
+                } else {
+                    currentData[i] = newData[i];
+                    previousPlayerActions.push(newData[i].requestId);
+                }
+                
             }
         }
         newData = null;
@@ -309,11 +337,11 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(typeof g.playerId !== undefined){
+    if(typeof g.playerId !== "undefined"){
 
         let player = players.find(x => x.id == g.playerId);
 
-        if(typeof player !== undefined){
+        if(typeof player !== "undefined" && player.health.points > 0){
 
             let requestId = `${Date.now()}-${g.playerId}`;
 
@@ -327,21 +355,44 @@ const update = (delta) => { // new delta parameter
             if(isKeyOn(" ")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
-                if(selectedTile !== undefined){
-                    if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
-                        tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                        addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
-                        model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
+                if(typeof selectedTile !== "undefined"){
+                    // Check if player is near
+
+                    let targetPlayer = null;
+
+                    for(let i = 0; i < players.length; i++){
+                        let otherPlayersTile = findTileBelowPlayer(players[i]);
+
+                        // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
+
+                        if(calcDistance(calcTilePos(selectedTile), calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                            targetPlayer = players[i];
+                        }
                     }
+                    
+                    // If there is a player in the direction within 1, then attack.
+                    if(targetPlayer !== null){
+                        targetPlayer.health.points -= 10;
+                        addRequestId(targetPlayer, requestId);
+                        model.savePlayerHealth(targetPlayer); 
+
+                    } else { // Else mine a block
+                        if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
+                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
+                            addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
+                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
+                        }
+                    }
+                    
                 }
                 
             } else if(isKeyOn("s")){
                 let selectedTile = findTileBelowPlayer(player);
 
-                if(selectedTile  !== undefined){
+                if(typeof selectedTile  !== "undefined"){
                     let gemOnTile = findCloseGem(player);
                     // console.log('gemOnTile', gemOnTile);
-                    if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
+                    if(typeof gemOnTile !== "undefined" && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
                         model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
@@ -353,17 +404,17 @@ const update = (delta) => { // new delta parameter
                 let selectedTile = findTileBelowPlayer(player);
                 
                 // If there is a tile that it can be dropped on,
-                if(selectedTile !== undefined){
+                if(typeof selectedTile !== "undefined"){
 
                     let gemOnTile = getGemOnTile(selectedTile);
                     
                     // if the gem is not on a tile
-                    if(gemOnTile === undefined ){
+                    if(typeof gemOnTile === "undefined" ){
 
                          // If player has gem,
                         let carriedGem = gems.find(x => x.carrier === g.playerId);
 
-                        if(carriedGem !== undefined){
+                        if(typeof carriedGem !== "undefined"){
 
                             // Drop gems
                             carriedGem.carrier = -1;
@@ -393,7 +444,7 @@ const update = (delta) => { // new delta parameter
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
-
+                console.log("moving left");
                 updatePlayerState("left", "x", playerUpdateObject);
 
             } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
@@ -426,7 +477,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     options.player.dir = direction;
 
     addRequestId(options.player, options.requestId);
-    model.savePlayer(options.player);
+    model.savePlayerPos(options.player);
 };
 
 
@@ -603,7 +654,7 @@ window.onkeydown = function(event) {
     for(let prop in keys){
         if(prop == event.key){
         // console.log("event.keycode", event.keycode);
-            keys[prop].active = true;
+            keys[prop] = true;
         }
     }
 };
@@ -613,7 +664,7 @@ window.onkeyup = function(event) {
     for(let prop in keys){
         if(prop == event.key){
             // console.log("event.keycode", event.keycode);
-            keys[prop].active = false;
+            keys[prop] = false;
         }
     }
 };

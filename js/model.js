@@ -4,6 +4,8 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
+const $ = ("jquery");
+
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -41,6 +43,11 @@ module.exports.fetchData = () => {
   
   
       // Try listening to only one of them.  One listens to tiles one listens to other.
+        firebase.database().ref("gameState").on('value', function(snapshot) {
+            //   console.log("-------Gem Update");
+            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
         firebase.database().ref("tiles").on('value', function(snapshot) {
           //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
@@ -56,23 +63,36 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
-        firebase.database().ref("gameState").on('value', function(snapshot) {
-            //   console.log("-------Gem Update");
-            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
+
 
     });
 
 
 };
 
-module.exports.savePlayer = (player) => {
+module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(player);
+        let jsonString = JSON.stringify({
+            "pos": player.pos,
+            "requestId": player.requestId
+        });
         let JSONRequest = new XMLHttpRequest();
         // console.log("save player");
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.savePlayerHealth = (player) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify({
+            "health": {
+                "points": player.health.points,
+                "requestId": player.requestId
+            }
+        });
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -86,11 +106,13 @@ module.exports.deletePlayer = (player) => {
     });
 };
 
-module.exports.saveTile = (tile) => {
+module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(tile);
+        let jsonString = JSON.stringify({
+            hard: tile.hard
+        });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}.json`);
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -139,7 +161,10 @@ module.exports.addNewPlayer = (id, team, x, y) => {
         },
         "requestId": "1515101455241-1",
         "dir": "up",
-        "health": 100
+        "health": {
+            "points": 100,
+            "requestId": "asdlkfj"
+        }
     };
 
     let jsonString = JSON.stringify(player);

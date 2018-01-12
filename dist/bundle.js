@@ -49,13 +49,13 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    ArrowLeft: { active: false, id: 37},
-    ArrowRight: { active: false, id: 39},
-    ArrowUp: { active: false, id: 38}, 
-    ArrowDown: { active: false, id: 40},
-    " ": { active: false, id: 32},
-    d: { active: false, id: 68},
-    s: { active: false, id: 83}
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false, 
+    ArrowDown: false,
+    " ": false,
+    d: false,
+    s: false
 };
 
 
@@ -203,11 +203,31 @@ const findTileInDirection = (player) => {
 };
 
 const isKeyOn = (prop) => { 
-    if(keys[prop].active === true){
+    if(keys[prop] === true){
         return true;
     } else {
         return false;
     }
+};
+
+
+// Takes two pos and deals with distance.
+const calcDistance = (posA,  posB) => {
+    
+    let a = (posA.x) - (posB.x),
+    b = (posA.y) - (posB.y);
+
+    let distance = Math.sqrt(a*a + b*b);
+
+    return Math.abs(distance); 
+};
+
+// Returns tile position based on their x and y and tilesize
+const calcTilePos = (tile) => {
+    let x = tile.pos.x * g.tileSize,
+    y = tile.pos.y * g.tileSize;
+
+    return {x, y};
 };
 
 const findCloseGem = (player) => {
@@ -264,11 +284,19 @@ const initiateGameState = () => {
 
 
 const proccessNewData = (currentData, newData) => {
-    if(newData !== null && typeof newData !== undefined){
+    if(newData !== null && typeof newData !== "undefined"){
         for(let i = 0; i < newData.length; i++){
-            if(typeof newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                currentData[i] = newData[i];
-                previousPlayerActions.push(newData[i].requestId);
+            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+
+                if(typeof newData[i].health !== "undefined"){  // If there is a health value
+                    if(!previousPlayerActions.includes(newData[i].health.requestId)){
+                        currentData[i].health = newData[i].health;
+                    }
+                } else {
+                    currentData[i] = newData[i];
+                    previousPlayerActions.push(newData[i].requestId);
+                }
+                
             }
         }
         newData = null;
@@ -310,11 +338,11 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(typeof g.playerId !== undefined){
+    if(typeof g.playerId !== "undefined"){
 
         let player = players.find(x => x.id == g.playerId);
 
-        if(typeof player !== undefined){
+        if(typeof player !== "undefined" && player.health.points > 0){
 
             let requestId = `${Date.now()}-${g.playerId}`;
 
@@ -328,21 +356,44 @@ const update = (delta) => { // new delta parameter
             if(isKeyOn(" ")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
-                if(selectedTile !== undefined){
-                    if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
-                        tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                        addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
-                        model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
+                if(typeof selectedTile !== "undefined"){
+                    // Check if player is near
+
+                    let targetPlayer = null;
+
+                    for(let i = 0; i < players.length; i++){
+                        let otherPlayersTile = findTileBelowPlayer(players[i]);
+
+                        // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
+
+                        if(calcDistance(calcTilePos(selectedTile), calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                            targetPlayer = players[i];
+                        }
                     }
+                    
+                    // If there is a player in the direction within 1, then attack.
+                    if(targetPlayer !== null){
+                        targetPlayer.health.points -= 10;
+                        addRequestId(targetPlayer, requestId);
+                        model.savePlayerHealth(targetPlayer); 
+
+                    } else { // Else mine a block
+                        if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
+                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
+                            addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
+                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
+                        }
+                    }
+                    
                 }
                 
             } else if(isKeyOn("s")){
                 let selectedTile = findTileBelowPlayer(player);
 
-                if(selectedTile  !== undefined){
+                if(typeof selectedTile  !== "undefined"){
                     let gemOnTile = findCloseGem(player);
                     // console.log('gemOnTile', gemOnTile);
-                    if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
+                    if(typeof gemOnTile !== "undefined" && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
                         model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
@@ -354,17 +405,17 @@ const update = (delta) => { // new delta parameter
                 let selectedTile = findTileBelowPlayer(player);
                 
                 // If there is a tile that it can be dropped on,
-                if(selectedTile !== undefined){
+                if(typeof selectedTile !== "undefined"){
 
                     let gemOnTile = getGemOnTile(selectedTile);
                     
                     // if the gem is not on a tile
-                    if(gemOnTile === undefined ){
+                    if(typeof gemOnTile === "undefined" ){
 
                          // If player has gem,
                         let carriedGem = gems.find(x => x.carrier === g.playerId);
 
-                        if(carriedGem !== undefined){
+                        if(typeof carriedGem !== "undefined"){
 
                             // Drop gems
                             carriedGem.carrier = -1;
@@ -394,7 +445,6 @@ const update = (delta) => { // new delta parameter
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
-
                 updatePlayerState("left", "x", playerUpdateObject);
 
             } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
@@ -427,7 +477,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     options.player.dir = direction;
 
     addRequestId(options.player, options.requestId);
-    model.savePlayer(options.player);
+    model.savePlayerPos(options.player);
 };
 
 
@@ -604,7 +654,7 @@ window.onkeydown = function(event) {
     for(let prop in keys){
         if(prop == event.key){
         // console.log("event.keycode", event.keycode);
-            keys[prop].active = true;
+            keys[prop] = true;
         }
     }
 };
@@ -614,7 +664,7 @@ window.onkeyup = function(event) {
     for(let prop in keys){
         if(prop == event.key){
             // console.log("event.keycode", event.keycode);
-            keys[prop].active = false;
+            keys[prop] = false;
         }
     }
 };
@@ -628,8 +678,10 @@ module.exports.ctx.canvas.width  = window.innerWidth;
 module.exports.ctx.canvas.height = window.innerHeight;
 
 module.exports.tileSize = 25;
+module.exports.attackDistance = 1;
 
 module.exports.playerId = 0;
+
 },{}],3:[function(require,module,exports){
 "use strict";
 
@@ -742,6 +794,8 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
+const $ = ("jquery");
+
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -778,7 +832,16 @@ module.exports.fetchData = () => {
       //   });
   
   
+
+      // Listening is not the issue.  It is how quicklyi an xhr request is sent.
+
+      
       // Try listening to only one of them.  One listens to tiles one listens to other.
+        firebase.database().ref("gameState").on('value', function(snapshot) {
+            //   console.log("-------Gem Update");
+            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+            c.dispatchEvent(serverUpdate);
+        });
         firebase.database().ref("tiles").on('value', function(snapshot) {
           //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
@@ -794,23 +857,36 @@ module.exports.fetchData = () => {
             let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
-        firebase.database().ref("gameState").on('value', function(snapshot) {
-            //   console.log("-------Gem Update");
-            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
+
 
     });
 
 
 };
 
-module.exports.savePlayer = (player) => {
+module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(player);
+        let jsonString = JSON.stringify({
+            "pos": player.pos,
+            "requestId": player.requestId
+        });
         let JSONRequest = new XMLHttpRequest();
         // console.log("save player");
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.savePlayerHealth = (player) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify({
+            "health": {
+                "points": player.health.points,
+                "requestId": player.requestId
+            }
+        });
+        let JSONRequest = new XMLHttpRequest();
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -824,11 +900,13 @@ module.exports.deletePlayer = (player) => {
     });
 };
 
-module.exports.saveTile = (tile) => {
+module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(tile);
+        let jsonString = JSON.stringify({
+            hard: tile.hard
+        });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}.json`);
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -877,7 +955,10 @@ module.exports.addNewPlayer = (id, team, x, y) => {
         },
         "requestId": "1515101455241-1",
         "dir": "up",
-        "health": 100
+        "health": {
+            "points": 100,
+            "requestId": "asdlkfj"
+        }
     };
 
     let jsonString = JSON.stringify(player);
@@ -942,6 +1023,7 @@ dirtImage.src = "./img/dirt.png";
 let stoneImage = new Image();
 stoneImage.src = "./img/stone.jpeg";
 
+let tilesToDraw = [];
 
 // Gems
 
@@ -1012,12 +1094,18 @@ const isTileWithinOne = (tile, otherTiles) => {
     return false;
 };
 
-const drawTiles = (tiles) => {
-    let tilesToDraw = [];
+const drawTiles = (tiles, players) => {
+    tilesToDraw = [];
 
     let tilesToBeAddedToDraw = [];
     
     let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+
+    for(let i = 0; i < players.length; i++){
+        if(players[i].team === thisPlayer.team && players[i].health.points > 0){
+            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+        }
+    }
 
     if(playerTile !== undefined){
         tilesToDraw.push(playerTile);
@@ -1117,15 +1205,16 @@ const canSeePlayer = (p1, p2, sightDistance) => {
     return Math.abs(distance) <= sightDistance;
 };
 
-const drawPlayers = (players, playerId) => {
+const drawPlayers = (players, playerId, tiles) => {
     // console.log("players", players); 
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
       
+        let playerTile = findTileBelowPlayer(players[i], tiles);
 
-        if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
             
             // g.ctx.save();
@@ -1188,14 +1277,26 @@ const drawGems = (gems, players) => {
     }
 };
 
+const drawHealth = (health) => {
+    if(health > 0){
+        $("#player-health").html(health);
+    } else {
+        $("#player-health").html("<p>You are Dead</p>");
+    }
+};
+
 module.exports.draw = (playerId, tiles, players, gems) => {
     thisPlayer = players.find(x => x.id == playerId);
-    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
-    drawTiles(tiles);
-    drawPlayers(players, playerId);
+    drawHealth(thisPlayer.health.points);
+
+    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
+    drawTiles(tiles, players);
+    drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
+
+
 
 module.exports.createPlayerButton = (players) => {
     $("#player-lobby").empty();
@@ -1218,6 +1319,8 @@ module.exports.viewMainMenu = () => {
     document.getElementById("main-menu-screen").classList.remove("hide");
 };
 
+
+
 // module.exports.viewSelectPlayerScreen = () => {
 //     hideAllMenus();
 
@@ -1234,16 +1337,15 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 module.exports.viewGame = () => {
     hideAllMenus();
 
-
-    g.c.classList.remove("hide");
+    $("#game-screen").removeClass("hide");
 };
 
 const hideAllMenus = () => {
 
     document.getElementById("victory-screen").classList.add("hide");
     document.getElementById("main-menu-screen").classList.add("hide");
+    document.getElementById("game-screen").classList.add("hide");
     document.getElementById("loading-screen").classList.add("hide");
-    g.c.classList.add("hide");
 };
 },{"./game":2,"jquery":164}],8:[function(require,module,exports){
 "use strict";

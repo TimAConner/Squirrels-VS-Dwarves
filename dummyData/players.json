@@ -8,7 +8,10 @@
                 "y": "0",
                 "z": "0"
             },
-            "health": 100,
+            "health": {
+                "points": 100,
+                "requestId": "asdlkfj"
+            },
             "hasGem": "false"
         },
         {
@@ -19,7 +22,10 @@
                 "y": "2",
                 "z": "0"
             },
-            "health": 100,
+            "health": {
+                "points": 100,
+                "requestId": "asdlkfj"
+            },
             "hasGem": "false"
         }
     ]   
