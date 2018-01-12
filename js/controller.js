@@ -286,8 +286,16 @@ const proccessNewData = (currentData, newData) => {
     if(newData !== null && typeof newData !== undefined){
         for(let i = 0; i < newData.length; i++){
             if(typeof newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                currentData[i] = newData[i];
-                previousPlayerActions.push(newData[i].requestId);
+
+                if(typeof newData[i].health !== undefined){  // If there is a health value
+                    if(!previousPlayerActions.includes(newData[i].health.requestId)){
+                        currentData[i].health = newData[i].health;
+                    }
+                } else {
+                    currentData[i] = newData[i];
+                    previousPlayerActions.push(newData[i].requestId);
+                }
+                
             }
         }
         newData = null;
@@ -348,11 +356,34 @@ const update = (delta) => { // new delta parameter
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
-                    if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
-                        tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                        addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
-                        model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
+                    // Check if player is near
+
+                    let targetPlayer = null;
+
+                    for(let i = 0; i < players.length; i++){
+                        let otherPlayersTile = findTileBelowPlayer(players[i]);
+
+                        // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
+
+                        if(calcDistance(calcTilePos(selectedTile), calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                            targetPlayer = players[i];
+                        }
                     }
+                    
+                    // If there is a player in the direction within 1, then attack.
+                    if(targetPlayer !== null){
+                        targetPlayer.health.points -= 10;
+                        addRequestId(targetPlayer, requestId);
+                        model.savePlayerHealth(targetPlayer); 
+
+                    } else { // Else mine a block
+                        if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
+                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
+                            addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
+                            model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
+                        }
+                    }
+                    
                 }
                 
             } else if(isKeyOn("s")){
@@ -446,7 +477,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     options.player.dir = direction;
 
     addRequestId(options.player, options.requestId);
-    model.savePlayer(options.player);
+    model.savePlayerPos(options.player);
 };
 
 
