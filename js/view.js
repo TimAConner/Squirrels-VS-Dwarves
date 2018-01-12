@@ -111,7 +111,7 @@ const drawTiles = (tiles, players) => {
     let playerTile = findTileBelowPlayer(thisPlayer, tiles);
 
     for(let i = 0; i < players.length; i++){
-        if(players[i].team === thisPlayer.team){
+        if(players[i].team === thisPlayer.team && players[i].health.points > 0){
             tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
         }
     }
