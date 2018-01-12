@@ -156,7 +156,10 @@ module.exports.addNewPlayer = (id, team, x, y) => {
         },
         "requestId": "1515101455241-1",
         "dir": "up",
-        "health": 100
+        "health": {
+            "points": 100,
+            "requestId": "asdlkfj"
+        }
     };
 
     let jsonString = JSON.stringify(player);
