@@ -597,7 +597,8 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
-        
+        if(e.detail !== null){
+            
         // Filter the results, because firebase will return empty values if there are gaps in the array.
         let filteredPlayers = Object.keys(e.detail.players).map(key => {
             let player = e.detail.players[key];
@@ -606,8 +607,7 @@ const activateServerListener = () => {
         });
 
         // console.log("player", e.detail);
-        if(e.detail !== null){
-            
+          
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
                 console.log(players);
