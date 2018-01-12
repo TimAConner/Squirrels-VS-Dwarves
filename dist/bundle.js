@@ -49,13 +49,13 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    ArrowLeft: { active: false, id: 37},
-    ArrowRight: { active: false, id: 39},
-    ArrowUp: { active: false, id: 38}, 
-    ArrowDown: { active: false, id: 40},
-    " ": { active: false, id: 32},
-    d: { active: false, id: 68},
-    s: { active: false, id: 83}
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false, 
+    ArrowDown: false,
+    " ": false,
+    d: false,
+    s: false
 };
 
 
@@ -203,7 +203,7 @@ const findTileInDirection = (player) => {
 };
 
 const isKeyOn = (prop) => { 
-    if(keys[prop].active === true){
+    if(keys[prop] === true){
         return true;
     } else {
         return false;
@@ -329,6 +329,7 @@ const update = (delta) => { // new delta parameter
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
+                    
                     if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
                         tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
                         addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
@@ -604,7 +605,7 @@ window.onkeydown = function(event) {
     for(let prop in keys){
         if(prop == event.key){
         // console.log("event.keycode", event.keycode);
-            keys[prop].active = true;
+            keys[prop] = true;
         }
     }
 };
@@ -614,7 +615,7 @@ window.onkeyup = function(event) {
     for(let prop in keys){
         if(prop == event.key){
             // console.log("event.keycode", event.keycode);
-            keys[prop].active = false;
+            keys[prop] = false;
         }
     }
 };
@@ -1012,12 +1013,18 @@ const isTileWithinOne = (tile, otherTiles) => {
     return false;
 };
 
-const drawTiles = (tiles) => {
+const drawTiles = (tiles, players) => {
     let tilesToDraw = [];
 
     let tilesToBeAddedToDraw = [];
     
     let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+
+    for(let i = 0; i < players.length; i++){
+        if(players[i].team === thisPlayer.team){
+            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+        }
+    }
 
     if(playerTile !== undefined){
         tilesToDraw.push(playerTile);
@@ -1192,7 +1199,7 @@ module.exports.draw = (playerId, tiles, players, gems) => {
     thisPlayer = players.find(x => x.id == playerId);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
-    drawTiles(tiles);
+    drawTiles(tiles, players);
     drawPlayers(players, playerId);
     drawGems(gems, players);
 };
