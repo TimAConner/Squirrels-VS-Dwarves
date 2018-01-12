@@ -102,12 +102,18 @@ const isTileWithinOne = (tile, otherTiles) => {
     return false;
 };
 
-const drawTiles = (tiles) => {
+const drawTiles = (tiles, players) => {
     let tilesToDraw = [];
 
     let tilesToBeAddedToDraw = [];
     
     let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+
+    for(let i = 0; i < players.length; i++){
+        if(players[i].team === thisPlayer.team){
+            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+        }
+    }
 
     if(playerTile !== undefined){
         tilesToDraw.push(playerTile);
@@ -282,7 +288,7 @@ module.exports.draw = (playerId, tiles, players, gems) => {
     thisPlayer = players.find(x => x.id == playerId);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
-    drawTiles(tiles);
+    drawTiles(tiles, players);
     drawPlayers(players, playerId);
     drawGems(gems, players);
 };
