@@ -8,7 +8,8 @@ const g = require("./game");
 const $ = require("jquery");
 
 
-let sightDistance = 2.25;
+// Number of squares that can be seen around player
+let sightDistance = 3;
 
 // Square colors
 let unknownColor = "black",
@@ -57,8 +58,77 @@ const findPlayerTile = (player) => {
     };
 };
 
+const doesTileExists = (tile, tiles) => {
+    return tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
+};
+
+const findTileBelowPlayer = (player, tiles) => {
+    
+    let playerX = (player.pos.x+player.size.w/2),
+    playerY = (player.pos.y+player.size.h/2);    
+
+    let sortedTiles = tiles.slice().sort((a, b) => {
+        let tileAX= a.pos.x*a.size.w,
+        tileAY = a.pos.y*a.size.h;
+        
+        let tileBX= b.pos.x*b.size.w,
+        tileBY = b.pos.y*b.size.h;
+
+        let tileAXDifference = (player.pos.x) - (tileAX),
+        playerAYDIfference = (player.pos.y) - (tileAY),
+        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
+
+        let tileBXDifference = (player.pos.x) - (tileBX),
+        playerBYDIfference = (player.pos.y) - (tileBY),
+        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
+        
+        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+    });
+
+    return sortedTiles[0];
+};
+
+// Tile is being check is if within one of other tiles
+const isTileWithinOne = (tile, otherTiles) => {
+    for(let i = 0; i < otherTiles.length; i++){
+        // console.log('Math.abs(tile.pos.x - otherTiles[i].pos.x)', Math.abs(tile.pos.x - otherTiles[i].pos.x));
+        // console.log('Math.abs(tile.pos.y - otherTiles[i].pos.y)', Math.abs(tile.pos.y - otherTiles[i].pos.y));
+        if(Math.abs(tile.pos.x - otherTiles[i].pos.x) <= 1 &&  Math.abs(tile.pos.y - otherTiles[i].pos.y) <= 1 && otherTiles[i].hard <= 0 && otherTiles[i].hard !== -2){
+            // console.log(tile);
+            return true;
+        }
+    }
+
+    return false;
+};
 
 const drawTiles = (tiles) => {
+    let tilesToDraw = [];
+
+    let tilesToBeAddedToDraw = [];
+    
+    let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+
+    if(playerTile !== undefined){
+        tilesToDraw.push(playerTile);
+    }
+
+    // Find all tiles touching the player that are hard <= 0
+    for(let i = 0; i < sightDistance; i++){
+        for(let a = 0; a < tiles.length; a++){
+            if(isTileWithinOne(tiles[a], tilesToDraw)){
+                tilesToBeAddedToDraw.push(tiles[a]);
+            }
+        }
+
+        // Add tiles  to tilesToDraw (the tiles that are being used to check if a tile is within oen), only after a whole loop so that the tile that is added will not be used to check other tiles against.
+        // console.log('tilesToDraw', tilesToDraw);
+        tilesToDraw = tilesToDraw.concat(tilesToBeAddedToDraw);
+        // console.log('tilesToDraw', tilesToDraw);
+    }
+    // console.log('tileToBeAddedToDraw', tilesToBeAddedToDraw);
+
+
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
@@ -68,11 +138,12 @@ const drawTiles = (tiles) => {
         
         if(typeof playerTile !== undefined){
 
-            let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
-            b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
-            distance = Math.sqrt(a*a + b*b);
+            // let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
+            // b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
+            // distance = Math.sqrt(a*a + b*b);
 
-            if(Math.abs(distance) <= sightDistance){
+            
+            if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
                 if(tiles[i].hard > 0){
                     g.ctx.fillStyle = rockColor; 
                     g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
@@ -219,7 +290,8 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 module.exports.createPlayerButton = (players) => {
     $("#player-lobby").empty();
     for(let i = 0; i < players.length; i ++){
-        $("#player-lobby").append($(`<button playerId=${players[i].id}>Select Player ${players[i].id}</button></br>`));
+        $("#player-lobby").append($(`<button class="add"playerId=${players[i].id}>Select Player ${players[i].id}</button>`));
+        $("#player-lobby").append($(`<button class="remove" playerId=${players[i].id}>Delete Player ${players[i].id}</button></br>`));
     }
 };  
 
@@ -253,14 +325,12 @@ module.exports.viewGame = () => {
     hideAllMenus();
 
 
-    document.getElementById("player-id").classList.remove("hide");
     g.c.classList.remove("hide");
 };
 
 const hideAllMenus = () => {
 
     document.getElementById("victory-screen").classList.add("hide");
-    document.getElementById("player-id").classList.add("hide");
     document.getElementById("main-menu-screen").classList.add("hide");
     document.getElementById("loading-screen").classList.add("hide");
     g.c.classList.add("hide");

@@ -16,7 +16,9 @@ const model = require("./model");
 const view = require("./view");
 const g = require("./game");
 const $ = require("jquery");
-const mapMaker = require("./mapMaker");
+const gameMaker = require("./gameMaker");
+
+const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
@@ -26,8 +28,6 @@ let waitingForGame = false;
 
 
 let winner = 0;
-
-let playerId = 0;
 
 
 let players = [];
@@ -48,17 +48,15 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    left: { active: false, id: 37},
-    right: { active: false, id: 39},
-    up: { active: false, id: 38}, 
-    down: { active: false, id: 40},
-    space: { active: false, id: 32},
+    ArrowLeft: { active: false, id: 37},
+    ArrowRight: { active: false, id: 39},
+    ArrowUp: { active: false, id: 38}, 
+    ArrowDown: { active: false, id: 40},
+    " ": { active: false, id: 32},
     d: { active: false, id: 68},
     s: { active: false, id: 83}
 };
 
-// Generated on runtime
-let keyIds = [];
 
 
 let initialTileDraw = true;
@@ -130,27 +128,27 @@ const canMove = (direction, obj, delta) => {
 };
 
 const findTileBelowPlayer = (player) => {
-
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
-
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= a.pos.x*a.size.w,
-        tileAY = a.pos.y*a.size.h;
-        
-        let tileBX= b.pos.x*b.size.w,
-        tileBY = b.pos.y*b.size.h;
-
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-    });
+    
+        let playerX = (player.pos.x+player.size.w/2),
+        playerY = (player.pos.y+player.size.h/2);    
+    
+        let sortedTiles = tiles.slice().sort((a, b) => {
+            let tileAX= a.pos.x*a.size.w,
+            tileAY = a.pos.y*a.size.h;
+            
+            let tileBX= b.pos.x*b.size.w,
+            tileBY = b.pos.y*b.size.h;
+    
+            let tileAXDifference = (player.pos.x) - (tileAX),
+            playerAYDIfference = (player.pos.y) - (tileAY),
+            tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
+    
+            let tileBXDifference = (player.pos.x) - (tileBX),
+            playerBYDIfference = (player.pos.y) - (tileBY),
+            tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
+            
+            return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+});
 
     // let tile = tiles.find(t => {
     //     let tileLeftPoint = t.pos.x*t.size.w,
@@ -203,7 +201,7 @@ const findTileInDirection = (player) => {
     return tile;
 };
 
-const isKeyOn = (prop) => {
+const isKeyOn = (prop) => { 
     if(keys[prop].active === true){
         return true;
     } else {
@@ -218,7 +216,7 @@ const findCloseGem = (player) => {
         b = (player.pos.y) - (gem.pos.y),
 
         distance = Math.sqrt(a*a + b*b);
-        console.log(Math.abs(distance));
+        // console.log(Math.abs(distance));
         return Math.abs(distance) <= 15; // 10 Pixels
     });
 
@@ -311,13 +309,13 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(typeof playerId !== undefined){
+    if(typeof g.playerId !== undefined){
 
-        let player = players.find(x => x.id == playerId);
+        let player = players.find(x => x.id == g.playerId);
 
         if(typeof player !== undefined){
 
-            let requestId = `${Date.now()}-${playerId}`;
+            let requestId = `${Date.now()}-${g.playerId}`;
 
             let playerUpdateObject = {
                 player: players[players.indexOf(player)],
@@ -326,7 +324,7 @@ const update = (delta) => { // new delta parameter
                 speedMultiplier,
             };
 
-            if(isKeyOn("space")){
+            if(isKeyOn(" ")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
@@ -346,7 +344,7 @@ const update = (delta) => { // new delta parameter
                     if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
-                        model.saveGem(gems[gems.indexOf(gemOnTile)]); 
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
                     }
                 } 
             
@@ -363,7 +361,7 @@ const update = (delta) => { // new delta parameter
                     if(gemOnTile === undefined ){
 
                          // If player has gem,
-                        let carriedGem = gems.find(x => x.carrier === playerId);
+                        let carriedGem = gems.find(x => x.carrier === g.playerId);
 
                         if(carriedGem !== undefined){
 
@@ -376,36 +374,36 @@ const update = (delta) => { // new delta parameter
                                 setWinner(player.team);
                             }
                             
-                            model.saveGem(gems[gems.indexOf(carriedGem)]); 
+                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
                         }
                     }
                 }      
             } 
             
-            if(isKeyOn("up") && canMove("up", player, delta)){
+            if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if(isKeyOn("up") && player.dir !== "up"){
+            } else if(isKeyOn("ArrowUp") && player.dir !== "up"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if (isKeyOn("down") && canMove("down", player, delta)){
+            } else if (isKeyOn("ArrowDown") && canMove("down", player, delta)){
 
                 updatePlayerState("down", "y", playerUpdateObject);
 
-            } else if(isKeyOn("down") && player.dir !== "down"){
+            } else if(isKeyOn("ArrowDown") && player.dir !== "down"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
-            } else if(isKeyOn("left") && canMove("left", player, delta)){
+            } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
 
                 updatePlayerState("left", "x", playerUpdateObject);
 
-            } else if(isKeyOn("left") && player.dir !== "left"){
+            } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("left", "x", playerUpdateObject);
-            } else if(isKeyOn("right") && canMove("right", player, delta)){
+            } else if(isKeyOn("ArrowRight") && canMove("right", player, delta)){
 
                 updatePlayerState("right", "x", playerUpdateObject);
             
-            } else if(isKeyOn("right") && player.dir !== "right"){
+            } else if(isKeyOn("ArrowRight") && player.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
             }
@@ -456,16 +454,16 @@ const mainLoop = (timestamp) => {
             delta -= timestep;
         }
 
-        view.draw(playerId, tiles, players, gems);
+        view.draw(g.playerId, tiles, players, gems);
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
-        if($("#player-lobby button").length === 0){
+
+        if($(".add").length === 0){
             view.createPlayerButton(players);
-        } 
-        // else if($("#player-lobby button").length !== newPlayers.length){
-        //     view.createPlayerButton(newPlayers);
-        // }
+        } else if($("#player-lobby .add").length !== newPlayers.length && newPlayers.length !== 0){
+            view.createPlayerButton(newPlayers);
+        }
     }  
 
     if(waitingForGame === true){  // Load screen
@@ -474,27 +472,13 @@ const mainLoop = (timestamp) => {
     requestAnimationFrame(mainLoop);
 };
 
-const populateKeyIds = ()  => {
-    for(let key in keys){
-        keyIds.push(keys[key].id);
-    }
-};
+
 
 module.exports.startGame = () => {
-    populateKeyIds();
     model.fetchData();
     activateServerListener();
     activateButtons();
     requestAnimationFrame(mainLoop);
-
-    document.getElementById('player-id').addEventListener("change", function(){
-
-        if(players.length > this.value && this.value >= 0){
-            playerId = this.value;
-        } else {
-            window.alert("Player does not exist.");
-        }
-    });
 
 };
 
@@ -510,104 +494,65 @@ const activateButtons = () => {
     });
 
     document.getElementById("add-player").addEventListener("click", () => {
-        let spawnPoint = tiles.find(x => x.teamBase === 0); 
-        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
-        model.addNewPlayer(newPlayerId, 0, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
-        playerId = newPlayerId;
+        gameMaker.addPlayer(0, tiles, players.length);
     });
 
     document.getElementById("add-player-2").addEventListener("click", () => {
-        let spawnPoint = tiles.find(x => x.teamBase === 1);
-        let newPlayerId = typeof players.length !== undefined ? players.length : 0;
-        model.addNewPlayer(newPlayerId, 1, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);
-        playerId = newPlayerId;
+        gameMaker.addPlayer(1, tiles, players.length);
     });
 
-    document.getElementById("main-menu-play").addEventListener("click", () => {
-        startPlay();
-    });
+    // document.getElementById("main-menu-play").addEventListener("click", () => {
+    //     startPlay();
+    // });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
-        newGame();
+        gameMaker.newGame();
     });
-
-     document.getElementById("main-menu-new").addEventListener("click", () => {
-        newGame();
-    });
-
-    $("#player-lobby").on("click", "button", function(){
-        playerId = $(this).attr("playerId");
+    $("#player-lobby").on("click", ".add", function(){
+        g.playerId = $(this).attr("playerId");
         startPlay();
     });
-};
-
-const newGame = () => {
-    let createdTiles = mapMaker.generateTiles(20, 20);
-    tiles = createdTiles;
+    $("#player-lobby").on("click", ".remove", function(){
+        model.deletePlayer({id: $(this).attr("playerId")});
+    });
     
-    let teamBaseZero = createdTiles.find(x => x.teamBase === 0);
-    let teamBaseOne = createdTiles.find(x => x.teamBase === 1);
-
-    let newGems = [
-        {
-            "pos": {
-                "x": teamBaseZero.pos.x*teamBaseZero.size.w,
-                "y": teamBaseZero.pos.y*teamBaseZero.size.h
-            },
-            "size": {
-                "h": 25,
-                "w": 25
-            },
-            "carrier": -1,
-            "team": 0,
-            "type": "gem",
-            "id": 0
-        },
-        {
-            "pos": {
-                "x": teamBaseOne.pos.x*teamBaseOne.size.w,
-                "y": teamBaseOne.pos.y*teamBaseOne.size.h
-            },
-            "size": {
-                "h": 25,
-                "w": 25
-            },
-            "carrier": -1,
-            "team": 1,
-            "type": "gem",
-            "id": 1
-        }
-    ];
-
-    model.saveGem(newGems[0]);  
-    model.saveGem(newGems[1]);
-    model.saveNewMap(createdTiles);
 };
+
+
 
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
+        let filteredGems = _.compact(e.detail.gems);
         if(initialGemDraw === true){
-            console.log(gems);
-            gems = e.detail.gems;
+            // console.log(gems);
+            gems = filteredGems;
             initialGemDraw = false;
         } else {
-            console.log(gems);
-            newGems = e.detail.gems;
+            console.log("new data");
+            newGems = filteredGems;
         }        
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
+        
+        // Filter the results, because firebase will return empty values if there are gaps in the array.
+        let filteredPlayers = Object.keys(e.detail.players).map(key => {
+            let player = e.detail.players[key];
+            player.id = key;
+            return player;
+        });
 
         // console.log("player", e.detail);
         if(e.detail !== null){
+            
             if(initialPlayerDraw === true){
-                players = e.detail.players;
+                players = filteredPlayers;
                 console.log(players);
                 initialPlayerDraw = false;
             } else {
                 console.log("new data");
-                newPlayers = e.detail.players;
+                newPlayers = filteredPlayers;
             }
         }
         
@@ -620,15 +565,19 @@ const activateServerListener = () => {
     });
     g.c.addEventListener("serverUpdateTiles", (e) => {
         // console.log("tile", e.detail);
-        for(let i = 0; i < e.detail.tiles.length; i++){
-            e.detail.tiles[i].id = i;
+
+        let filteredTiles = _.compact(e.detail.tiles);
+
+        for(let i = 0; i < filteredTiles.length; i++){
+            filteredTiles[i].id = i;
         }
 
         if(initialTileDraw === true){
-            tiles = e.detail.tiles;
+            tiles = filteredTiles;
             initialTileDraw = false;
         } else {
-            newTiles = e.detail.tiles;
+            console.log("new data");
+            newTiles = filteredTiles;
         }
 
     });
@@ -643,16 +592,17 @@ const activateServerListener = () => {
 
 // Prevent key defaults
 window.addEventListener("keydown", function(e) {
-    if(keyIds.indexOf(e.keyCode) > -1) {
+    if(Object.keys(keys).indexOf(e.key) > -1) {
         e.preventDefault();
     }
 }, false);
 
 // When a key is pressed, set it to true.
 window.onkeydown = function(event) {
+    // console.log(event.key);
     for(let prop in keys){
-        if(keys[prop].id == event.keyCode){
-        console.log("event.keycode", event.keycode);
+        if(prop == event.key){
+        // console.log("event.keycode", event.keycode);
             keys[prop].active = true;
         }
     }
@@ -661,8 +611,8 @@ window.onkeydown = function(event) {
 // When a key is up, set it to false.
 window.onkeyup = function(event) {
     for(let prop in keys){
-        if(keys[prop].id == event.keyCode){
-            console.log("event.keycode", event.keycode);
+        if(prop == event.key){
+            // console.log("event.keycode", event.keycode);
             keys[prop].active = false;
         }
     }

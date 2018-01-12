@@ -4,7 +4,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 
 ## Version 2.0 Goals
 - [x] Restrict movement to map
-- [ ] Streamline adding a player and starting game as player
+- [x] Streamline adding a player and starting game as player
 - [ ] Ability to kill enemey
 - [ ] Player lobby
 - [x] Smaller Modules / Refactor code
