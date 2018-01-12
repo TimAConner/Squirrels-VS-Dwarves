@@ -322,6 +322,8 @@ module.exports.viewMainMenu = () => {
     document.getElementById("main-menu-screen").classList.remove("hide");
 };
 
+
+
 // module.exports.viewSelectPlayerScreen = () => {
 //     hideAllMenus();
 
@@ -338,14 +340,13 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 module.exports.viewGame = () => {
     hideAllMenus();
 
-
-    g.c.classList.remove("hide");
+    $("#game-screen").removeClass("hide");
 };
 
 const hideAllMenus = () => {
 
     document.getElementById("victory-screen").classList.add("hide");
     document.getElementById("main-menu-screen").classList.add("hide");
+    document.getElementById("game-screen").classList.add("hide");
     document.getElementById("loading-screen").classList.add("hide");
-    g.c.classList.add("hide");
 };
