@@ -383,7 +383,7 @@ const update = (delta) => { // new delta parameter
                     }
                     
                     // If there is a player in the direction within 1, then attack.
-                    if(targetPlayer !== null){
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
                         targetPlayer.health.points -= 10;
                         addRequestId(targetPlayer, requestId);
                         model.savePlayerHealth(targetPlayer); 
