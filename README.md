@@ -8,7 +8,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [ ] Ability to kill enemey
 - [ ] Player lobby
 - [x] Smaller Modules / Refactor code
-- [ ] See vision around allys
+- [x] See vision around allys
 - [ ] Squirrel & Nut image
 - [ ] See direction player is facing
 - [x] Face direction of keys even if cant move
