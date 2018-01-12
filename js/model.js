@@ -79,7 +79,12 @@ module.exports.savePlayer = (player) => {
 
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({"health": player.health});
+        let jsonString = JSON.stringify({
+            "health": {
+                "points": player.health.points,
+                "requestId": player.requestId
+            }
+        });
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
