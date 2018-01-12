@@ -7,5 +7,6 @@ module.exports.ctx.canvas.width  = window.innerWidth;
 module.exports.ctx.canvas.height = window.innerHeight;
 
 module.exports.tileSize = 25;
+module.exports.attackDistance = 1;
 
 module.exports.playerId = 0;
