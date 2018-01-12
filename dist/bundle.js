@@ -17,9 +17,9 @@ const model = require("./model");
 const view = require("./view");
 const g = require("./game");
 const $ = require("jquery");
-const mapMaker = require("./mapMaker");
+const gameMaker = require("./gameMaker");
 
-const _compact = require("lodash.compact");
+const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
@@ -29,8 +29,6 @@ let waitingForGame = false;
 
 
 let winner = 0;
-
-let playerId = 0;
 
 
 let players = [];
@@ -314,13 +312,13 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(typeof playerId !== undefined){
+    if(typeof g.playerId !== undefined){
 
-        let player = players.find(x => x.id == playerId);
+        let player = players.find(x => x.id == g.playerId);
 
         if(typeof player !== undefined){
 
-            let requestId = `${Date.now()}-${playerId}`;
+            let requestId = `${Date.now()}-${g.playerId}`;
 
             let playerUpdateObject = {
                 player: players[players.indexOf(player)],
@@ -366,7 +364,7 @@ const update = (delta) => { // new delta parameter
                     if(gemOnTile === undefined ){
 
                          // If player has gem,
-                        let carriedGem = gems.find(x => x.carrier === playerId);
+                        let carriedGem = gems.find(x => x.carrier === g.playerId);
 
                         if(carriedGem !== undefined){
 
