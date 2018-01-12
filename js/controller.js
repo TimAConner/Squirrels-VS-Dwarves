@@ -502,9 +502,9 @@ const activateButtons = () => {
         gameMaker.addPlayer(1, tiles, players.length);
     });
 
-    document.getElementById("main-menu-play").addEventListener("click", () => {
-        startPlay();
-    });
+    // document.getElementById("main-menu-play").addEventListener("click", () => {
+    //     startPlay();
+    // });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
         gameMaker.newGame();
