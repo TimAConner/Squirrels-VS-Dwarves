@@ -209,6 +209,26 @@ const isKeyOn = (prop) => {
     }
 };
 
+
+// Takes two pos and deals with distance.
+const calcDistance = (posA,  posB) => {
+    
+    let a = (posA.x) - (posB.x),
+    b = (posA.y) - (posB.y);
+
+    let distance = Math.sqrt(a*a + b*b);
+
+    return Math.abs(distance); 
+};
+
+// Returns tile position based on their x and y and tilesize
+const calcTilePos = (tile) => {
+    let x = tile.pos.x * g.tileSize,
+    y = tile.pos.y * g.tileSize;
+
+    return {x, y};
+};
+
 const findCloseGem = (player) => {
     let gem = gems.find((gem) => {
 
