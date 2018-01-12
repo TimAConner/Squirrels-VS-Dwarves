@@ -283,11 +283,11 @@ const initiateGameState = () => {
 
 
 const proccessNewData = (currentData, newData) => {
-    if(newData !== null && typeof newData !== undefined){
+    if(newData !== null && typeof newData !== "undefined"){
         for(let i = 0; i < newData.length; i++){
-            if(typeof newData[i].requestId !== undefined && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
 
-                if(typeof newData[i].health !== undefined){  // If there is a health value
+                if(typeof newData[i].health !== "undefined"){  // If there is a health value
                     if(!previousPlayerActions.includes(newData[i].health.requestId)){
                         currentData[i].health = newData[i].health;
                     }
@@ -337,11 +337,11 @@ const update = (delta) => { // new delta parameter
     */
 
 
-    if(typeof g.playerId !== undefined){
+    if(typeof g.playerId !== "undefined"){
 
         let player = players.find(x => x.id == g.playerId);
 
-        if(typeof player !== undefined){
+        if(typeof player !== "undefined"){
 
             let requestId = `${Date.now()}-${g.playerId}`;
 
@@ -355,7 +355,7 @@ const update = (delta) => { // new delta parameter
             if(isKeyOn(" ")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
-                if(selectedTile !== undefined){
+                if(typeof selectedTile !== "undefined"){
                     // Check if player is near
 
                     let targetPlayer = null;
@@ -389,10 +389,10 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("s")){
                 let selectedTile = findTileBelowPlayer(player);
 
-                if(selectedTile  !== undefined){
+                if(typeof selectedTile  !== "undefined"){
                     let gemOnTile = findCloseGem(player);
                     // console.log('gemOnTile', gemOnTile);
-                    if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
+                    if(typeof gemOnTile !== "undefined" && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
                         model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
@@ -404,17 +404,17 @@ const update = (delta) => { // new delta parameter
                 let selectedTile = findTileBelowPlayer(player);
                 
                 // If there is a tile that it can be dropped on,
-                if(selectedTile !== undefined){
+                if(typeof selectedTile !== "undefined"){
 
                     let gemOnTile = getGemOnTile(selectedTile);
                     
                     // if the gem is not on a tile
-                    if(gemOnTile === undefined ){
+                    if(typeof gemOnTile === "undefined" ){
 
                          // If player has gem,
                         let carriedGem = gems.find(x => x.carrier === g.playerId);
 
-                        if(carriedGem !== undefined){
+                        if(typeof carriedGem !== "undefined"){
 
                             // Drop gems
                             carriedGem.carrier = -1;
@@ -444,7 +444,7 @@ const update = (delta) => { // new delta parameter
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
-
+                console.log("moving left");
                 updatePlayerState("left", "x", playerUpdateObject);
 
             } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
