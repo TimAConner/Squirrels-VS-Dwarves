@@ -48,13 +48,13 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    ArrowLeft: { active: false},
-    ArrowRight: { active: false},
-    ArrowUp: { active: false}, 
-    ArrowDown: { active: false},
-    " ": { active: false},
-    d: { active: false},
-    s: { active: false}
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false, 
+    ArrowDown: false,
+    " ": false,
+    d: false,
+    s: false
 };
 
 
@@ -202,7 +202,7 @@ const findTileInDirection = (player) => {
 };
 
 const isKeyOn = (prop) => { 
-    if(keys[prop].active === true){
+    if(keys[prop] === true){
         return true;
     } else {
         return false;
@@ -603,7 +603,7 @@ window.onkeydown = function(event) {
     for(let prop in keys){
         if(prop == event.key){
         // console.log("event.keycode", event.keycode);
-            keys[prop].active = true;
+            keys[prop] = true;
         }
     }
 };
@@ -613,7 +613,7 @@ window.onkeyup = function(event) {
     for(let prop in keys){
         if(prop == event.key){
             // console.log("event.keycode", event.keycode);
-            keys[prop].active = false;
+            keys[prop] = false;
         }
     }
 };
