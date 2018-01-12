@@ -202,7 +202,6 @@ const findTileInDirection = (player) => {
 };
 
 const isKeyOn = (prop) => {
-    console.log(prop);
     if(keys[prop].active === true){
         return true;
     } else {
