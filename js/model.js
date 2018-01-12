@@ -77,6 +77,16 @@ module.exports.savePlayer = (player) => {
     });
 };
 
+module.exports.savePlayerHealth = (player) => {
+    return new Promise(function (resolve, reject){
+        let jsonString = JSON.stringify(player);
+        let JSONRequest = new XMLHttpRequest();
+        // console.log("save player");
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/health.json`);
+        JSONRequest.send(jsonString);
+    });
+};
+
 
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
