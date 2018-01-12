@@ -48,13 +48,13 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    ArrowLeft: { active: false, id: 37},
-    ArrowRight: { active: false, id: 39},
-    ArrowUp: { active: false, id: 38}, 
-    ArrowDown: { active: false, id: 40},
-    " ": { active: false, id: 32},
-    d: { active: false, id: 68},
-    s: { active: false, id: 83}
+    ArrowLeft: { active: false},
+    ArrowRight: { active: false},
+    ArrowUp: { active: false}, 
+    ArrowDown: { active: false},
+    " ": { active: false},
+    d: { active: false},
+    s: { active: false}
 };
 
 
