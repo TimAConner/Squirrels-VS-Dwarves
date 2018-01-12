@@ -103,11 +103,13 @@ module.exports.deletePlayer = (player) => {
     });
 };
 
-module.exports.saveTile = (tile) => {
+module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(tile);
+        let jsonString = JSON.stringify({
+            hard: tile.hard
+        });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}.json`);
+        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };

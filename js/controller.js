@@ -380,7 +380,7 @@ const update = (delta) => { // new delta parameter
                         if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
                             addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
-                            model.saveTile(tiles[tiles.indexOf(selectedTile)]); 
+                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
                     
