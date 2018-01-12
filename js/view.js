@@ -221,7 +221,7 @@ const drawPlayers = (players, playerId) => {
         // console.log("playeri", players[i], thisPlayer);
       
 
-        if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)){
+        if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance) && players[i].health.points > 0){
             // console.log("in here", players[i]);
             
             // g.ctx.save();
@@ -284,14 +284,22 @@ const drawGems = (gems, players) => {
     }
 };
 
+const drawHealth = (health) => {
+    $("#player-health").html(health);
+};
+
 module.exports.draw = (playerId, tiles, players, gems) => {
     thisPlayer = players.find(x => x.id == playerId);
-    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
 
+    drawHealth(thisPlayer.health.points);
+
+    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
     drawTiles(tiles, players);
     drawPlayers(players, playerId);
     drawGems(gems, players);
 };
+
+
 
 module.exports.createPlayerButton = (players) => {
     $("#player-lobby").empty();
