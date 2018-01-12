@@ -70,7 +70,8 @@ module.exports.fetchData = () => {
 module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify({
-            "pos": player.pos
+            "pos": player.pos,
+            "requestId": player.requestId
         });
         let JSONRequest = new XMLHttpRequest();
         // console.log("save player");
