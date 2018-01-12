@@ -48,17 +48,15 @@ let speedMultiplier = 0.1;
 
 //  Use timestamp instead?
 let keys = {
-    left: { active: false, id: 37},
-    right: { active: false, id: 39},
-    up: { active: false, id: 38}, 
-    down: { active: false, id: 40},
-    space: { active: false, id: 32},
+    ArrowLeft: { active: false, id: 37},
+    ArrowRight: { active: false, id: 39},
+    ArrowUp: { active: false, id: 38}, 
+    ArrowDown: { active: false, id: 40},
+    " ": { active: false, id: 32},
     d: { active: false, id: 68},
     s: { active: false, id: 83}
 };
 
-// Generated on runtime
-let keyIds = [];
 
 
 let initialTileDraw = true;
@@ -204,6 +202,7 @@ const findTileInDirection = (player) => {
 };
 
 const isKeyOn = (prop) => {
+    console.log(prop);
     if(keys[prop].active === true){
         return true;
     } else {
@@ -326,7 +325,7 @@ const update = (delta) => { // new delta parameter
                 speedMultiplier,
             };
 
-            if(isKeyOn("space")){
+            if(isKeyOn(" ")){
                 // If there is an object in front of you
                 let selectedTile = findTileInDirection(player);
                 if(selectedTile !== undefined){
@@ -382,30 +381,30 @@ const update = (delta) => { // new delta parameter
                 }      
             } 
             
-            if(isKeyOn("up") && canMove("up", player, delta)){
+            if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if(isKeyOn("up") && player.dir !== "up"){
+            } else if(isKeyOn("ArrowUp") && player.dir !== "up"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if (isKeyOn("down") && canMove("down", player, delta)){
+            } else if (isKeyOn("ArrowDown") && canMove("down", player, delta)){
 
                 updatePlayerState("down", "y", playerUpdateObject);
 
-            } else if(isKeyOn("down") && player.dir !== "down"){
+            } else if(isKeyOn("ArrowDown") && player.dir !== "down"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
-            } else if(isKeyOn("left") && canMove("left", player, delta)){
+            } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
 
                 updatePlayerState("left", "x", playerUpdateObject);
 
-            } else if(isKeyOn("left") && player.dir !== "left"){
+            } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("left", "x", playerUpdateObject);
-            } else if(isKeyOn("right") && canMove("right", player, delta)){
+            } else if(isKeyOn("ArrowRight") && canMove("right", player, delta)){
 
                 updatePlayerState("right", "x", playerUpdateObject);
             
-            } else if(isKeyOn("right") && player.dir !== "right"){
+            } else if(isKeyOn("ArrowRight") && player.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
             }
@@ -474,14 +473,9 @@ const mainLoop = (timestamp) => {
     requestAnimationFrame(mainLoop);
 };
 
-const populateKeyIds = ()  => {
-    for(let key in keys){
-        keyIds.push(keys[key].id);
-    }
-};
+
 
 module.exports.startGame = () => {
-    populateKeyIds();
     model.fetchData();
     activateServerListener();
     activateButtons();
@@ -522,6 +516,7 @@ const activateButtons = () => {
     $("#player-lobby").on("click", ".remove", function(){
         model.deletePlayer({id: $(this).attr("playerId")});
     });
+    
 };
 
 
@@ -597,15 +592,16 @@ const activateServerListener = () => {
 
 // Prevent key defaults
 window.addEventListener("keydown", function(e) {
-    if(keyIds.indexOf(e.keyCode) > -1) {
+    if(Object.keys(keys).indexOf(e.key) > -1) {
         e.preventDefault();
     }
 }, false);
 
 // When a key is pressed, set it to true.
 window.onkeydown = function(event) {
+    console.log(event.key);
     for(let prop in keys){
-        if(keys[prop].id == event.keyCode){
+        if(prop == event.key){
         console.log("event.keycode", event.keycode);
             keys[prop].active = true;
         }
@@ -615,7 +611,7 @@ window.onkeydown = function(event) {
 // When a key is up, set it to false.
 window.onkeyup = function(event) {
     for(let prop in keys){
-        if(keys[prop].id == event.keyCode){
+        if(prop == event.key){
             console.log("event.keycode", event.keycode);
             keys[prop].active = false;
         }
