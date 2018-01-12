@@ -57,7 +57,7 @@ module.exports.fetchData = () => {
             c.dispatchEvent(serverUpdate);
         });
         firebase.database().ref("gameState").on('value', function(snapshot) {
-            //   console.log("Update");
+            //   console.log("-------Gem Update");
             let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
@@ -71,6 +71,7 @@ module.exports.savePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(player);
         let JSONRequest = new XMLHttpRequest();
+        // console.log("save player");
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
         JSONRequest.send(jsonString);
     });
@@ -109,6 +110,7 @@ module.exports.saveGem = (gem) => {
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
         JSONRequest.send(jsonString);
+        resolve();
     });
 };
 
@@ -136,7 +138,8 @@ module.exports.addNewPlayer = (id, team, x, y) => {
             "h": 20
         },
         "requestId": "1515101455241-1",
-        "dir": "up"
+        "dir": "up",
+        "health": 100
     };
 
     let jsonString = JSON.stringify(player);

@@ -128,27 +128,27 @@ const canMove = (direction, obj, delta) => {
 };
 
 const findTileBelowPlayer = (player) => {
-
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
-
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= a.pos.x*a.size.w,
-        tileAY = a.pos.y*a.size.h;
-        
-        let tileBX= b.pos.x*b.size.w,
-        tileBY = b.pos.y*b.size.h;
-
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-    });
+    
+        let playerX = (player.pos.x+player.size.w/2),
+        playerY = (player.pos.y+player.size.h/2);    
+    
+        let sortedTiles = tiles.slice().sort((a, b) => {
+            let tileAX= a.pos.x*a.size.w,
+            tileAY = a.pos.y*a.size.h;
+            
+            let tileBX= b.pos.x*b.size.w,
+            tileBY = b.pos.y*b.size.h;
+    
+            let tileAXDifference = (player.pos.x) - (tileAX),
+            playerAYDIfference = (player.pos.y) - (tileAY),
+            tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
+    
+            let tileBXDifference = (player.pos.x) - (tileBX),
+            playerBYDIfference = (player.pos.y) - (tileBY),
+            tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
+            
+            return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+});
 
     // let tile = tiles.find(t => {
     //     let tileLeftPoint = t.pos.x*t.size.w,
@@ -201,7 +201,7 @@ const findTileInDirection = (player) => {
     return tile;
 };
 
-const isKeyOn = (prop) => {
+const isKeyOn = (prop) => { 
     if(keys[prop].active === true){
         return true;
     } else {
@@ -216,7 +216,7 @@ const findCloseGem = (player) => {
         b = (player.pos.y) - (gem.pos.y),
 
         distance = Math.sqrt(a*a + b*b);
-        console.log(Math.abs(distance));
+        // console.log(Math.abs(distance));
         return Math.abs(distance) <= 15; // 10 Pixels
     });
 
@@ -344,7 +344,7 @@ const update = (delta) => { // new delta parameter
                     if(gemOnTile !== undefined && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
-                        model.saveGem(gems[gems.indexOf(gemOnTile)]); 
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
                     }
                 } 
             
@@ -374,7 +374,7 @@ const update = (delta) => { // new delta parameter
                                 setWinner(player.team);
                             }
                             
-                            model.saveGem(gems[gems.indexOf(carriedGem)]); 
+                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
                         }
                     }
                 }      
@@ -529,7 +529,7 @@ const activateServerListener = () => {
             gems = filteredGems;
             initialGemDraw = false;
         } else {
-            console.log(gems);
+            console.log("new data");
             newGems = filteredGems;
         }        
     });
@@ -576,6 +576,7 @@ const activateServerListener = () => {
             tiles = filteredTiles;
             initialTileDraw = false;
         } else {
+            console.log("new data");
             newTiles = filteredTiles;
         }
 
@@ -598,10 +599,10 @@ window.addEventListener("keydown", function(e) {
 
 // When a key is pressed, set it to true.
 window.onkeydown = function(event) {
-    console.log(event.key);
+    // console.log(event.key);
     for(let prop in keys){
         if(prop == event.key){
-        console.log("event.keycode", event.keycode);
+        // console.log("event.keycode", event.keycode);
             keys[prop].active = true;
         }
     }
@@ -611,7 +612,7 @@ window.onkeydown = function(event) {
 window.onkeyup = function(event) {
     for(let prop in keys){
         if(prop == event.key){
-            console.log("event.keycode", event.keycode);
+            // console.log("event.keycode", event.keycode);
             keys[prop].active = false;
         }
     }
