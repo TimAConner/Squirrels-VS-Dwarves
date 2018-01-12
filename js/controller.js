@@ -284,6 +284,18 @@ const initiateGameState = () => {
 
 const proccessNewData = (currentData, newData) => {
     if(newData !== null && typeof newData !== "undefined"){
+
+        // Check if there are new values and add
+        let curIdList = currentData.map(data => data.id),
+        newIdList = newData.map(data => data.id);
+
+        let distinctValues =  _.difference(newIdList, curIdList);
+
+        for(let i = 0; i < distinctValues.length; i++){
+            currentData.push(newData.find(data => data.id === distinctValues[i])); // jshint ignore:line
+        }
+
+        // Change existing values
         for(let i = 0; i < newData.length; i++){
             if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
 
@@ -444,7 +456,6 @@ const update = (delta) => { // new delta parameter
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
-                console.log("moving left");
                 updatePlayerState("left", "x", playerUpdateObject);
 
             } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
