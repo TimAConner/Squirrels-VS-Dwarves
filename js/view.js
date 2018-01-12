@@ -221,7 +221,7 @@ const drawPlayers = (players, playerId) => {
         // console.log("playeri", players[i], thisPlayer);
       
 
-        if(players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance) && players[i].health.points > 0){
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)) && players[i].health.points > 0){
             // console.log("in here", players[i]);
             
             // g.ctx.save();
@@ -285,7 +285,11 @@ const drawGems = (gems, players) => {
 };
 
 const drawHealth = (health) => {
-    $("#player-health").html(health);
+    if(health > 0){
+        $("#player-health").html(health);
+    } else {
+        $("#player-health").html("<p>You are Dead</p>");
+    }
 };
 
 module.exports.draw = (playerId, tiles, players, gems) => {

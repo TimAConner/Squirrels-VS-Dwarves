@@ -341,7 +341,7 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
 
-        if(typeof player !== "undefined"){
+        if(typeof player !== "undefined" && player.health.points > 0){
 
             let requestId = `${Date.now()}-${g.playerId}`;
 
