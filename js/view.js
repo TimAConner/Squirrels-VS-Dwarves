@@ -32,6 +32,7 @@ dirtImage.src = "./img/dirt.png";
 let stoneImage = new Image();
 stoneImage.src = "./img/stone.jpeg";
 
+let tilesToDraw = [];
 
 // Gems
 
@@ -103,7 +104,7 @@ const isTileWithinOne = (tile, otherTiles) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = [];
+    tilesToDraw = [];
 
     let tilesToBeAddedToDraw = [];
     
@@ -213,15 +214,16 @@ const canSeePlayer = (p1, p2, sightDistance) => {
     return Math.abs(distance) <= sightDistance;
 };
 
-const drawPlayers = (players, playerId) => {
+const drawPlayers = (players, playerId, tiles) => {
     // console.log("players", players); 
     for(let i = 0; i < players.length; i++){
         // let playerDirection = (players[i].dir*30);
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
       
+        let playerTile = findTileBelowPlayer(players[i], tiles);
 
-        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || canSeePlayer(thisPlayer, players[i], sightDistance)) && players[i].health.points > 0){
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
             
             // g.ctx.save();
@@ -299,7 +301,7 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
     drawTiles(tiles, players);
-    drawPlayers(players, playerId);
+    drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
 
