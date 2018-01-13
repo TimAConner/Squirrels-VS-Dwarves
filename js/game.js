@@ -12,3 +12,12 @@ module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
 
 module.exports.playerId = 0;
+
+
+// Returns tile position based on their x and y and tilesize
+module.exports.calcTilePos = (tile) => {
+    let x = tile.pos.x * module.exports.tileSize,
+    y = tile.pos.y * module.exports.tileSize;
+
+    return {x, y};
+};

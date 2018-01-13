@@ -67,13 +67,7 @@ let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
-// Returns tile position based on their x and y and tilesize
-const calcTilePos = (tile) => {
-    let x = tile.pos.x * g.tileSize,
-    y = tile.pos.y * g.tileSize;
 
-    return {x, y};
-};
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
@@ -85,8 +79,8 @@ const canMove = (direction, obj, delta) => {
 
     for(let i = 0; i < tiles.length; i++){
 
-        let tileXPosition = calcTilePos(tiles[i]).x,
-        tileYPosition = calcTilePos(tiles[i]).y;
+        let tileXPosition = g.calcTilePos(tiles[i]).x,
+        tileYPosition = g.calcTilePos(tiles[i]).y;
 
         let tileRightPoint = tileXPosition + tiles[i].size.w,
         tileLeftPoint = tileXPosition,
@@ -136,11 +130,11 @@ const findTileBelowPlayer = (player) => {
         playerY = (player.pos.y+player.size.h/2);    
     
         let sortedTiles = tiles.slice().sort((a, b) => {
-            let tileAX= calcTilePos(a).x,
-            tileAY = calcTilePos(a).y;
+            let tileAX= g.calcTilePos(a).x,
+            tileAY = g.calcTilePos(a).y;
             
-            let tileBX= calcTilePos(b).x,
-            tileBY = calcTilePos(b).y;
+            let tileBX= g.calcTilePos(b).x,
+            tileBY = g.calcTilePos(b).y;
     
             let tileAXDifference = (player.pos.x) - (tileAX),
             playerAYDIfference = (player.pos.y) - (tileAY),
@@ -242,8 +236,8 @@ const findCloseGem = (player) => {
 
 const getGemOnTile = (tile) => {
     let gem = gems.find((gem) => {
-        let tileXPosition = calcTilePos(tile).x,
-        tileYPosition = calcTilePos(tile).y;
+        let tileXPosition = g.calcTilePos(tile).x,
+        tileYPosition = g.calcTilePos(tile).y;
 
         let tileRightPoint = tileXPosition + tile.size.w,
         tileLeftPoint = tileXPosition,
@@ -389,7 +383,7 @@ const update = (delta) => { // new delta parameter
 
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
 
-                        if(calcDistance(calcTilePos(selectedTile), calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile)) <= g.attackDistance){
                             targetPlayer = players[i];
                         }
                     }
