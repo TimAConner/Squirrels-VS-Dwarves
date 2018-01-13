@@ -67,11 +67,6 @@ let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
-
-const clamp = (number, min, max) => {
-    return number <= min ? min : number >= max ? max : number;
-};
-
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
     objRightPoint = obj.pos.x+obj.size.w,
