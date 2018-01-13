@@ -394,13 +394,13 @@ const update = (delta) => { // new delta parameter
                     
                     // If there is a player in the direction within 1, then attack.
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
-                        targetPlayer.health.points -= 0.05;
+                        targetPlayer.health.points -= g.attackStrength;
                         addRequestId(targetPlayer, requestId);
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
-                            tiles[tiles.indexOf(selectedTile)].hard.points -= 0.01;
+                            tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
