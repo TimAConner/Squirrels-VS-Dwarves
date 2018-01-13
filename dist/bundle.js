@@ -91,7 +91,7 @@ const canMove = (direction, obj, delta) => {
         tileBottomPoint = tileYPosition + tiles[i].size.h,
         tileTopPoint = tileYPosition;
         
-       if(tiles[i].hard > 0 || tiles[i].hard === -2){ // If it  is still hard or if hardness is -2, unbreakable.
+       if(tiles[i].hard.points > 0 || tiles[i].hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
             if(((objTopPoint > tileTopPoint && objTopPoint < tileBottomPoint) || (objBottomPoint > tileTopPoint && objBottomPoint < tileBottomPoint))){
                 if(direction === "left"){
                     if((((objLeftPoint-increment) < tileRightPoint && (objLeftPoint-increment) > tileLeftPoint))){
@@ -282,8 +282,14 @@ const initiateGameState = () => {
     
 };
 
+const parseRequestId = (requestId) => {
+    let values = requestId.match("(.*)-(-.*)");
+    return values;
+};
 
-const proccessNewData = (currentData, newData) => {
+// Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
+
+const proccessNewData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && typeof newData !== "undefined"){
 
         // // Check if there are new values and add
@@ -298,16 +304,27 @@ const proccessNewData = (currentData, newData) => {
 
         // Change existing values
         for(let i = 0; i < newData.length; i++){
-            if(typeof newData[i].health !== "undefined" && !previousPlayerActions.includes(newData[i].health.requestId)){  // If there is a health value
-                if(!previousPlayerActions.includes(newData[i].health.requestId)){
-                    currentData[i].health = newData[i].health;
-                }
-            }
 
-            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                currentData[i] = newData[i];
-                previousPlayerActions.push(newData[i].requestId);
+            if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
+                if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+                    currentData[i] = newData[i];
+                    previousPlayerActions.push(newData[i].requestId);
+                }
+            } else { // If a specific value should be proccesed, update only that one value.
+                for(let j = 0; j < valuesToCheck.length; j++){
+                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
+                        let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
+                        let curRequestId = parseRequestId(currentData[i][valuesToCheck[j]].requestId);
+                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId[0] >= curRequestId[0])){ // If this game has not proccessed it and the value is not an old one
+                            currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                        }
+                    }
+                }
+
             }
+           
+
+            
         }
         newData = null;
     }
@@ -388,9 +405,9 @@ const update = (delta) => { // new delta parameter
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
-                        if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
-                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                            addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
+                            tiles[tiles.indexOf(selectedTile)].hard.points -= 0.01;
+                            addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
@@ -486,7 +503,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
     options.player.dir = direction;
 
-    addRequestId(options.player, options.requestId);
+    addRequestId(options.player.pos, options.requestId);
     model.savePlayerPos(options.player);
 };
 
@@ -506,8 +523,8 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers);
-            proccessNewData(tiles, newTiles);
+            proccessNewData(players, newPlayers, ["health", "pos"]);
+            proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
             
             update(timestep);
@@ -705,7 +722,28 @@ const g = require("./game");
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     let spawnPoint = tiles.find(x => x.teamBase === teamId); 
     let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
-    model.addNewPlayer(newPlayerId, teamId, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
+
+    let player = {
+        "id": newPlayerId,
+        "team": teamId,
+        "pos": {
+            "x": spawnPoint.pos.x*spawnPoint.size.w,
+            "y": spawnPoint.pos.y*spawnPoint.size.h,
+            "z": 0,
+            "requestId": "0--0"
+        },
+        "size": {
+            "w": 20,
+            "h": 20
+        },
+        "dir": "up",
+        "health": {
+            "points": 100,
+            "requestId": "0--0"
+        }
+    };
+
+    model.addNewPlayer(player);  
     g.playerId = newPlayerId;
 };
 
@@ -775,20 +813,24 @@ controller.startGame();
                         "w": 25,
                         "h": 25
                     },
-                    "hard": 1,
+                    "hard": {
+                        "points": 1,
+                        "requestId": "0--0"
+                    }
+                    
                 };
 
                 if(x === 0 || x === w-1 || y === 0 || y === h-1){ // Set grid around map.
-                    obj.hard = -2;
+                    obj.hard.points = -2;
                 }
 
                 if(x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2){
-                    obj.hard = 0;
+                    obj.hard.points = 0;
                     obj.teamBase = 0;
                 }
     
                 if(x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2){
-                    obj.hard = 0;
+                    obj.hard.points = 0;
                     obj.teamBase = 1;
                 }
     
@@ -916,8 +958,7 @@ module.exports.deletePlayer = (player) => {
 module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify({
-            hard: tile.hard,
-            requestId: tile.requestId
+            hard: tile.hard
         });
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
@@ -953,28 +994,7 @@ module.exports.saveGameState = (state) => {
     });
 };
 
-module.exports.addNewPlayer = (id, team, x, y) => {
-    console.log(x, y);
-    let player = {
-        "id": `${id}`,
-        "team": team,
-        "pos": {
-            "x": x,
-            "y": y,
-            "z": '0'
-        },
-        "size": {
-            "w": 20,
-            "h": 20
-        },
-        "requestId": "1515101455241-1",
-        "dir": "up",
-        "health": {
-            "points": 100,
-            "requestId": "asdlkfj"
-        }
-    };
-
+module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
     JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/players/players/.json`);
@@ -1100,7 +1120,7 @@ const isTileWithinOne = (tile, otherTiles) => {
     for(let i = 0; i < otherTiles.length; i++){
         // console.log('Math.abs(tile.pos.x - otherTiles[i].pos.x)', Math.abs(tile.pos.x - otherTiles[i].pos.x));
         // console.log('Math.abs(tile.pos.y - otherTiles[i].pos.y)', Math.abs(tile.pos.y - otherTiles[i].pos.y));
-        if(Math.abs(tile.pos.x - otherTiles[i].pos.x) <= 1 &&  Math.abs(tile.pos.y - otherTiles[i].pos.y) <= 1 && otherTiles[i].hard <= 0 && otherTiles[i].hard !== -2){
+        if(Math.abs(tile.pos.x - otherTiles[i].pos.x) <= 1 &&  Math.abs(tile.pos.y - otherTiles[i].pos.y) <= 1 && otherTiles[i].hard.points <= 0 && otherTiles[i].hard.points !== -2){
             // console.log(tile);
             return true;
         }
@@ -1157,12 +1177,12 @@ const drawTiles = (tiles, players) => {
 
             
             if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
-                if(tiles[i].hard > 0){
+                if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
                     g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 // console.log("b",  distance);
-                } else if (tiles[i].hard === -2) {
+                } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
@@ -1185,7 +1205,7 @@ const drawTiles = (tiles, players) => {
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
-                } else if (tiles[i].hard === -2) {
+                } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
