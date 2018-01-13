@@ -16,20 +16,24 @@
                         "w": 25,
                         "h": 25
                     },
-                    "hard": 1,
+                    "hard": {
+                        "points": 1,
+                        "requestId": "0--0"
+                    }
+                    
                 };
 
                 if(x === 0 || x === w-1 || y === 0 || y === h-1){ // Set grid around map.
-                    obj.hard = -2;
+                    obj.hard.points = -2;
                 }
 
                 if(x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2){
-                    obj.hard = 0;
+                    obj.hard.points = 0;
                     obj.teamBase = 0;
                 }
     
                 if(x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2){
-                    obj.hard = 0;
+                    obj.hard.points = 0;
                     obj.teamBase = 1;
                 }
     

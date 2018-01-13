@@ -95,7 +95,7 @@ const isTileWithinOne = (tile, otherTiles) => {
     for(let i = 0; i < otherTiles.length; i++){
         // console.log('Math.abs(tile.pos.x - otherTiles[i].pos.x)', Math.abs(tile.pos.x - otherTiles[i].pos.x));
         // console.log('Math.abs(tile.pos.y - otherTiles[i].pos.y)', Math.abs(tile.pos.y - otherTiles[i].pos.y));
-        if(Math.abs(tile.pos.x - otherTiles[i].pos.x) <= 1 &&  Math.abs(tile.pos.y - otherTiles[i].pos.y) <= 1 && otherTiles[i].hard <= 0 && otherTiles[i].hard !== -2){
+        if(Math.abs(tile.pos.x - otherTiles[i].pos.x) <= 1 &&  Math.abs(tile.pos.y - otherTiles[i].pos.y) <= 1 && otherTiles[i].hard.points <= 0 && otherTiles[i].hard.points !== -2){
             // console.log(tile);
             return true;
         }
@@ -152,12 +152,12 @@ const drawTiles = (tiles, players) => {
 
             
             if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
-                if(tiles[i].hard > 0){
+                if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
                     g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
                 // console.log("b",  distance);
-                } else if (tiles[i].hard === -2) {
+                } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
@@ -180,7 +180,7 @@ const drawTiles = (tiles, players) => {
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
-                } else if (tiles[i].hard === -2) {
+                } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
                     
