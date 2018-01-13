@@ -346,13 +346,15 @@ const update = (delta) => { // new delta parameter
                     let targetPlayer = null;
 
                     for(let i = 0; i < players.length; i++){
-                        let otherPlayersTile = g.findTileBelowPlayer(player, tiles);
+                        let otherPlayersTile = g.findTileBelowPlayer(players[i], tiles);
                         console.log(otherPlayersTile);
+                        console.log(players[i]);
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
-                        console.log('calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))', calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile)));
+                        console.log('calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))', calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize);
                         console.log('g.attackDistance', g.attackDistance);
-                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize <= g.attackDistance){
+                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize <= g.attackDistance && targetPlayer !== player){
                             targetPlayer = players[i];
+                            break;
                         }
                     }
                     
