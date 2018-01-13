@@ -6,6 +6,7 @@
 
 const g = require("./game");
 const $ = require("jquery");
+const _ = require("lodash");
 
 
 // Number of squares that can be seen around player
@@ -308,10 +309,31 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
 
 module.exports.createPlayerButton = (players) => {
-    $("#player-lobby").empty();
+    
+
+    // let idsOnPage = $.map($("#player-lobby .add"), function(li) {
+    //     return $("#player-lobby .add").attr("playerId");
+    // });
+
+    // let  buttonsToKeep = _.difference(players, idsOnPage);
+
+    // $("#player-lobby .add").each(function(){
+    //     if(!buttonsToKeep.includes($(this).attr("playerId"))){
+    //         console.log('$(this).attr("playerId")', $(this).attr("playerId"));
+    //         $(this).remove();
+    //         $(`.remove[playerId=${$(this).attr("playerId")}]`).remove();
+    //     }
+    // });
+
+        // if(!$.inArray($(this).attr("playerId"), players)){
+        //     $(`#player-lobby .remove[playerId=${$(this).attr("playerId")}]`).remove();
+        // }
+
     for(let i = 0; i < players.length; i ++){
-        $("#player-lobby").append($(`<button class="add"playerId=${players[i].id}>Select Player ${players[i].id}</button>`));
-        $("#player-lobby").append($(`<button class="remove" playerId=${players[i].id}>Delete Player ${players[i].id}</button></br>`));
+        if(!$(`#player-lobby .add[playerId=${players[i]}]`).length){
+            $("#player-lobby").append($(`<button class="add" playerId=${players[i]}>Select Player ${players[i]}</button>`));
+            $("#player-lobby").append($(`<button class="remove" playerId=${players[i]}>Delete Player ${players[i]}</button>`));
+        }
     }
 };  
 
