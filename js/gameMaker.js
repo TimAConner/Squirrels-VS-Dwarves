@@ -7,7 +7,28 @@ const g = require("./game");
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     let spawnPoint = tiles.find(x => x.teamBase === teamId); 
     let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
-    model.addNewPlayer(newPlayerId, teamId, spawnPoint.pos.x*spawnPoint.size.w, spawnPoint.pos.y*spawnPoint.size.h);  
+
+    let player = {
+        "id": newPlayerId,
+        "team": teamId,
+        "pos": {
+            "x": spawnPoint.pos.x*spawnPoint.size.w,
+            "y": spawnPoint.pos.y*spawnPoint.size.h,
+            "z": 0,
+            "requestId": 0
+        },
+        "size": {
+            "w": 20,
+            "h": 20
+        },
+        "dir": "up",
+        "health": {
+            "points": 100,
+            "requestId": 0
+        }
+    };
+
+    model.addNewPlayer(player);  
     g.playerId = newPlayerId;
 };
 

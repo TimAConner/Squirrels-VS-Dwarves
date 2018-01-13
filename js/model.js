@@ -150,28 +150,7 @@ module.exports.saveGameState = (state) => {
     });
 };
 
-module.exports.addNewPlayer = (id, team, x, y) => {
-    console.log(x, y);
-    let player = {
-        "id": `${id}`,
-        "team": team,
-        "pos": {
-            "x": x,
-            "y": y,
-            "z": '0'
-        },
-        "size": {
-            "w": 20,
-            "h": 20
-        },
-        "requestId": "1515101455241-1",
-        "dir": "up",
-        "health": {
-            "points": 100,
-            "requestId": "asdlkfj"
-        }
-    };
-
+module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
     JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/players/players/.json`);
