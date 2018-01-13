@@ -15,7 +15,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "x": spawnPoint.pos.x*spawnPoint.size.w,
             "y": spawnPoint.pos.y*spawnPoint.size.h,
             "z": 0,
-            "requestId": 0
+            "requestId": "0--0"
         },
         "size": {
             "w": 20,
@@ -24,7 +24,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
         "dir": "up",
         "health": {
             "points": 100,
-            "requestId": 0
+            "requestId": "0--0"
         }
     };
 

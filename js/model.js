@@ -113,8 +113,7 @@ module.exports.deletePlayer = (player) => {
 module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify({
-            hard: tile.hard,
-            requestId: tile.requestId
+            hard: tile.hard
         });
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);

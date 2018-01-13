@@ -90,7 +90,7 @@ const canMove = (direction, obj, delta) => {
         tileBottomPoint = tileYPosition + tiles[i].size.h,
         tileTopPoint = tileYPosition;
         
-       if(tiles[i].hard > 0 || tiles[i].hard === -2){ // If it  is still hard or if hardness is -2, unbreakable.
+       if(tiles[i].hard.points > 0 || tiles[i].hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
             if(((objTopPoint > tileTopPoint && objTopPoint < tileBottomPoint) || (objBottomPoint > tileTopPoint && objBottomPoint < tileBottomPoint))){
                 if(direction === "left"){
                     if((((objLeftPoint-increment) < tileRightPoint && (objLeftPoint-increment) > tileLeftPoint))){
@@ -281,6 +281,10 @@ const initiateGameState = () => {
     
 };
 
+const parseRequestId = (requestId) => {
+    let values = requestId.match("(.*)-(-.*)");
+    return values;
+};
 
 // Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
 
@@ -300,15 +304,17 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         // Change existing values
         for(let i = 0; i < newData.length; i++){
 
-            if(typeof valuesToCheck !== "undefined"){ // If no specific value should be proccessed, update the whole object
+            if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
                 if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
                     currentData[i] = newData[i];
                     previousPlayerActions.push(newData[i].requestId);
                 }
-            } else { // If a specific value should be proccesed, update only that one.
+            } else { // If a specific value should be proccesed, update only that one value.
                 for(let j = 0; j < valuesToCheck.length; j++){
-                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){  // If there is a health value
-                        if(!previousPlayerActions.includes(newData[i].health.requestId)){
+                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
+                        let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
+                        let curRequestId = parseRequestId(currentData[i][valuesToCheck[j]].requestId);
+                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId[0] >= curRequestId[0])){ // If this game has not proccessed it and the value is not an old one
                             currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
                         }
                     }
@@ -398,9 +404,9 @@ const update = (delta) => { // new delta parameter
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
-                        if(selectedTile.hard !== -1 && selectedTile.hard !== -2){ // -1 is mined, -2 is unbreakable
-                            tiles[tiles.indexOf(selectedTile)].hard -= 0.01;
-                            addRequestId(tiles[tiles.indexOf(selectedTile)], requestId);
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
+                            tiles[tiles.indexOf(selectedTile)].hard.points -= 0.01;
+                            addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
@@ -496,7 +502,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
     options.player.dir = direction;
 
-    addRequestId(options.player, options.requestId);
+    addRequestId(options.player.pos, options.requestId);
     model.savePlayerPos(options.player);
 };
 
@@ -517,7 +523,7 @@ const mainLoop = (timestamp) => {
         while (delta >= timestep) {
 
             proccessNewData(players, newPlayers, ["health", "pos"]);
-            proccessNewData(tiles, newTiles);
+            proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
             
             update(timestep);
