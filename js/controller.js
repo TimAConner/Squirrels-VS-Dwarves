@@ -282,7 +282,9 @@ const initiateGameState = () => {
 };
 
 
-const proccessNewData = (currentData, newData) => {
+// Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
+
+const proccessNewData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && typeof newData !== "undefined"){
 
         // // Check if there are new values and add
@@ -297,16 +299,25 @@ const proccessNewData = (currentData, newData) => {
 
         // Change existing values
         for(let i = 0; i < newData.length; i++){
-            if(typeof newData[i].health !== "undefined" && !previousPlayerActions.includes(newData[i].health.requestId)){  // If there is a health value
-                if(!previousPlayerActions.includes(newData[i].health.requestId)){
-                    currentData[i].health = newData[i].health;
-                }
-            }
 
-            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                currentData[i] = newData[i];
-                previousPlayerActions.push(newData[i].requestId);
+            if(typeof valuesToCheck !== "undefined"){ // If no specific value should be proccessed, update the whole object
+                if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+                    currentData[i] = newData[i];
+                    previousPlayerActions.push(newData[i].requestId);
+                }
+            } else { // If a specific value should be proccesed, update only that one.
+                for(let j = 0; j < valuesToCheck.length; j++){
+                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){  // If there is a health value
+                        if(!previousPlayerActions.includes(newData[i].health.requestId)){
+                            currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                        }
+                    }
+                }
+
             }
+           
+
+            
         }
         newData = null;
     }
@@ -505,7 +516,7 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers);
+            proccessNewData(players, newPlayers, ["health", "pos"]);
             proccessNewData(tiles, newTiles);
             proccessNewData(gems, newGems);
             
