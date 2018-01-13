@@ -16,7 +16,7 @@ let sightDistance = 3;
 let unknownColor = "black",
 minedColor = "blue",
 rockColor = "brown",
-baseColor = "orange",
+baseColor = "#FFA50080",
 allyColor = "green",
 enemyColor = "red",
 allyGemColor = "yellow",
@@ -138,6 +138,8 @@ const drawTiles = (tiles, players) => {
                     
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
+                        g.ctx.fillStyle = minedColor; 
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                         g.ctx.fillStyle = baseColor;
                         g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                         
@@ -152,6 +154,8 @@ const drawTiles = (tiles, players) => {
                 }
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
+                    g.ctx.fillStyle = minedColor; 
+                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
