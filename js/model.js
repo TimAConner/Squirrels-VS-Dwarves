@@ -42,6 +42,10 @@ module.exports.fetchData = () => {
       //   });
   
   
+
+      // Listening is not the issue.  It is how quicklyi an xhr request is sent.
+
+      
       // Try listening to only one of them.  One listens to tiles one listens to other.
         firebase.database().ref("gameState").on('value', function(snapshot) {
             //   console.log("-------Gem Update");
