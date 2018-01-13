@@ -153,7 +153,7 @@ const drawTiles = (tiles, players) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).xs, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
