@@ -285,7 +285,7 @@ const initiateGameState = () => {
 const proccessNewData = (currentData, newData) => {
     if(newData !== null && typeof newData !== "undefined"){
 
-        // Check if there are new values and add
+        // // Check if there are new values and add
         let curIdList = currentData.map(data => data.id),
         newIdList = newData.map(data => data.id);
 
@@ -302,6 +302,7 @@ const proccessNewData = (currentData, newData) => {
                     currentData[i].health = newData[i].health;
                 }
             }
+
             if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
                 currentData[i] = newData[i];
                 previousPlayerActions.push(newData[i].requestId);
