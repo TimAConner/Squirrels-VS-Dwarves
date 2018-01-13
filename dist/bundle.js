@@ -69,9 +69,6 @@ delta = 0,
 lastFrameTimeMs = 0;
 
 
-const clamp = (number, min, max) => {
-    return number <= min ? min : number >= max ? max : number;
-};
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
@@ -83,8 +80,8 @@ const canMove = (direction, obj, delta) => {
 
     for(let i = 0; i < tiles.length; i++){
 
-        let tileXPosition = (tiles[i].pos.x*tiles[i].size.w),
-        tileYPosition = (tiles[i].pos.y*tiles[i].size.h);
+        let tileXPosition = g.calcTilePos(tiles[i]).x,
+        tileYPosition = g.calcTilePos(tiles[i]).y;
 
         let tileRightPoint = tileXPosition + tiles[i].size.w,
         tileLeftPoint = tileXPosition,
@@ -128,41 +125,7 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-const findTileBelowPlayer = (player) => {
-    
-        let playerX = (player.pos.x+player.size.w/2),
-        playerY = (player.pos.y+player.size.h/2);    
-    
-        let sortedTiles = tiles.slice().sort((a, b) => {
-            let tileAX= a.pos.x*a.size.w,
-            tileAY = a.pos.y*a.size.h;
-            
-            let tileBX= b.pos.x*b.size.w,
-            tileBY = b.pos.y*b.size.h;
-    
-            let tileAXDifference = (player.pos.x) - (tileAX),
-            playerAYDIfference = (player.pos.y) - (tileAY),
-            tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-    
-            let tileBXDifference = (player.pos.x) - (tileBX),
-            playerBYDIfference = (player.pos.y) - (tileBY),
-            tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-            
-            return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-});
 
-    // let tile = tiles.find(t => {
-    //     let tileLeftPoint = t.pos.x*t.size.w,
-    //     tileTopPoint = t.pos.y*t.size.h;
-
-    //     let tileRightPoint = tileLeftPoint + t.size.w,
-    //     tileBottomPoint = tileTopPoint + t.size.h;
-        
-    //     return playerX >= tileLeftPoint && playerX <= tileRightPoint && playerY >= tileTopPoint && playerY <= tileBottomPoint;
-    // });
-
-    return sortedTiles[0];
-};
 
 const findTileInDirection = (player) => {
 
@@ -222,13 +185,7 @@ const calcDistance = (posA,  posB) => {
     return Math.abs(distance); 
 };
 
-// Returns tile position based on their x and y and tilesize
-const calcTilePos = (tile) => {
-    let x = tile.pos.x * g.tileSize,
-    y = tile.pos.y * g.tileSize;
 
-    return {x, y};
-};
 
 const findCloseGem = (player) => {
     let gem = gems.find((gem) => {
@@ -246,8 +203,8 @@ const findCloseGem = (player) => {
 
 const getGemOnTile = (tile) => {
     let gem = gems.find((gem) => {
-        let tileXPosition = (tile.pos.x*tile.size.w),
-        tileYPosition = (tile.pos.y*tile.size.h);
+        let tileXPosition = g.calcTilePos(tile).x,
+        tileYPosition = g.calcTilePos(tile).y;
 
         let tileRightPoint = tileXPosition + tile.size.w,
         tileLeftPoint = tileXPosition,
@@ -389,24 +346,24 @@ const update = (delta) => { // new delta parameter
                     let targetPlayer = null;
 
                     for(let i = 0; i < players.length; i++){
-                        let otherPlayersTile = findTileBelowPlayer(players[i]);
+                        let otherPlayersTile = g.findTileBelowPlayer(player, tiles);
 
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
 
-                        if(calcDistance(calcTilePos(selectedTile), calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile)) <= g.attackDistance){
                             targetPlayer = players[i];
                         }
                     }
                     
                     // If there is a player in the direction within 1, then attack.
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
-                        targetPlayer.health.points -= 0.05;
+                        targetPlayer.health.points -= g.attackStrength;
                         addRequestId(targetPlayer, requestId);
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
-                            tiles[tiles.indexOf(selectedTile)].hard.points -= 0.01;
+                            tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
@@ -415,7 +372,7 @@ const update = (delta) => { // new delta parameter
                 }
                 
             } else if(isKeyOn("s")){
-                let selectedTile = findTileBelowPlayer(player);
+                let selectedTile = g.findTileBelowPlayer(player, tiles);
 
                 if(typeof selectedTile  !== "undefined"){
                     let gemOnTile = findCloseGem(player);
@@ -429,7 +386,7 @@ const update = (delta) => { // new delta parameter
             
             } else if(isKeyOn("d")){
                 // If there is an object in front of you
-                let selectedTile = findTileBelowPlayer(player);
+                let selectedTile = g.findTileBelowPlayer(player, tiles);
                 
                 // If there is a tile that it can be dropped on,
                 if(typeof selectedTile !== "undefined"){
@@ -701,6 +658,8 @@ window.onkeyup = function(event) {
 },{"./game":2,"./gameMaker":3,"./model":6,"./view":7,"jquery":164,"lodash":165}],2:[function(require,module,exports){
 "use strict";
 
+// Holds information that needs to be accessible by multiple modules
+
 module.exports.c = document.getElementById('game-canvas');
 module.exports.ctx = module.exports.c.getContext("2d");
 
@@ -709,9 +668,45 @@ module.exports.ctx.canvas.height = window.innerHeight;
 
 module.exports.tileSize = 25;
 module.exports.attackDistance = 1;
+module.exports.attackStrength = 1;
+module.exports.mineStrength = 0.01;
 
 module.exports.playerId = 0;
 
+
+// Returns tile position based on their x and y and tilesize
+module.exports.calcTilePos = (tile) => {
+    let x = tile.pos.x * module.exports.tileSize,
+    y = tile.pos.y * module.exports.tileSize;
+
+    return {x, y};
+};
+
+module.exports.findTileBelowPlayer = (player, tiles) => {
+
+    let playerX = (player.pos.x+player.size.w/2),
+    playerY = (player.pos.y+player.size.h/2);    
+
+    let sortedTiles = tiles.slice().sort((a, b) => {
+        let tileAX= module.exports.calcTilePos(a).x,
+        tileAY = module.exports.calcTilePos(a).y;
+        
+        let tileBX= module.exports.calcTilePos(b).x,
+        tileBY = module.exports.calcTilePos(b).y;
+
+        let tileAXDifference = (player.pos.x) - (tileAX),
+        playerAYDIfference = (player.pos.y) - (tileAY),
+        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
+
+        let tileBXDifference = (player.pos.x) - (tileBX),
+        playerBYDIfference = (player.pos.y) - (tileBY),
+        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
+        
+        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+    });
+
+    return sortedTiles[0];
+};
 },{}],3:[function(require,module,exports){
 "use strict";
 
@@ -1041,7 +1036,7 @@ let sightDistance = 3;
 let unknownColor = "black",
 minedColor = "blue",
 rockColor = "brown",
-baseColor = "orange",
+baseColor = "#FFA50080",
 allyColor = "green",
 enemyColor = "red",
 allyGemColor = "yellow",
@@ -1089,31 +1084,6 @@ const doesTileExists = (tile, tiles) => {
     return tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
 };
 
-const findTileBelowPlayer = (player, tiles) => {
-    
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
-
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= a.pos.x*a.size.w,
-        tileAY = a.pos.y*a.size.h;
-        
-        let tileBX= b.pos.x*b.size.w,
-        tileBY = b.pos.y*b.size.h;
-
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-    });
-
-    return sortedTiles[0];
-};
 
 // Tile is being check is if within one of other tiles
 const isTileWithinOne = (tile, otherTiles) => {
@@ -1134,11 +1104,11 @@ const drawTiles = (tiles, players) => {
 
     let tilesToBeAddedToDraw = [];
     
-    let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+    let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
 
     for(let i = 0; i < players.length; i++){
         if(players[i].team === thisPlayer.team && players[i].health.points > 0){
-            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+            tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
         }
     }
 
@@ -1179,21 +1149,23 @@ const drawTiles = (tiles, players) => {
             if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
                 if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
+                        g.ctx.fillStyle = minedColor; 
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                         g.ctx.fillStyle = baseColor;
-                        g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                         
                     }
                    
@@ -1202,16 +1174,18 @@ const drawTiles = (tiles, players) => {
                 }
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
+                    g.ctx.fillStyle = minedColor; 
+                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
                 } else {
                     g.ctx.fillStyle = unknownColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
                 }
                 // console.log("b", distance);
@@ -1219,7 +1193,7 @@ const drawTiles = (tiles, players) => {
             
         } else {
             g.ctx.fillStyle = unknownColor;
-            g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+            g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
             
         }   
 
@@ -1247,7 +1221,7 @@ const drawPlayers = (players, playerId, tiles) => {
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
       
-        let playerTile = findTileBelowPlayer(players[i], tiles);
+        let playerTile = g.findTileBelowPlayer(players[i], tiles);
 
         if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
