@@ -67,6 +67,14 @@ let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
+// Returns tile position based on their x and y and tilesize
+const calcTilePos = (tile) => {
+    let x = tile.pos.x * g.tileSize,
+    y = tile.pos.y * g.tileSize;
+
+    return {x, y};
+};
+
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
     objRightPoint = obj.pos.x+obj.size.w,
@@ -77,8 +85,8 @@ const canMove = (direction, obj, delta) => {
 
     for(let i = 0; i < tiles.length; i++){
 
-        let tileXPosition = (tiles[i].pos.x*tiles[i].size.w),
-        tileYPosition = (tiles[i].pos.y*tiles[i].size.h);
+        let tileXPosition = calcTilePos(tiles[i]).x,
+        tileYPosition = calcTilePos(tiles[i]).y;
 
         let tileRightPoint = tileXPosition + tiles[i].size.w,
         tileLeftPoint = tileXPosition,
@@ -216,13 +224,7 @@ const calcDistance = (posA,  posB) => {
     return Math.abs(distance); 
 };
 
-// Returns tile position based on their x and y and tilesize
-const calcTilePos = (tile) => {
-    let x = tile.pos.x * g.tileSize,
-    y = tile.pos.y * g.tileSize;
 
-    return {x, y};
-};
 
 const findCloseGem = (player) => {
     let gem = gems.find((gem) => {
@@ -240,8 +242,8 @@ const findCloseGem = (player) => {
 
 const getGemOnTile = (tile) => {
     let gem = gems.find((gem) => {
-        let tileXPosition = (tile.pos.x*tile.size.w),
-        tileYPosition = (tile.pos.y*tile.size.h);
+        let tileXPosition = calcTilePos(tile).x,
+        tileYPosition = calcTilePos(tile).y;
 
         let tileRightPoint = tileXPosition + tile.size.w,
         tileLeftPoint = tileXPosition,
