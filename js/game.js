@@ -1,5 +1,7 @@
 "use strict";
 
+// Holds information that needs to be accessible by multiple modules
+
 module.exports.c = document.getElementById('game-canvas');
 module.exports.ctx = module.exports.c.getContext("2d");
 
