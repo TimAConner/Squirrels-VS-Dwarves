@@ -124,41 +124,7 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-const findTileBelowPlayer = (player) => {
-    
-        let playerX = (player.pos.x+player.size.w/2),
-        playerY = (player.pos.y+player.size.h/2);    
-    
-        let sortedTiles = tiles.slice().sort((a, b) => {
-            let tileAX= g.calcTilePos(a).x,
-            tileAY = g.calcTilePos(a).y;
-            
-            let tileBX= g.calcTilePos(b).x,
-            tileBY = g.calcTilePos(b).y;
-    
-            let tileAXDifference = (player.pos.x) - (tileAX),
-            playerAYDIfference = (player.pos.y) - (tileAY),
-            tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-    
-            let tileBXDifference = (player.pos.x) - (tileBX),
-            playerBYDIfference = (player.pos.y) - (tileBY),
-            tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-            
-            return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-});
 
-    // let tile = tiles.find(t => {
-    //     let tileLeftPoint = t.pos.x*t.size.w,
-    //     tileTopPoint = t.pos.y*t.size.h;
-
-    //     let tileRightPoint = tileLeftPoint + t.size.w,
-    //     tileBottomPoint = tileTopPoint + t.size.h;
-        
-    //     return playerX >= tileLeftPoint && playerX <= tileRightPoint && playerY >= tileTopPoint && playerY <= tileBottomPoint;
-    // });
-
-    return sortedTiles[0];
-};
 
 const findTileInDirection = (player) => {
 
@@ -379,7 +345,7 @@ const update = (delta) => { // new delta parameter
                     let targetPlayer = null;
 
                     for(let i = 0; i < players.length; i++){
-                        let otherPlayersTile = findTileBelowPlayer(players[i]);
+                        let otherPlayersTile = g.findTileBelowPlayer(player, tiles);
 
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
 
@@ -405,7 +371,7 @@ const update = (delta) => { // new delta parameter
                 }
                 
             } else if(isKeyOn("s")){
-                let selectedTile = findTileBelowPlayer(player);
+                let selectedTile = g.findTileBelowPlayer(player, tiles);
 
                 if(typeof selectedTile  !== "undefined"){
                     let gemOnTile = findCloseGem(player);
@@ -419,7 +385,7 @@ const update = (delta) => { // new delta parameter
             
             } else if(isKeyOn("d")){
                 // If there is an object in front of you
-                let selectedTile = findTileBelowPlayer(player);
+                let selectedTile = g.findTileBelowPlayer(player, tiles);
                 
                 // If there is a tile that it can be dropped on,
                 if(typeof selectedTile !== "undefined"){

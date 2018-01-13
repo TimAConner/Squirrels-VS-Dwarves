@@ -64,31 +64,6 @@ const doesTileExists = (tile, tiles) => {
     return tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
 };
 
-const findTileBelowPlayer = (player, tiles) => {
-    
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
-
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= a.pos.x*a.size.w,
-        tileAY = a.pos.y*a.size.h;
-        
-        let tileBX= b.pos.x*b.size.w,
-        tileBY = b.pos.y*b.size.h;
-
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-    });
-
-    return sortedTiles[0];
-};
 
 // Tile is being check is if within one of other tiles
 const isTileWithinOne = (tile, otherTiles) => {
@@ -109,11 +84,11 @@ const drawTiles = (tiles, players) => {
 
     let tilesToBeAddedToDraw = [];
     
-    let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+    let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
 
     for(let i = 0; i < players.length; i++){
         if(players[i].team === thisPlayer.team && players[i].health.points > 0){
-            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+            tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
         }
     }
 
@@ -222,7 +197,7 @@ const drawPlayers = (players, playerId, tiles) => {
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
       
-        let playerTile = findTileBelowPlayer(players[i], tiles);
+        let playerTile = g.findTileBelowPlayer(players[i], tiles);
 
         if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
