@@ -128,11 +128,11 @@ const findTileBelowPlayer = (player) => {
         playerY = (player.pos.y+player.size.h/2);    
     
         let sortedTiles = tiles.slice().sort((a, b) => {
-            let tileAX= a.pos.x*a.size.w,
-            tileAY = a.pos.y*a.size.h;
+            let tileAX= calcTilePos(a).x,
+            tileAY = calcTilePos(a).y;
             
-            let tileBX= b.pos.x*b.size.w,
-            tileBY = b.pos.y*b.size.h;
+            let tileBX= calcTilePos(b).x,
+            tileBY = calcTilePos(b).y;
     
             let tileAXDifference = (player.pos.x) - (tileAX),
             playerAYDIfference = (player.pos.y) - (tileAY),
