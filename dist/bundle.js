@@ -298,17 +298,14 @@ const proccessNewData = (currentData, newData) => {
 
         // Change existing values
         for(let i = 0; i < newData.length; i++){
-            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-
-                if(typeof newData[i].health !== "undefined"){  // If there is a health value
-                    if(!previousPlayerActions.includes(newData[i].health.requestId)){
-                        currentData[i].health = newData[i].health;
-                    }
-                } else {
-                    currentData[i] = newData[i];
-                    previousPlayerActions.push(newData[i].requestId);
+            if(typeof newData[i].health !== "undefined" && !previousPlayerActions.includes(newData[i].health.requestId)){  // If there is a health value
+                if(!previousPlayerActions.includes(newData[i].health.requestId)){
+                    currentData[i].health = newData[i].health;
                 }
-                
+            }
+            if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
+                currentData[i] = newData[i];
+                previousPlayerActions.push(newData[i].requestId);
             }
         }
         newData = null;
