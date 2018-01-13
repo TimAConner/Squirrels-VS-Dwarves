@@ -138,7 +138,7 @@ const findTileInDirection = (player) => {
 
     // console.log(tile.pos.x, " ", tile.pos.y);
 
-    let direction = player.dir;
+    let direction = player.pos.dir;
 
     // Find tile based on middle of player.
 
@@ -346,18 +346,21 @@ const update = (delta) => { // new delta parameter
 
                     for(let i = 0; i < players.length; i++){
                         let otherPlayersTile = g.findTileBelowPlayer(player, tiles);
-
+                        console.log(otherPlayersTile);
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
-
-                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                        console.log('calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))', calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile)));
+                        console.log('g.attackDistance', g.attackDistance);
+                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize <= g.attackDistance){
                             targetPlayer = players[i];
                         }
                     }
                     
                     // If there is a player in the direction within 1, then attack.
+                    console.log(targetPlayer);
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
                         targetPlayer.health.points -= g.attackStrength;
-                        addRequestId(targetPlayer, requestId);
+                        addRequestId(targetPlayer.health, requestId);
+                        console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
@@ -417,27 +420,27 @@ const update = (delta) => { // new delta parameter
             
             if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if(isKeyOn("ArrowUp") && player.dir !== "up"){
+            } else if(isKeyOn("ArrowUp") && player.pos.dir !== "up"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if (isKeyOn("ArrowDown") && canMove("down", player, delta)){
 
                 updatePlayerState("down", "y", playerUpdateObject);
 
-            } else if(isKeyOn("ArrowDown") && player.dir !== "down"){
+            } else if(isKeyOn("ArrowDown") && player.pos.dir !== "down"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
                 updatePlayerState("left", "x", playerUpdateObject);
 
-            } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
+            } else if(isKeyOn("ArrowLeft") && player.pos.dir !== "left"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("left", "x", playerUpdateObject);
             } else if(isKeyOn("ArrowRight") && canMove("right", player, delta)){
 
                 updatePlayerState("right", "x", playerUpdateObject);
             
-            } else if(isKeyOn("ArrowRight") && player.dir !== "right"){
+            } else if(isKeyOn("ArrowRight") && player.pos.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
             }
@@ -457,7 +460,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
-    options.player.dir = direction;
+    options.player.pos.dir = direction;
 
     addRequestId(options.player.pos, options.requestId);
     model.savePlayerPos(options.player);
