@@ -285,6 +285,18 @@ const initiateGameState = () => {
 
 const proccessNewData = (currentData, newData) => {
     if(newData !== null && typeof newData !== "undefined"){
+
+        // Check if there are new values and add
+        let curIdList = currentData.map(data => data.id),
+        newIdList = newData.map(data => data.id);
+
+        let distinctValues =  _.difference(newIdList, curIdList);
+
+        for(let i = 0; i < distinctValues.length; i++){
+            currentData.push(newData.find(data => data.id === distinctValues[i])); // jshint ignore:line
+        }
+
+        // Change existing values
         for(let i = 0; i < newData.length; i++){
             if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
 
@@ -372,7 +384,7 @@ const update = (delta) => { // new delta parameter
                     }
                     
                     // If there is a player in the direction within 1, then attack.
-                    if(targetPlayer !== null){
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
                         targetPlayer.health.points -= 10;
                         addRequestId(targetPlayer, requestId);
                         model.savePlayerHealth(targetPlayer); 
@@ -511,9 +523,12 @@ const mainLoop = (timestamp) => {
         view.viewMainMenu();
 
         if($(".add").length === 0){
-            view.createPlayerButton(players);
-        } else if($("#player-lobby .add").length !== newPlayers.length && newPlayers.length !== 0){
-            view.createPlayerButton(newPlayers);
+            let playerIds = players.map(x => x.id);
+            view.createPlayerButton(playerIds);
+        } 
+        else if($("#player-lobby .add").length !== newPlayers.length){
+            let playerIds = newPlayers.map(x => x.id);
+            view.createPlayerButton(playerIds);
         }
     }  
 
@@ -586,7 +601,8 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
-        
+        if(e.detail !== null){
+            
         // Filter the results, because firebase will return empty values if there are gaps in the array.
         let filteredPlayers = Object.keys(e.detail.players).map(key => {
             let player = e.detail.players[key];
@@ -595,8 +611,7 @@ const activateServerListener = () => {
         });
 
         // console.log("player", e.detail);
-        if(e.detail !== null){
-            
+          
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
                 console.log(players);
@@ -997,6 +1012,7 @@ module.exports.saveNewMap = (data) => {
 
 const g = require("./game");
 const $ = require("jquery");
+const _ = require("lodash");
 
 
 // Number of squares that can be seen around player
@@ -1299,10 +1315,31 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
 
 module.exports.createPlayerButton = (players) => {
-    $("#player-lobby").empty();
+    
+
+    // let idsOnPage = $.map($("#player-lobby .add"), function(li) {
+    //     return $("#player-lobby .add").attr("playerId");
+    // });
+
+    // let  buttonsToKeep = _.difference(players, idsOnPage);
+
+    // $("#player-lobby .add").each(function(){
+    //     if(!buttonsToKeep.includes($(this).attr("playerId"))){
+    //         console.log('$(this).attr("playerId")', $(this).attr("playerId"));
+    //         $(this).remove();
+    //         $(`.remove[playerId=${$(this).attr("playerId")}]`).remove();
+    //     }
+    // });
+
+        // if(!$.inArray($(this).attr("playerId"), players)){
+        //     $(`#player-lobby .remove[playerId=${$(this).attr("playerId")}]`).remove();
+        // }
+
     for(let i = 0; i < players.length; i ++){
-        $("#player-lobby").append($(`<button class="add"playerId=${players[i].id}>Select Player ${players[i].id}</button>`));
-        $("#player-lobby").append($(`<button class="remove" playerId=${players[i].id}>Delete Player ${players[i].id}</button></br>`));
+        if(!$(`#player-lobby .add[playerId=${players[i]}]`).length){
+            $("#player-lobby").append($(`<button class="add" playerId=${players[i]}>Select Player ${players[i]}</button>`));
+            $("#player-lobby").append($(`<button class="remove" playerId=${players[i]}>Delete Player ${players[i]}</button>`));
+        }
     }
 };  
 
@@ -1347,7 +1384,7 @@ const hideAllMenus = () => {
     document.getElementById("game-screen").classList.add("hide");
     document.getElementById("loading-screen").classList.add("hide");
 };
-},{"./game":2,"jquery":164}],8:[function(require,module,exports){
+},{"./game":2,"jquery":164,"lodash":165}],8:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
