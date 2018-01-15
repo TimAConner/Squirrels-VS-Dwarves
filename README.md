@@ -6,9 +6,9 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [x] Restrict movement to map
 - [x] Streamline adding a player and starting game as player
 - [x] Ability to kill enemey
-- [ ] Player lobby
+- [x] Player lobby
 - [x] Smaller Modules / Refactor code
-- [x] See vision around allys
+- [x] See vision around ally
     - [x] Only see enemy player if can see their tile.
 - [ ] Squirrel & Nut image
 - [ ] See direction player is facing
