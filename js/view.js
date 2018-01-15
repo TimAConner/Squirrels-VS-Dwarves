@@ -56,24 +56,12 @@ module.exports.setPlayers = (x) => {
 let app = angular.module("myApp", []);
 
 app.controller("myCtrl", ['$scope', function($scope) {
-    $scope.players = players;
-    console.log('players', players);
-
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
-        // // console.log("hey");
-        // console.log('players', players);
-        // console.log('typeof players', typeof players);
-        // // players = ["hey"];
-        // console.log('isArray', Array.isArray(players));
         $scope.$apply(function(){
             $scope.players = Object.keys(e.detail.players);
         });
     });
 }]);
-
-setTimeout(function(){module.exports.setPlayers(['here']); console.log("here");}, 3000);
-
-
 
 // Set by draw()
 let thisPlayer;

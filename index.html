@@ -33,8 +33,8 @@
                 <div ng-app="myApp" ng-controller="myCtrl">
                     <ul ng-repeat="x in players" >
                         <li>
-                            <button ng-bind="x" class="add" playerId={{x}}>Select Player {{x}}</button>
-                            <button ng-bind="x" class="remove" playerId={{x}}>Delete Player {{x}}</button>
+                            <button class="add" playerId={{x}}>Select Player {{x}}</button>
+                            <button  class="remove" playerId={{x}}>Delete Player {{x}}</button>
                         </li>
                     </ul>
                 </div>
