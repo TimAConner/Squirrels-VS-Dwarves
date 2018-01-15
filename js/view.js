@@ -7,7 +7,7 @@
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
-
+const angular = require("angular");
 
 // Number of squares that can be seen around player
 let sightDistance = 3;
@@ -43,6 +43,35 @@ let tilesToDraw = [];
 
 let gemImage = new Image();
 gemImage.src = "./img/gems.png";
+
+
+// Angular
+
+let players = ['two'];
+
+module.exports.setPlayers = (x) => {
+    players = x;
+};
+
+let app = angular.module("myApp", []);
+
+app.controller("myCtrl", ['$scope', function($scope) {
+    $scope.players = players;
+    console.log('players', players);
+
+    $("#game-canvas").on("serverUpdatePlayer", (e) => {
+        // // console.log("hey");
+        // console.log('players', players);
+        // console.log('typeof players', typeof players);
+        // // players = ["hey"];
+        // console.log('isArray', Array.isArray(players));
+        $scope.$apply(function(){
+            $scope.players = Object.keys(e.detail.players);
+        });
+    });
+}]);
+
+setTimeout(function(){module.exports.setPlayers(['here']); console.log("here");}, 3000);
 
 
 
@@ -287,34 +316,6 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
 
 
-module.exports.createPlayerButton = (players) => {
-    
-
-    // let idsOnPage = $.map($("#player-lobby .add"), function(li) {
-    //     return $("#player-lobby .add").attr("playerId");
-    // });
-
-    // let  buttonsToKeep = _.difference(players, idsOnPage);
-
-    // $("#player-lobby .add").each(function(){
-    //     if(!buttonsToKeep.includes($(this).attr("playerId"))){
-    //         console.log('$(this).attr("playerId")', $(this).attr("playerId"));
-    //         $(this).remove();
-    //         $(`.remove[playerId=${$(this).attr("playerId")}]`).remove();
-    //     }
-    // });
-
-        // if(!$.inArray($(this).attr("playerId"), players)){
-        //     $(`#player-lobby .remove[playerId=${$(this).attr("playerId")}]`).remove();
-        // }
-
-    for(let i = 0; i < players.length; i ++){
-        if(!$(`#player-lobby .add[playerId=${players[i]}]`).length){
-            $("#player-lobby").append($(`<button class="add" playerId=${players[i]}>Select Player ${players[i]}</button>`));
-            $("#player-lobby").append($(`<button class="remove" playerId=${players[i]}>Delete Player ${players[i]}</button>`));
-        }
-    }
-};  
 
 module.exports.showLoadingScreen = () => {
     hideAllMenus();

@@ -498,12 +498,16 @@ const mainLoop = (timestamp) => {
 
         if($(".add").length === 0){
             let playerIds = players.map(x => x.id);
-            view.createPlayerButton(playerIds);
-        } 
-        else if($("#player-lobby .add").length !== newPlayers.length){
+            // console.log('playerIds', playerIds);
+            view.setPlayers(playerIds);
+        } else {
             let playerIds = newPlayers.map(x => x.id);
-            view.createPlayerButton(playerIds);
+            view.setPlayers(playerIds);
         }
+        // else if($("#player-lobby .add").length !== newPlayers.length){
+            // console.log('newPlayers', newPlayers);
+          
+        // }
     }  
 
     if(waitingForGame === true){  // Load screen
@@ -588,7 +592,7 @@ const activateServerListener = () => {
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                console.log(players);
+                // console.log(players);
                 initialPlayerDraw = false;
             } else {
                 console.log("new data");
