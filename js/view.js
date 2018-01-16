@@ -30,6 +30,9 @@ edgeColor = "gray";
 let dwarfImage = new Image(); 
 dwarfImage.src = './img/dwarf.png'; 
 
+let squirrelImage = new Image(); 
+squirrelImage.src = './img/squirrel.png'; 
+
 let dirtImage = new Image();
 dirtImage.src = "./img/dirt.png";
 
@@ -46,6 +49,9 @@ let tilesToDraw = [];
 
 let gemImage = new Image();
 gemImage.src = "./img/gems.png";
+
+let acornImage = new Image();
+acornImage.src = "./img/acorn.png";
 
 // Angular
 
@@ -238,9 +244,15 @@ const drawPlayers = (players, playerId, tiles) => {
         //     if(players[i].pos.dir === "right"){
         //         g.ctx.rotate(90); // rotate
         //     }
+        if(players[i].team === 1){
+            g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            
+        } else {
+            
             g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
-            g.ctx.stroke();
-
+        }
+            
+        g.ctx.stroke();
             // g.ctx.setTransform(1,0,0,1,0,0); // restore default transform
 
             // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
@@ -254,21 +266,20 @@ const drawPlayers = (players, playerId, tiles) => {
 const drawGems = (gems, players) => {
     for(let i = 0; i < gems.length; i++){
 
-        if(thisPlayer.team === gems[i].team){ // Your team
-            // console.log(gems[i].carrier === -1);
+
+        if(gems[i].team === 1){
             if(gems[i].carrier === -1){ 
                 g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
                 g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
-        } else { // Enemy team
-
+        } else {
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();

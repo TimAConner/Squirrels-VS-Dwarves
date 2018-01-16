@@ -74,8 +74,8 @@ mostRecentRecieved = 0;
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
-    objRightPoint = obj.pos.x+obj.size.w,
-    objBottomPoint = obj.pos.y+obj.size.h,
+    objRightPoint = obj.pos.x+g.playerSize,
+    objBottomPoint = obj.pos.y+g.playerSize,
     objTopPoint = obj.pos.y;
 
     let increment = speedMultiplier*delta;
@@ -145,8 +145,8 @@ const findTileInDirection = (player) => {
 
     // Find tile based on middle of player.
 
-    let tileX = Math.floor((player.pos.x+player.size.w/2) / g.tileSize),
-    tileY = Math.floor((player.pos.y+player.size.h/2) / g.tileSize);
+    let tileX = Math.floor((player.pos.x+g.playerSize/2) / g.tileSize),
+    tileY = Math.floor((player.pos.y+g.playerSize/2) / g.tileSize);
 
     // console.log(tileX, tileY);
     if(direction === "up"){
@@ -247,7 +247,6 @@ const parseRequestId = (requestId) => {
 };
 
 const calculateLag = (miliseconds) => {
-    console.log(miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }

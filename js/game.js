@@ -8,8 +8,8 @@ module.exports.ctx = module.exports.c.getContext("2d");
 module.exports.ctx.canvas.width  = window.innerWidth;
 module.exports.ctx.canvas.height = window.innerHeight;
 
-module.exports.tileSize = 25;
-module.exports.playerSize = 20;
+module.exports.tileSize = 30;
+module.exports.playerSize = 25;
 module.exports.attackDistance = 1;
 module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
@@ -28,8 +28,8 @@ module.exports.calcTilePos = (tile) => {
 
 module.exports.findTileBelowPlayer = (player, tiles) => {
 
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
+    let playerX = (player.pos.x+module.exports.playerSize/2),
+    playerY = (player.pos.y+module.exports.playerSize/2);    
 
     let sortedTiles = tiles.slice().sort((a, b) => {
         let tileAX= module.exports.calcTilePos(a).x,
