@@ -23,7 +23,7 @@ const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
-let onlineGameState = 1;
+let onlineGameState = null;
 let localGameState = 0;
 let waitingForGame = false;
 
@@ -244,26 +244,26 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-// Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
-
 const proccessNewData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && typeof newData !== "undefined"){
 
-        // // Check if there are new values and add
+        // Create an array of new and olds ids
         let curIdList = currentData.map(data => data.id),
         newIdList = newData.map(data => data.id);
 
-        // Remove values not present
-        // for(let i = 0; i < curIdList.length; i ++){
-        //     if(!newIdList.includes(curIdList[i])){
-        //         curIdList.splice(curIdList.indexOf(curIdList[i]), 1);
-        //     }
-        // }
+        if(newIdList.length !== 0){
+            let addedValues =  _.difference(newIdList, curIdList),
+            deletedValues =  _.difference(curIdList, newIdList);
+            
+            // Remove values not present
+            for(let i = 0; i < deletedValues.length; i ++){
+                currentData.splice(curIdList.indexOf(deletedValues[i]), 1);
+            }
 
-        let distinctValues =  _.difference(newIdList, curIdList);
-
-        for(let i = 0; i < distinctValues.length; i++){
-            currentData.push(newData.find(data => data.id === distinctValues[i])); // jshint ignore:line
+            // Add values present
+            for(let i = 0; i < addedValues.length; i++){
+                currentData.push(newData.find(data => data.id === addedValues[i])); // jshint ignore:line
+            }
         }
 
         // Change existing values
@@ -271,24 +271,26 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
 
             if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
                 if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                    currentData[i] = newData[i];
-                    previousPlayerActions.push(newData[i].requestId);
+                    let newRequestId = parseRequestId(newData[i].requestId);
+                    let curRequestId = parseRequestId(currentData[i].requestId);
+                    // If the new values also have a newer timestamp
+                    if((newRequestId[0] >= curRequestId[0])){
+                        currentData[i] = newData[i];
+                        previousPlayerActions.push(newData[i].requestId);
+                    }
                 }
-            } else { // If a specific value should be proccesed, update only that one value.
+            } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
                         let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
                         let curRequestId = parseRequestId(currentData[i][valuesToCheck[j]].requestId);
+
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId[0] >= curRequestId[0])){ // If this game has not proccessed it and the value is not an old one
                             currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
                         }
                     }
                 }
-
             }
-           
-
-            
         }
         newData = null;
     }
@@ -364,7 +366,7 @@ const update = (delta) => { // new delta parameter
                     }
                     
                     // If there is a player in the direction within 1, then attack.
-                    console.log(targetPlayer);
+                    
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
                         targetPlayer.health.points -= g.attackStrength;
                         addRequestId(targetPlayer.health, requestId);
@@ -478,8 +480,10 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 
 const mainLoop = (timestamp) => {
-    
-    if (onlineGameState === 2 && localGameState === 1){ // Winner
+
+    if(onlineGameState === null){ // Page is loading
+        view.showLoadingScreen();
+    } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
         view.viewGame();
@@ -560,7 +564,7 @@ const activateButtons = () => {
     document.getElementById("main-menu-new").addEventListener("click", () => {
         gameMaker.newGame();
     });
-    $("#player-lobby").on("click", ".add", function(){
+    $("#player-lobby").on("click", ".select", function(){
         g.playerId = $(this).attr("playerId");
         startPlay();
     });
@@ -635,6 +639,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
+        console.log("loaded");
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
@@ -916,7 +921,6 @@ module.exports.fetchData = () => {
           //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
-            console.log("new player data");
         });
         firebase.database().ref("gems").on('value', function(snapshot) {
         //   console.log("Update");
@@ -1212,19 +1216,21 @@ const drawTiles = (tiles, players) => {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
-                } else {
-                    g.ctx.fillStyle = unknownColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                } 
+                // else {
+                //     g.ctx.fillStyle = unknownColor;
+                //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
-                }
+                // }
                 // console.log("b", distance);
             }   
             
-        } else {
-            g.ctx.fillStyle = unknownColor;
-            g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+        } 
+        // else {
+        //     g.ctx.fillStyle = unknownColor;
+        //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
             
-        }   
+        // }   
 
        
         g.ctx.stroke();
@@ -1338,45 +1344,36 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
 
 module.exports.showLoadingScreen = () => {
-    hideAllMenus();
-    
-    document.getElementById("loading-screen").classList.remove("hide");
+    showScreen("#loading-screen");
 };
 
 module.exports.viewMainMenu = () => {
-    hideAllMenus();
-    
-
-    document.getElementById("main-menu-screen").classList.remove("hide");
+    showScreen("#main-menu-screen");
 };
 
-
-
-// module.exports.viewSelectPlayerScreen = () => {
-//     hideAllMenus();
-
-//     document.getElementById("select-player-screen").classList.remove("hide");
-// };
-
 module.exports.viewWinnerScreen =  (winnerId) => {
-    hideAllMenus();
-
-    document.getElementById("victory-screen").classList.remove("hide");
-    document.getElementById("winner").textContent = winnerId;
+    showScreen("#victory-screen");
+    $("#winner").text(winnerId);
 };  
 
 module.exports.viewGame = () => {
-    hideAllMenus();
-
-    $("#game-screen").removeClass("hide");
+    showScreen("#game-screen");
 };
 
-const hideAllMenus = () => {
+const showScreen = (screen) => {
 
-    document.getElementById("victory-screen").classList.add("hide");
-    document.getElementById("main-menu-screen").classList.add("hide");
-    document.getElementById("game-screen").classList.add("hide");
-    document.getElementById("loading-screen").classList.add("hide");
+    let allScreens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+
+    for(let i = 0; i < allScreens.length; i++){
+        if(allScreens[i] !== screen){
+            if(!$(allScreens[i]).hasClass("hide")){
+                $(allScreens[i]).addClass("hide");
+            }
+        }
+    }
+    if($(screen).hasClass("hide")){
+        $(screen).removeClass("hide");
+    }
 };
 },{"./game":2,"angular":159,"jquery":166,"lodash":167}],8:[function(require,module,exports){
 "use strict";
