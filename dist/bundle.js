@@ -86,9 +86,9 @@ const canMove = (direction, obj, delta) => {
         let tileXPosition = g.calcTilePos(tiles[i]).x,
         tileYPosition = g.calcTilePos(tiles[i]).y;
 
-        let tileRightPoint = tileXPosition + tiles[i].size.w,
+        let tileRightPoint = tileXPosition + g.tileSize,
         tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + tiles[i].size.h,
+        tileBottomPoint = tileYPosition + g.tileSize,
         tileTopPoint = tileYPosition;
         
        if(tiles[i].hard.points > 0 || tiles[i].hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
@@ -209,9 +209,9 @@ const getGemOnTile = (tile) => {
         let tileXPosition = g.calcTilePos(tile).x,
         tileYPosition = g.calcTilePos(tile).y;
 
-        let tileRightPoint = tileXPosition + tile.size.w,
+        let tileRightPoint = tileXPosition + g.tileSize,
         tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + tile.size.h,
+        tileBottomPoint = tileYPosition + g.tileSize,
         tileTopPoint = tileYPosition;        
 
         // console.log(gem.team, tileLeftPoint, gem.pos.x, tileRightPoint, tileTopPoint, gem.pos.y, tileBottomPoint);
@@ -248,13 +248,14 @@ const parseRequestId = (requestId) => {
 };
 
 const calculateLag = (miliseconds) => {
+    console.log(miliseconds);
     if(miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
-    if(newData !== null && typeof newData !== "undefined"){
+    if(newData !== null && typeof newData !== "undefined" && newData.length !== 0){
 
         // Create an array of new and olds ids
         let curIdList = currentData.map(data => data.id),
@@ -283,10 +284,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    calculateLag(newRequestId); 
+                    // calculateLag(newRequestId); 
                     if(!previousPlayerActions.includes(newData[i].requestId)){
-                        if((newRequestId >= curRequestId)){
-                            currentData[i] = newData[i];
+                        if((newRequestId >= curRequestId)){ 
+                            currentData[i] = Object.assign({}, newData[i]);
                             previousPlayerActions.push(newData[i].requestId);
                         }
                     }
@@ -297,14 +298,13 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
                         calculateLag(newRequestId);
-                        
-                        // console.log(newData[i][valuesToCheck[j]].requestId, currentData[i][valuesToCheck[j]].requestId, newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId  );
+                
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
                             if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
                                 previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
-    
-                                currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                                
+                                currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
                         }   
@@ -313,7 +313,9 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
             }
         }
     }
-    newData = null;
+    
+    // console.log('a newData', newData);
+    // console.log('a currentData', currentData);
 };
 
 // const updateGemPosition = () => {   
@@ -518,6 +520,10 @@ const mainLoop = (timestamp) => {
             proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
             
+            newPlayers = null;
+            newTiles = null;
+            newGems = null;
+
             update(timestep);
 
             delta -= timestep;
@@ -723,6 +729,7 @@ module.exports.ctx.canvas.width  = window.innerWidth;
 module.exports.ctx.canvas.height = window.innerHeight;
 
 module.exports.tileSize = 25;
+module.exports.playerSize = 20;
 module.exports.attackDistance = 1;
 module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
@@ -779,15 +786,15 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
         "id": newPlayerId,
         "team": teamId,
         "pos": {
-            "x": spawnPoint.pos.x*spawnPoint.size.w,
-            "y": spawnPoint.pos.y*spawnPoint.size.h,
+            "x": spawnPoint.pos.x*g.tileSize,
+            "y": spawnPoint.pos.y*g.tileSize,
             "z": 0,
             "requestId": "0--0",
             "dir": "up"
         },
         "size": {
-            "w": 20,
-            "h": 20
+            "w": g.playerSize,
+            "h": g.playerSize
         },
         
         "health": {
@@ -809,12 +816,8 @@ module.exports.newGame = () => {
     let newGems = [
         {
             "pos": {
-                "x": teamBaseZero.pos.x*teamBaseZero.size.w,
-                "y": teamBaseZero.pos.y*teamBaseZero.size.h
-            },
-            "size": {
-                "h": 25,
-                "w": 25
+                "x": teamBaseZero.pos.x*g.tileSize,
+                "y": teamBaseZero.pos.y*g.tileSize
             },
             "carrier": -1,
             "team": 0,
@@ -823,12 +826,8 @@ module.exports.newGame = () => {
         },
         {
             "pos": {
-                "x": teamBaseOne.pos.x*teamBaseOne.size.w,
-                "y": teamBaseOne.pos.y*teamBaseOne.size.h
-            },
-            "size": {
-                "h": 25,
-                "w": 25
+                "x": teamBaseOne.pos.x*g.tileSize,
+                "y": teamBaseOne.pos.y*g.tileSize
             },
             "carrier": -1,
             "team": 1,
@@ -850,6 +849,8 @@ controller.startGame();
 },{"./controller":1}],5:[function(require,module,exports){
   "use strict";
 
+  const g = require("./game");
+
   module.exports.generateTiles = (w, h) => {
     let tiles = [];
         let id = 0;
@@ -861,10 +862,6 @@ controller.startGame();
                         "x": x,
                         "y": y,
                         "z": 0
-                    },
-                    "size": {
-                        "w": 25,
-                        "h": 25
                     },
                     "hard": {
                         "points": 1,
@@ -895,7 +892,7 @@ controller.startGame();
   };
 
  
-},{}],6:[function(require,module,exports){
+},{"./game":2}],6:[function(require,module,exports){
 "use strict";
 
 let firebase = require('firebase');
@@ -1227,23 +1224,23 @@ const drawTiles = (tiles, players) => {
             if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
                 if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
-                        g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     }
                    
@@ -1253,18 +1250,18 @@ const drawTiles = (tiles, players) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 } 
                 // else {
                 //     g.ctx.fillStyle = unknownColor;
-                //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 // }
                 // console.log("b", distance);
@@ -1273,7 +1270,7 @@ const drawTiles = (tiles, players) => {
         } 
         // else {
         //     g.ctx.fillStyle = unknownColor;
-        //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+        //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
             
         // }   
 
@@ -1306,36 +1303,19 @@ const drawPlayers = (players, playerId, tiles) => {
         if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
             
-            // g.ctx.save();
 
-            // // if(players[i].dir === "right"){
-            //     // g.ctx.rotate(1);
-            // // }
-
-            // // if(players[i].dir === "left"){
-            //     g.ctx.rotate(10*Math.PI/180);
-            // // }
-            // // if(players[i].dir === "up"){
-            // //     g.ctx.rotate(0*Math.PI/180);
-            // // }
-            
-
-
-            // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
-
+        //    g.ctx.setTransform(1,0,0,1,players[i].pos.x,players[i].pos.y); // set position of image center
            
-            // if(players[i].team === thisPlayer.team){
-            //     g.ctx.fillStyle = allyColor; 
-            // } else {
-            //     g.ctx.fillStyle  = enemyColor;
-            // }
-            
-            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
-            
-            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+        //     if(players[i].pos.dir === "right"){
+        //         g.ctx.rotate(90); // rotate
+        //     }
+            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             g.ctx.stroke();
 
-            // g.ctx.restore();
+            // g.ctx.setTransform(1,0,0,1,0,0); // restore default transform
+
+            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+            
         }
         
         // g.ctx.rotate(-playerDirection * Math.PI / 180);
@@ -1348,18 +1328,18 @@ const drawGems = (gems, players) => {
         if(thisPlayer.team === gems[i].team){ // Your team
             // console.log(gems[i].carrier === -1);
             if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         } else { // Enemy team
 
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();
