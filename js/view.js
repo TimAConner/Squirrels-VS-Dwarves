@@ -304,7 +304,7 @@ const drawHealth = (health) => {
 };
 
 const drawLag = (lag) => {
-    $("#lag").text("Lag: " + lag.toString().slice(0, 4));
+    $("#lag").text("Lag (miliseconds): " + lag);
 };
 
 module.exports.draw = (playerId, tiles, players, gems, lag) => {

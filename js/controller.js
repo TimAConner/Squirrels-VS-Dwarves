@@ -306,7 +306,7 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                                 currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
-                        }
+                        }   
                     }
                 }
             }
