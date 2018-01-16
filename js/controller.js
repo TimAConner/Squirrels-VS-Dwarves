@@ -245,32 +245,26 @@ const parseRequestId = (requestId) => {
 
 // Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
 
-const proccessNewData = (currentData, newData, valuesToCheck, deleteRemovedValues = false) => {
+const proccessNewData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && typeof newData !== "undefined"){
 
         // Create an array of new and olds ids
         let curIdList = currentData.map(data => data.id),
         newIdList = newData.map(data => data.id);
 
-        let distinctValues =  _.difference( newIdList, curIdList);
-        
-        if(distinctValues.length !== 0){
-            console.log('distinctValues', distinctValues);
-        }
-        
-
-        // Remove values not present
-        if(deleteRemovedValues === true){
-            for(let i = 0; i < curIdList.length; i ++){
-                if(!newIdList.includes(curIdList[i])){
-                    currentData.splice(curIdList.indexOf(curIdList[i]), 1);
-                }
+        if(newIdList.length !== 0){
+            let addedValues =  _.difference( newIdList, curIdList),
+            deletedValues =  _.difference( curIdList, newIdList);
+            
+            // Remove values not present
+            for(let i = 0; i < deletedValues.length; i ++){
+                currentData.splice(curIdList.indexOf(deletedValues[i]), 1);
             }
-        }
 
-        // Add values present
-        for(let i = 0; i < distinctValues.length; i++){
-            currentData.push(newData.find(data => data.id === distinctValues[i])); // jshint ignore:line
+            // Add values present
+            for(let i = 0; i < addedValues.length; i++){
+                currentData.push(newData.find(data => data.id === addedValues[i])); // jshint ignore:line
+            }
         }
 
         // Change existing values
@@ -281,7 +275,7 @@ const proccessNewData = (currentData, newData, valuesToCheck, deleteRemovedValue
                     currentData[i] = newData[i];
                     previousPlayerActions.push(newData[i].requestId);
                 }
-            } else { // If a specific value should be proccesed, update only that one value.
+            } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
                         let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
@@ -291,11 +285,7 @@ const proccessNewData = (currentData, newData, valuesToCheck, deleteRemovedValue
                         }
                     }
                 }
-
             }
-           
-
-            
         }
         newData = null;
     }
@@ -497,7 +487,7 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers, ["health", "pos"], true);
+            proccessNewData(players, newPlayers, ["health", "pos"]);
             proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
             
