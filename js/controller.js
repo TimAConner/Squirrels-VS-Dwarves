@@ -380,7 +380,7 @@ const update = (delta) => { // new delta parameter
                     
                     // If there is a player in the direction within 1, then attack.
                     
-                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
                         targetPlayer.health.points -= g.attackStrength;
                         addRequestId(targetPlayer.health, requestId);
                         // console.log(targetPlayer.health);
