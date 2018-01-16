@@ -11,3 +11,16 @@
 canvas {
     background-color: black;
 }
+
+#loading-screen h3 {
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
