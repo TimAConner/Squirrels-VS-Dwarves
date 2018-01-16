@@ -245,15 +245,30 @@ const parseRequestId = (requestId) => {
 
 // Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
 
-const proccessNewData = (currentData, newData, valuesToCheck) => {
+const proccessNewData = (currentData, newData, valuesToCheck, deleteRemovedValues = false) => {
     if(newData !== null && typeof newData !== "undefined"){
 
-        // // Check if there are new values and add
+        // Create an array of new and olds ids
         let curIdList = currentData.map(data => data.id),
         newIdList = newData.map(data => data.id);
 
-        let distinctValues =  _.difference(newIdList, curIdList);
+        let distinctValues =  _.difference( newIdList, curIdList);
+        
+        if(distinctValues.length !== 0){
+            console.log('distinctValues', distinctValues);
+        }
+        
 
+        // Remove values not present
+        if(deleteRemovedValues === true){
+            for(let i = 0; i < curIdList.length; i ++){
+                if(!newIdList.includes(curIdList[i])){
+                    currentData.splice(curIdList.indexOf(curIdList[i]), 1);
+                }
+            }
+        }
+
+        // Add values present
         for(let i = 0; i < distinctValues.length; i++){
             currentData.push(newData.find(data => data.id === distinctValues[i])); // jshint ignore:line
         }
@@ -470,7 +485,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 
 const mainLoop = (timestamp) => {
-    
+
     if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
@@ -482,7 +497,7 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers, ["health", "pos"]);
+            proccessNewData(players, newPlayers, ["health", "pos"], true);
             proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
             
@@ -501,7 +516,7 @@ const mainLoop = (timestamp) => {
             // console.log('playerIds', playerIds);
             view.setPlayers(playerIds);
         } else {
-            let playerIds = newPlayers.map(x => x.id);
+            let playerIds = players.map(x => x.id);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
@@ -552,7 +567,7 @@ const activateButtons = () => {
     document.getElementById("main-menu-new").addEventListener("click", () => {
         gameMaker.newGame();
     });
-    $("#player-lobby").on("click", ".add", function(){
+    $("#player-lobby").on("click", ".select", function(){
         g.playerId = $(this).attr("playerId");
         startPlay();
     });
