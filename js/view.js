@@ -4,6 +4,9 @@
 //     console.log(tiles);
 // };
 
+
+let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
@@ -326,12 +329,11 @@ module.exports.viewGame = () => {
 
 const showScreen = (screen) => {
 
-    let allScreens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
 
-    for(let i = 0; i < allScreens.length; i++){
-        if(allScreens[i] !== screen){
-            if(!$(allScreens[i]).hasClass("hide")){
-                $(allScreens[i]).addClass("hide");
+    for(let i = 0; i < screens.length; i++){
+        if(screens[i] !== screen){
+            if(!$(screens[i]).hasClass("hide")){
+                $(screens[i]).addClass("hide");
             }
         }
     }
