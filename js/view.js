@@ -180,19 +180,21 @@ const drawTiles = (tiles, players) => {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
-                } else {
-                    g.ctx.fillStyle = unknownColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+                } 
+                // else {
+                //     g.ctx.fillStyle = unknownColor;
+                //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
                     
-                }
+                // }
                 // console.log("b", distance);
             }   
             
-        } else {
-            g.ctx.fillStyle = unknownColor;
-            g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
+        } 
+        // else {
+        //     g.ctx.fillStyle = unknownColor;
+        //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, tiles[i].size.w,  tiles[i].size.h);
             
-        }   
+        // }   
 
        
         g.ctx.stroke();
