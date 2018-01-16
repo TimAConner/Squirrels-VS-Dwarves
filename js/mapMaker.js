@@ -1,5 +1,7 @@
   "use strict";
 
+  const g = require("./game");
+
   module.exports.generateTiles = (w, h) => {
     let tiles = [];
         let id = 0;
@@ -11,10 +13,6 @@
                         "x": x,
                         "y": y,
                         "z": 0
-                    },
-                    "size": {
-                        "w": 25,
-                        "h": 25
                     },
                     "hard": {
                         "points": 1,

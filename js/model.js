@@ -77,8 +77,7 @@ module.exports.fetchData = () => {
 module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify({
-            "pos": player.pos,
-            "requestId": player.requestId
+            "pos": player.pos
         });
         let JSONRequest = new XMLHttpRequest();
         // console.log("save player");
@@ -90,10 +89,7 @@ module.exports.savePlayerPos = (player) => {
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify({
-            "health": {
-                "points": player.health.points,
-                "requestId": player.requestId
-            }
+            "health": player.health
         });
         let JSONRequest = new XMLHttpRequest();
         JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);

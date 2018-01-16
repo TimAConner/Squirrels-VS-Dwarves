@@ -4,10 +4,13 @@
 //     console.log(tiles);
 // };
 
+
+let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
-
+const angular = require("angular");
 
 // Number of squares that can be seen around player
 let sightDistance = 3;
@@ -16,7 +19,7 @@ let sightDistance = 3;
 let unknownColor = "black",
 minedColor = "blue",
 rockColor = "brown",
-baseColor = "orange",
+baseColor = "#FFA50080",
 allyColor = "green",
 enemyColor = "red",
 allyGemColor = "yellow",
@@ -44,7 +47,28 @@ let tilesToDraw = [];
 let gemImage = new Image();
 gemImage.src = "./img/gems.png";
 
+// Angular
 
+let players = ['two'];
+
+module.exports.setPlayers = (x) => {
+    players = x;
+};
+
+let app = angular.module("myApp", []);
+
+app.controller("myCtrl", ['$scope', function($scope) {
+    $("#game-canvas").on("serverUpdatePlayer", (e) => {
+        $scope.$apply(function(){
+            if(e.detail!== null){
+                $scope.players = Object.keys(e.detail.players);
+            } else {
+                $scope.players = [];
+            }
+            
+        });
+    });
+}]);
 
 // Set by draw()
 let thisPlayer;
@@ -64,31 +88,6 @@ const doesTileExists = (tile, tiles) => {
     return tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
 };
 
-const findTileBelowPlayer = (player, tiles) => {
-    
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
-
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= a.pos.x*a.size.w,
-        tileAY = a.pos.y*a.size.h;
-        
-        let tileBX= b.pos.x*b.size.w,
-        tileBY = b.pos.y*b.size.h;
-
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-    });
-
-    return sortedTiles[0];
-};
 
 // Tile is being check is if within one of other tiles
 const isTileWithinOne = (tile, otherTiles) => {
@@ -109,11 +108,11 @@ const drawTiles = (tiles, players) => {
 
     let tilesToBeAddedToDraw = [];
     
-    let playerTile = findTileBelowPlayer(thisPlayer, tiles);
+    let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
 
     for(let i = 0; i < players.length; i++){
         if(players[i].team === thisPlayer.team && players[i].health.points > 0){
-            tilesToDraw.push(findTileBelowPlayer(players[i], tiles));
+            tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
         }
     }
 
@@ -154,21 +153,23 @@ const drawTiles = (tiles, players) => {
             if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
                 if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage( stoneImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
+                        g.ctx.fillStyle = minedColor; 
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
-                        g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     }
                    
@@ -177,26 +178,30 @@ const drawTiles = (tiles, players) => {
                 }
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
+                    g.ctx.fillStyle = minedColor; 
+                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
-                } else {
-                    g.ctx.fillStyle = unknownColor;
-                    g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+                } 
+                // else {
+                //     g.ctx.fillStyle = unknownColor;
+                //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
-                }
+                // }
                 // console.log("b", distance);
             }   
             
-        } else {
-            g.ctx.fillStyle = unknownColor;
-            g.ctx.fillRect(tiles[i].pos.x*tiles[i].size.w, tiles[i].pos.y*tiles[i].size.h, tiles[i].size.w,  tiles[i].size.h);
+        } 
+        // else {
+        //     g.ctx.fillStyle = unknownColor;
+        //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
             
-        }   
+        // }   
 
        
         g.ctx.stroke();
@@ -222,41 +227,24 @@ const drawPlayers = (players, playerId, tiles) => {
         // g.ctx.rotate(playerDirection * Math.PI / 180);
         // console.log("playeri", players[i], thisPlayer);
       
-        let playerTile = findTileBelowPlayer(players[i], tiles);
+        let playerTile = g.findTileBelowPlayer(players[i], tiles);
 
         if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
             // console.log("in here", players[i]);
             
-            // g.ctx.save();
 
-            // // if(players[i].dir === "right"){
-            //     // g.ctx.rotate(1);
-            // // }
-
-            // // if(players[i].dir === "left"){
-            //     g.ctx.rotate(10*Math.PI/180);
-            // // }
-            // // if(players[i].dir === "up"){
-            // //     g.ctx.rotate(0*Math.PI/180);
-            // // }
-            
-
-
-            // Instead of rotating it, will just use a seperate image for each direction that the user is facing.
-
+        //    g.ctx.setTransform(1,0,0,1,players[i].pos.x,players[i].pos.y); // set position of image center
            
-            // if(players[i].team === thisPlayer.team){
-            //     g.ctx.fillStyle = allyColor; 
-            // } else {
-            //     g.ctx.fillStyle  = enemyColor;
-            // }
-            
-            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
-            
-            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+        //     if(players[i].pos.dir === "right"){
+        //         g.ctx.rotate(90); // rotate
+        //     }
+            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             g.ctx.stroke();
 
-            // g.ctx.restore();
+            // g.ctx.setTransform(1,0,0,1,0,0); // restore default transform
+
+            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
+            
         }
         
         // g.ctx.rotate(-playerDirection * Math.PI / 180);
@@ -269,37 +257,44 @@ const drawGems = (gems, players) => {
         if(thisPlayer.team === gems[i].team){ // Your team
             // console.log(gems[i].carrier === -1);
             if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
+                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         } else { // Enemy team
 
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w, gems[i].size.h);
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, gems[i].size.w/2, gems[i].size.h/2);
+                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();
     }
 };
 
+
+
+
 const drawHealth = (health) => {
     if(health > 0){
-        $("#player-health").html(health);
+        $("#player-health").html("Health: " + health);
     } else {
         $("#player-health").html("<p>You are Dead</p>");
     }
 };
 
-module.exports.draw = (playerId, tiles, players, gems) => {
+const drawLag = (lag) => {
+    $("#lag").text("Lag (miliseconds): " + lag);
+};
+
+module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
     drawHealth(thisPlayer.health.points);
-
+    drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
     drawTiles(tiles, players);
     drawPlayers(players, playerId, tiles);
@@ -308,73 +303,35 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
 
 
-module.exports.createPlayerButton = (players) => {
-    
-
-    // let idsOnPage = $.map($("#player-lobby .add"), function(li) {
-    //     return $("#player-lobby .add").attr("playerId");
-    // });
-
-    // let  buttonsToKeep = _.difference(players, idsOnPage);
-
-    // $("#player-lobby .add").each(function(){
-    //     if(!buttonsToKeep.includes($(this).attr("playerId"))){
-    //         console.log('$(this).attr("playerId")', $(this).attr("playerId"));
-    //         $(this).remove();
-    //         $(`.remove[playerId=${$(this).attr("playerId")}]`).remove();
-    //     }
-    // });
-
-        // if(!$.inArray($(this).attr("playerId"), players)){
-        //     $(`#player-lobby .remove[playerId=${$(this).attr("playerId")}]`).remove();
-        // }
-
-    for(let i = 0; i < players.length; i ++){
-        if(!$(`#player-lobby .add[playerId=${players[i]}]`).length){
-            $("#player-lobby").append($(`<button class="add" playerId=${players[i]}>Select Player ${players[i]}</button>`));
-            $("#player-lobby").append($(`<button class="remove" playerId=${players[i]}>Delete Player ${players[i]}</button>`));
-        }
-    }
-};  
 
 module.exports.showLoadingScreen = () => {
-    hideAllMenus();
-    
-    document.getElementById("loading-screen").classList.remove("hide");
+    showScreen("#loading-screen");
 };
 
 module.exports.viewMainMenu = () => {
-    hideAllMenus();
-    
-
-    document.getElementById("main-menu-screen").classList.remove("hide");
+    showScreen("#main-menu-screen");
 };
 
-
-
-// module.exports.viewSelectPlayerScreen = () => {
-//     hideAllMenus();
-
-//     document.getElementById("select-player-screen").classList.remove("hide");
-// };
-
 module.exports.viewWinnerScreen =  (winnerId) => {
-    hideAllMenus();
-
-    document.getElementById("victory-screen").classList.remove("hide");
-    document.getElementById("winner").textContent = winnerId;
+    showScreen("#victory-screen");
+    $("#winner").text(winnerId);
 };  
 
 module.exports.viewGame = () => {
-    hideAllMenus();
-
-    $("#game-screen").removeClass("hide");
+    showScreen("#game-screen");
 };
 
-const hideAllMenus = () => {
+const showScreen = (screen) => {
 
-    document.getElementById("victory-screen").classList.add("hide");
-    document.getElementById("main-menu-screen").classList.add("hide");
-    document.getElementById("game-screen").classList.add("hide");
-    document.getElementById("loading-screen").classList.add("hide");
+
+    for(let i = 0; i < screens.length; i++){
+        if(screens[i] !== screen){
+            if(!$(screens[i]).hasClass("hide")){
+                $(screens[i]).addClass("hide");
+            }
+        }
+    }
+    if($(screen).hasClass("hide")){
+        $(screen).removeClass("hide");
+    }
 };

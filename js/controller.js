@@ -22,7 +22,7 @@ const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
-let onlineGameState = 1;
+let onlineGameState = null;
 let localGameState = 0;
 let waitingForGame = false;
 
@@ -68,9 +68,9 @@ delta = 0,
 lastFrameTimeMs = 0;
 
 
-const clamp = (number, min, max) => {
-    return number <= min ? min : number >= max ? max : number;
-};
+let lag = 0,
+mostRecentRecieved = 0;
+
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
@@ -82,12 +82,12 @@ const canMove = (direction, obj, delta) => {
 
     for(let i = 0; i < tiles.length; i++){
 
-        let tileXPosition = (tiles[i].pos.x*tiles[i].size.w),
-        tileYPosition = (tiles[i].pos.y*tiles[i].size.h);
+        let tileXPosition = g.calcTilePos(tiles[i]).x,
+        tileYPosition = g.calcTilePos(tiles[i]).y;
 
-        let tileRightPoint = tileXPosition + tiles[i].size.w,
+        let tileRightPoint = tileXPosition + g.tileSize,
         tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + tiles[i].size.h,
+        tileBottomPoint = tileYPosition + g.tileSize,
         tileTopPoint = tileYPosition;
         
        if(tiles[i].hard.points > 0 || tiles[i].hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
@@ -127,41 +127,7 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-const findTileBelowPlayer = (player) => {
-    
-        let playerX = (player.pos.x+player.size.w/2),
-        playerY = (player.pos.y+player.size.h/2);    
-    
-        let sortedTiles = tiles.slice().sort((a, b) => {
-            let tileAX= a.pos.x*a.size.w,
-            tileAY = a.pos.y*a.size.h;
-            
-            let tileBX= b.pos.x*b.size.w,
-            tileBY = b.pos.y*b.size.h;
-    
-            let tileAXDifference = (player.pos.x) - (tileAX),
-            playerAYDIfference = (player.pos.y) - (tileAY),
-            tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-    
-            let tileBXDifference = (player.pos.x) - (tileBX),
-            playerBYDIfference = (player.pos.y) - (tileBY),
-            tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-            
-            return Math.abs(tileADistance) - Math.abs(tileBDistance); 
-});
 
-    // let tile = tiles.find(t => {
-    //     let tileLeftPoint = t.pos.x*t.size.w,
-    //     tileTopPoint = t.pos.y*t.size.h;
-
-    //     let tileRightPoint = tileLeftPoint + t.size.w,
-    //     tileBottomPoint = tileTopPoint + t.size.h;
-        
-    //     return playerX >= tileLeftPoint && playerX <= tileRightPoint && playerY >= tileTopPoint && playerY <= tileBottomPoint;
-    // });
-
-    return sortedTiles[0];
-};
 
 const findTileInDirection = (player) => {
 
@@ -175,7 +141,7 @@ const findTileInDirection = (player) => {
 
     // console.log(tile.pos.x, " ", tile.pos.y);
 
-    let direction = player.dir;
+    let direction = player.pos.dir;
 
     // Find tile based on middle of player.
 
@@ -221,13 +187,7 @@ const calcDistance = (posA,  posB) => {
     return Math.abs(distance); 
 };
 
-// Returns tile position based on their x and y and tilesize
-const calcTilePos = (tile) => {
-    let x = tile.pos.x * g.tileSize,
-    y = tile.pos.y * g.tileSize;
 
-    return {x, y};
-};
 
 const findCloseGem = (player) => {
     let gem = gems.find((gem) => {
@@ -245,12 +205,12 @@ const findCloseGem = (player) => {
 
 const getGemOnTile = (tile) => {
     let gem = gems.find((gem) => {
-        let tileXPosition = (tile.pos.x*tile.size.w),
-        tileYPosition = (tile.pos.y*tile.size.h);
+        let tileXPosition = g.calcTilePos(tile).x,
+        tileYPosition = g.calcTilePos(tile).y;
 
-        let tileRightPoint = tileXPosition + tile.size.w,
+        let tileRightPoint = tileXPosition + g.tileSize,
         tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + tile.size.h,
+        tileBottomPoint = tileYPosition + g.tileSize,
         tileTopPoint = tileYPosition;        
 
         // console.log(gem.team, tileLeftPoint, gem.pos.x, tileRightPoint, tileTopPoint, gem.pos.y, tileBottomPoint);
@@ -286,47 +246,78 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-// Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
+const calculateLag = (miliseconds) => {
+    console.log(miliseconds);
+    if(+miliseconds !== 0){
+        lag = Date.now() - miliseconds;
+    }
+};
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
-    if(newData !== null && typeof newData !== "undefined"){
+    if(newData !== null && typeof newData !== "undefined" && newData.length !== 0){
 
-        // // Check if there are new values and add
+        // Create an array of new and olds ids
         let curIdList = currentData.map(data => data.id),
         newIdList = newData.map(data => data.id);
 
-        let distinctValues =  _.difference(newIdList, curIdList);
+        if(newIdList.length !== 0){
+            let addedValues =  _.difference(newIdList, curIdList),
+            deletedValues =  _.difference(curIdList, newIdList);
+            
+            // Remove values not present
+            for(let i = 0; i < deletedValues.length; i ++){
+                currentData.splice(curIdList.indexOf(deletedValues[i]), 1);
+            }
 
-        for(let i = 0; i < distinctValues.length; i++){
-            currentData.push(newData.find(data => data.id === distinctValues[i])); // jshint ignore:line
+            // Add values present
+            for(let i = 0; i < addedValues.length; i++){
+                currentData.push(newData.find(data => data.id === addedValues[i])); // jshint ignore:line
+            }
         }
 
         // Change existing values
         for(let i = 0; i < newData.length; i++){
 
             if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
-                if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                    currentData[i] = newData[i];
-                    previousPlayerActions.push(newData[i].requestId);
-                }
-            } else { // If a specific value should be proccesed, update only that one value.
-                for(let j = 0; j < valuesToCheck.length; j++){
-                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
-                        let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
-                        let curRequestId = parseRequestId(currentData[i][valuesToCheck[j]].requestId);
-                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId[0] >= curRequestId[0])){ // If this game has not proccessed it and the value is not an old one
-                            currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                if(typeof newData[i].requestId !== "undefined" && newData[i].requestId !== currentData[i].requestId ){
+                    let newRequestId = +parseRequestId(newData[i].requestId)[1];
+                    let curRequestId = +parseRequestId(currentData[i].requestId)[1];
+                    // If the new values also have a newer timestamp
+                    // calculateLag(newRequestId); 
+                    if(!previousPlayerActions.includes(newData[i].requestId)){
+                        if((newRequestId >= curRequestId)){ 
+                            currentData[i] = Object.assign({}, newData[i]);
+                            previousPlayerActions.push(newData[i].requestId);
                         }
                     }
                 }
+            } else { // If specific values should be proccesed, update only those values.
+                for(let j = 0; j < valuesToCheck.length; j++){
+                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
+                        let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
+                        let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
+                        calculateLag(newRequestId);
+                
 
+                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
+                            if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
+                                previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
+                                
+                                currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
+                                // console.log('newRequestId, lag', newRequestId, lag);
+                            }
+                        }   
+                    }
+                }
             }
-           
-
-            
         }
-        newData = null;
     }
+    
+    newData.length = 0;
+    
+
+    // console.log('a newData', newData);
+    // console.log('a currentData', currentData);
 };
 
 // const updateGemPosition = () => {   
@@ -388,24 +379,27 @@ const update = (delta) => { // new delta parameter
                     let targetPlayer = null;
 
                     for(let i = 0; i < players.length; i++){
-                        let otherPlayersTile = findTileBelowPlayer(players[i]);
+                        let otherPlayersTile = g.findTileBelowPlayer(players[i], tiles);
 
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
 
-                        if(calcDistance(calcTilePos(selectedTile), calcTilePos(otherPlayersTile)) <= g.attackDistance){
+                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize <= g.attackDistance && players[i].id !== player.id){
                             targetPlayer = players[i];
+                            break;
                         }
                     }
                     
                     // If there is a player in the direction within 1, then attack.
-                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
-                        targetPlayer.health.points -= 0.05;
-                        addRequestId(targetPlayer, requestId);
+                    
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
+                        targetPlayer.health.points -= g.attackStrength;
+                        addRequestId(targetPlayer.health, requestId);
+                        // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
-                            tiles[tiles.indexOf(selectedTile)].hard.points -= 0.01;
+                            tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
@@ -414,7 +408,7 @@ const update = (delta) => { // new delta parameter
                 }
                 
             } else if(isKeyOn("s")){
-                let selectedTile = findTileBelowPlayer(player);
+                let selectedTile = g.findTileBelowPlayer(player, tiles);
 
                 if(typeof selectedTile  !== "undefined"){
                     let gemOnTile = findCloseGem(player);
@@ -428,7 +422,7 @@ const update = (delta) => { // new delta parameter
             
             } else if(isKeyOn("d")){
                 // If there is an object in front of you
-                let selectedTile = findTileBelowPlayer(player);
+                let selectedTile = g.findTileBelowPlayer(player, tiles);
                 
                 // If there is a tile that it can be dropped on,
                 if(typeof selectedTile !== "undefined"){
@@ -460,27 +454,27 @@ const update = (delta) => { // new delta parameter
             
             if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if(isKeyOn("ArrowUp") && player.dir !== "up"){
+            } else if(isKeyOn("ArrowUp") && player.pos.dir !== "up"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if (isKeyOn("ArrowDown") && canMove("down", player, delta)){
 
                 updatePlayerState("down", "y", playerUpdateObject);
 
-            } else if(isKeyOn("ArrowDown") && player.dir !== "down"){
+            } else if(isKeyOn("ArrowDown") && player.pos.dir !== "down"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
                 updatePlayerState("left", "x", playerUpdateObject);
 
-            } else if(isKeyOn("ArrowLeft") && player.dir !== "left"){
+            } else if(isKeyOn("ArrowLeft") && player.pos.dir !== "left"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("left", "x", playerUpdateObject);
             } else if(isKeyOn("ArrowRight") && canMove("right", player, delta)){
 
                 updatePlayerState("right", "x", playerUpdateObject);
             
-            } else if(isKeyOn("ArrowRight") && player.dir !== "right"){
+            } else if(isKeyOn("ArrowRight") && player.pos.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
             }
@@ -500,7 +494,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
-    options.player.dir = direction;
+    options.player.pos.dir = direction;
 
     addRequestId(options.player.pos, options.requestId);
     model.savePlayerPos(options.player);
@@ -510,8 +504,10 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 
 const mainLoop = (timestamp) => {
-    
-    if (onlineGameState === 2 && localGameState === 1){ // Winner
+
+    if(onlineGameState === null){ // Page is loading
+        view.showLoadingScreen();
+    } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
         view.viewGame();
@@ -525,25 +521,30 @@ const mainLoop = (timestamp) => {
             proccessNewData(players, newPlayers, ["health", "pos"]);
             proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
-            
+      
             update(timestep);
 
             delta -= timestep;
         }
 
-        view.draw(g.playerId, tiles, players, gems);
+        view.draw(g.playerId, tiles, players, gems, lag);
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
 
         if($(".add").length === 0){
             let playerIds = players.map(x => x.id);
-            view.createPlayerButton(playerIds);
-        } 
-        else if($("#player-lobby .add").length !== newPlayers.length){
-            let playerIds = newPlayers.map(x => x.id);
-            view.createPlayerButton(playerIds);
+            // console.log('playerIds', playerIds);
+            view.setPlayers(playerIds);
+        } else {
+            let playerIds = players.map(x => x.id);
+            console.log(players);
+            view.setPlayers(playerIds);
         }
+        // else if($("#player-lobby .add").length !== newPlayers.length){
+            // console.log('newPlayers', newPlayers);
+          
+        // }
     }  
 
     if(waitingForGame === true){  // Load screen
@@ -585,10 +586,26 @@ const activateButtons = () => {
     //     startPlay();
     // });
 
+   
+    $("canvas").on("click", function(e){
+    
+        let rect = g.c.getBoundingClientRect();
+        let x = e.clientX - rect.left,
+        y = e.clientY - rect.top;
+    
+        let tile = tiles.find(data => function(){
+            let t = g.calcTilePos(data);
+    
+            return x > t.x && x < t.r && y > t.y && y < t.b;
+        });
+    
+        console.log(tile);
+    });
+
     document.getElementById("main-menu-new").addEventListener("click", () => {
         gameMaker.newGame();
     });
-    $("#player-lobby").on("click", ".add", function(){
+    $("#player-lobby").on("click", ".select", function(){
         g.playerId = $(this).attr("playerId");
         startPlay();
     });
@@ -628,7 +645,7 @@ const activateServerListener = () => {
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                console.log(players);
+                // console.log(players);
                 initialPlayerDraw = false;
             } else {
                 console.log("new data");
@@ -663,6 +680,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
+        console.log("loaded");
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
