@@ -12,15 +12,15 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
         "id": newPlayerId,
         "team": teamId,
         "pos": {
-            "x": spawnPoint.pos.x*spawnPoint.size.w,
-            "y": spawnPoint.pos.y*spawnPoint.size.h,
+            "x": spawnPoint.pos.x*g.tileSize,
+            "y": spawnPoint.pos.y*g.tileSize,
             "z": 0,
             "requestId": "0--0",
             "dir": "up"
         },
         "size": {
-            "w": 20,
-            "h": 20
+            "w": g.playerSize,
+            "h": g.playerSize
         },
         
         "health": {
@@ -42,12 +42,8 @@ module.exports.newGame = () => {
     let newGems = [
         {
             "pos": {
-                "x": teamBaseZero.pos.x*teamBaseZero.size.w,
-                "y": teamBaseZero.pos.y*teamBaseZero.size.h
-            },
-            "size": {
-                "h": 25,
-                "w": 25
+                "x": teamBaseZero.pos.x*g.tileSize,
+                "y": teamBaseZero.pos.y*g.tileSize
             },
             "carrier": -1,
             "team": 0,
@@ -56,12 +52,8 @@ module.exports.newGame = () => {
         },
         {
             "pos": {
-                "x": teamBaseOne.pos.x*teamBaseOne.size.w,
-                "y": teamBaseOne.pos.y*teamBaseOne.size.h
-            },
-            "size": {
-                "h": 25,
-                "w": 25
+                "x": teamBaseOne.pos.x*g.tileSize,
+                "y": teamBaseOne.pos.y*g.tileSize
             },
             "carrier": -1,
             "team": 1,

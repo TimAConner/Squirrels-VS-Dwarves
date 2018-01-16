@@ -85,9 +85,9 @@ const canMove = (direction, obj, delta) => {
         let tileXPosition = g.calcTilePos(tiles[i]).x,
         tileYPosition = g.calcTilePos(tiles[i]).y;
 
-        let tileRightPoint = tileXPosition + tiles[i].size.w,
+        let tileRightPoint = tileXPosition + g.tileSize,
         tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + tiles[i].size.h,
+        tileBottomPoint = tileYPosition + g.tileSize,
         tileTopPoint = tileYPosition;
         
        if(tiles[i].hard.points > 0 || tiles[i].hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
@@ -208,9 +208,9 @@ const getGemOnTile = (tile) => {
         let tileXPosition = g.calcTilePos(tile).x,
         tileYPosition = g.calcTilePos(tile).y;
 
-        let tileRightPoint = tileXPosition + tile.size.w,
+        let tileRightPoint = tileXPosition + g.tileSize,
         tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + tile.size.h,
+        tileBottomPoint = tileYPosition + g.tileSize,
         tileTopPoint = tileYPosition;        
 
         // console.log(gem.team, tileLeftPoint, gem.pos.x, tileRightPoint, tileTopPoint, gem.pos.y, tileBottomPoint);
@@ -285,7 +285,7 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     // If the new values also have a newer timestamp
                     // calculateLag(newRequestId); 
                     if(!previousPlayerActions.includes(newData[i].requestId)){
-                        if((newRequestId >= curRequestId)){
+                        if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
                             previousPlayerActions.push(newData[i].requestId);
                         }
