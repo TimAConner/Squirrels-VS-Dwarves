@@ -248,7 +248,7 @@ const parseRequestId = (requestId) => {
 
 const calculateLag = (miliseconds) => {
     console.log(miliseconds);
-    if(miliseconds !== 0){
+    if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
 };
@@ -313,6 +313,9 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         }
     }
     
+    newData.length = 0;
+    
+
     // console.log('a newData', newData);
     // console.log('a currentData', currentData);
 };
@@ -518,11 +521,7 @@ const mainLoop = (timestamp) => {
             proccessNewData(players, newPlayers, ["health", "pos"]);
             proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
-            
-            newPlayers = null;
-            newTiles = null;
-            newGems = null;
-
+      
             update(timestep);
 
             delta -= timestep;
