@@ -47,7 +47,6 @@ let tilesToDraw = [];
 let gemImage = new Image();
 gemImage.src = "./img/gems.png";
 
-
 // Angular
 
 let players = ['two'];
@@ -296,10 +295,15 @@ const drawHealth = (health) => {
     }
 };
 
-module.exports.draw = (playerId, tiles, players, gems) => {
+const drawLag = (lag) => {
+    $("#lag").text("Lag: " + lag.toString().slice(0, 3));
+};
+
+module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
     drawHealth(thisPlayer.health.points);
+    if(Date.now().toString().substr(Date.now().toString().length-4, 3) % 200 === 0) drawLag(lag);
 
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
     drawTiles(tiles, players);

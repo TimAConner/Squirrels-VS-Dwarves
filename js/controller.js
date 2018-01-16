@@ -22,7 +22,7 @@ const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
-let onlineGameState = 1;
+let onlineGameState = null;
 let localGameState = 0;
 let waitingForGame = false;
 
@@ -67,6 +67,9 @@ let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
+
+let lag = 0,
+mostRecentRecieved = 0;
 
 
 const canMove = (direction, obj, delta) => {
@@ -243,7 +246,9 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-// Make position and hardness have their own requestId.  The requestId does not go on the whole object.  Could this mean that the whole object ALSO has a request id that can be checked?
+const calculateLag = (miliseconds) => {
+    lag = Date.now() - mostRecentRecieved;
+};
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && typeof newData !== "undefined"){
@@ -253,8 +258,8 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         newIdList = newData.map(data => data.id);
 
         if(newIdList.length !== 0){
-            let addedValues =  _.difference( newIdList, curIdList),
-            deletedValues =  _.difference( curIdList, newIdList);
+            let addedValues =  _.difference(newIdList, curIdList),
+            deletedValues =  _.difference(curIdList, newIdList);
             
             // Remove values not present
             for(let i = 0; i < deletedValues.length; i ++){
@@ -272,17 +277,30 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
 
             if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
                 if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                    currentData[i] = newData[i];
-                    previousPlayerActions.push(newData[i].requestId);
+                    let newRequestId = +parseRequestId(newData[i].requestId)[1];
+                    let curRequestId = +parseRequestId(currentData[i].requestId)[1];
+                    // If the new values also have a newer timestamp
+                    mostRecentRecieved = parseRequestId(newData[i].requestId)[1];
+                    if((newRequestId >= curRequestId)){
+                        currentData[i] = newData[i];
+                        previousPlayerActions.push(newData[i].requestId);
+                        calculateLag(newRequestId);
+                    }
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
-                        let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
-                        let curRequestId = parseRequestId(currentData[i][valuesToCheck[j]].requestId);
-                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId[0] >= curRequestId[0])){ // If this game has not proccessed it and the value is not an old one
+                        let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
+                        let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
+
+                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
+                            previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
+ 
                             currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                            // console.log('newRequestId, lag', newRequestId, lag);
+                            calculateLag(newRequestId);
                         }
+                        mostRecentRecieved = parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                     }
                 }
             }
@@ -361,11 +379,11 @@ const update = (delta) => { // new delta parameter
                     }
                     
                     // If there is a player in the direction within 1, then attack.
-                    console.log(targetPlayer);
+                    
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
                         targetPlayer.health.points -= g.attackStrength;
                         addRequestId(targetPlayer.health, requestId);
-                        console.log(targetPlayer.health);
+                        // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
@@ -476,7 +494,9 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if (onlineGameState === 2 && localGameState === 1){ // Winner
+    if(onlineGameState === null){ // Page is loading
+        view.showLoadingScreen();
+    } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
         view.viewGame();
@@ -496,7 +516,7 @@ const mainLoop = (timestamp) => {
             delta -= timestep;
         }
 
-        view.draw(g.playerId, tiles, players, gems);
+        view.draw(g.playerId, tiles, players, gems, lag);
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
@@ -632,6 +652,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
+        console.log("loaded");
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
