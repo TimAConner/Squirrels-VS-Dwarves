@@ -5,4 +5,16 @@
 .hide {
   display: none; }
 
+canvas {
+  background-color: black; }
+
+#loading-screen h3 {
+  animation: pulse 2s infinite alternate; }
+
+@keyframes pulse {
+  0% {
+    opacity: 1; }
+  100% {
+    opacity: 0; } }
+
 /*# sourceMappingURL=main.css.map */
