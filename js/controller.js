@@ -311,8 +311,8 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 }
             }
         }
-        newData = null;
     }
+    newData = null;
 };
 
 // const updateGemPosition = () => {   
