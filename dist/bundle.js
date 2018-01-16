@@ -75,8 +75,8 @@ mostRecentRecieved = 0;
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
-    objRightPoint = obj.pos.x+obj.size.w,
-    objBottomPoint = obj.pos.y+obj.size.h,
+    objRightPoint = obj.pos.x+g.playerSize,
+    objBottomPoint = obj.pos.y+g.playerSize,
     objTopPoint = obj.pos.y;
 
     let increment = speedMultiplier*delta;
@@ -146,8 +146,8 @@ const findTileInDirection = (player) => {
 
     // Find tile based on middle of player.
 
-    let tileX = Math.floor((player.pos.x+player.size.w/2) / g.tileSize),
-    tileY = Math.floor((player.pos.y+player.size.h/2) / g.tileSize);
+    let tileX = Math.floor((player.pos.x+g.playerSize/2) / g.tileSize),
+    tileY = Math.floor((player.pos.y+g.playerSize/2) / g.tileSize);
 
     // console.log(tileX, tileY);
     if(direction === "up"){
@@ -248,7 +248,6 @@ const parseRequestId = (requestId) => {
 };
 
 const calculateLag = (miliseconds) => {
-    console.log(miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
@@ -727,8 +726,8 @@ module.exports.ctx = module.exports.c.getContext("2d");
 module.exports.ctx.canvas.width  = window.innerWidth;
 module.exports.ctx.canvas.height = window.innerHeight;
 
-module.exports.tileSize = 25;
-module.exports.playerSize = 20;
+module.exports.tileSize = 30;
+module.exports.playerSize = 25;
 module.exports.attackDistance = 1;
 module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
@@ -747,8 +746,8 @@ module.exports.calcTilePos = (tile) => {
 
 module.exports.findTileBelowPlayer = (player, tiles) => {
 
-    let playerX = (player.pos.x+player.size.w/2),
-    playerY = (player.pos.y+player.size.h/2);    
+    let playerX = (player.pos.x+module.exports.playerSize/2),
+    playerY = (player.pos.y+module.exports.playerSize/2);    
 
     let sortedTiles = tiles.slice().sort((a, b) => {
         let tileAX= module.exports.calcTilePos(a).x,
@@ -791,11 +790,6 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "requestId": "0--0",
             "dir": "up"
         },
-        "size": {
-            "w": g.playerSize,
-            "h": g.playerSize
-        },
-        
         "health": {
             "points": 100,
             "requestId": "0--0"
@@ -859,8 +853,7 @@ controller.startGame();
                     "id": id,
                     "pos": {
                         "x": x,
-                        "y": y,
-                        "z": 0
+                        "y": y
                     },
                     "hard": {
                         "points": 1,
@@ -1100,6 +1093,9 @@ edgeColor = "gray";
 let dwarfImage = new Image(); 
 dwarfImage.src = './img/dwarf.png'; 
 
+let squirrelImage = new Image(); 
+squirrelImage.src = './img/squirrel.png'; 
+
 let dirtImage = new Image();
 dirtImage.src = "./img/dirt.png";
 
@@ -1116,6 +1112,9 @@ let tilesToDraw = [];
 
 let gemImage = new Image();
 gemImage.src = "./img/gems.png";
+
+let acornImage = new Image();
+acornImage.src = "./img/acorn.png";
 
 // Angular
 
@@ -1308,9 +1307,15 @@ const drawPlayers = (players, playerId, tiles) => {
         //     if(players[i].pos.dir === "right"){
         //         g.ctx.rotate(90); // rotate
         //     }
+        if(players[i].team === 1){
+            g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            
+        } else {
+            
             g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
-            g.ctx.stroke();
-
+        }
+            
+        g.ctx.stroke();
             // g.ctx.setTransform(1,0,0,1,0,0); // restore default transform
 
             // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
@@ -1324,21 +1329,20 @@ const drawPlayers = (players, playerId, tiles) => {
 const drawGems = (gems, players) => {
     for(let i = 0; i < gems.length; i++){
 
-        if(thisPlayer.team === gems[i].team){ // Your team
-            // console.log(gems[i].carrier === -1);
+
+        if(gems[i].team === 1){
             if(gems[i].carrier === -1){ 
                 g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
                 g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
-        } else { // Enemy team
-
+        } else {
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(gemImage, 32, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();
