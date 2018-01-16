@@ -303,7 +303,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
     drawHealth(thisPlayer.health.points);
-    if(Date.now().toString().substr(Date.now().toString().length-4, 3) % 200 === 0) drawLag(lag);
+    drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
     drawTiles(tiles, players);
     drawPlayers(players, playerId, tiles);
