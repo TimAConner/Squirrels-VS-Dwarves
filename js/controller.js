@@ -533,6 +533,7 @@ const mainLoop = (timestamp) => {
             view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
+            console.log(players);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){

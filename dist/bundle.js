@@ -69,6 +69,9 @@ delta = 0,
 lastFrameTimeMs = 0;
 
 
+let lag = 0,
+mostRecentRecieved = 0;
+
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
@@ -244,6 +247,12 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
+const calculateLag = (miliseconds) => {
+    if(miliseconds !== 0){
+        lag = Date.now() - miliseconds;
+    }
+};
+
 const proccessNewData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && typeof newData !== "undefined"){
 
@@ -270,23 +279,34 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         for(let i = 0; i < newData.length; i++){
 
             if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
-                if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                    let newRequestId = parseRequestId(newData[i].requestId);
-                    let curRequestId = parseRequestId(currentData[i].requestId);
+                if(typeof newData[i].requestId !== "undefined" && newData[i].requestId !== currentData[i].requestId ){
+                    let newRequestId = +parseRequestId(newData[i].requestId)[1];
+                    let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    if((newRequestId[0] >= curRequestId[0])){
-                        currentData[i] = newData[i];
-                        previousPlayerActions.push(newData[i].requestId);
+                    calculateLag(newRequestId); 
+                    if(!previousPlayerActions.includes(newData[i].requestId)){
+                        if((newRequestId >= curRequestId)){
+                            currentData[i] = newData[i];
+                            previousPlayerActions.push(newData[i].requestId);
+                        }
                     }
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
-                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
-                        let newRequestId = parseRequestId(newData[i][valuesToCheck[j]].requestId);
-                        let curRequestId = parseRequestId(currentData[i][valuesToCheck[j]].requestId);
+                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
+                        let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
+                        let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
+                        calculateLag(newRequestId);
+                        
+                        // console.log(newData[i][valuesToCheck[j]].requestId, currentData[i][valuesToCheck[j]].requestId, newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId  );
 
-                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId[0] >= curRequestId[0])){ // If this game has not proccessed it and the value is not an old one
-                            currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
+                            if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
+                                previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
+    
+                                currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                                // console.log('newRequestId, lag', newRequestId, lag);
+                            }
                         }
                     }
                 }
@@ -367,10 +387,10 @@ const update = (delta) => { // new delta parameter
                     
                     // If there is a player in the direction within 1, then attack.
                     
-                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team){
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
                         targetPlayer.health.points -= g.attackStrength;
                         addRequestId(targetPlayer.health, requestId);
-                        console.log(targetPlayer.health);
+                        // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
@@ -503,7 +523,7 @@ const mainLoop = (timestamp) => {
             delta -= timestep;
         }
 
-        view.draw(g.playerId, tiles, players, gems);
+        view.draw(g.playerId, tiles, players, gems, lag);
 
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
@@ -514,6 +534,7 @@ const mainLoop = (timestamp) => {
             view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
+            console.log(players);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
@@ -560,6 +581,22 @@ const activateButtons = () => {
     // document.getElementById("main-menu-play").addEventListener("click", () => {
     //     startPlay();
     // });
+
+   
+    $("canvas").on("click", function(e){
+    
+        let rect = g.c.getBoundingClientRect();
+        let x = e.clientX - rect.left,
+        y = e.clientY - rect.top;
+    
+        let tile = tiles.find(data => function(){
+            let t = g.calcTilePos(data);
+    
+            return x > t.x && x < t.r && y > t.y && y < t.b;
+        });
+    
+        console.log(tile);
+    });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
         gameMaker.newGame();
@@ -696,9 +733,10 @@ module.exports.playerId = 0;
 // Returns tile position based on their x and y and tilesize
 module.exports.calcTilePos = (tile) => {
     let x = tile.pos.x * module.exports.tileSize,
-    y = tile.pos.y * module.exports.tileSize;
-
-    return {x, y};
+    y = tile.pos.y * module.exports.tileSize,
+    b = y + module.exports.tileSize, // Bottom
+    r = x + module.exports.tileSize; // Right
+    return {x, y, b, r};
 };
 
 module.exports.findTileBelowPlayer = (player, tiles) => {
@@ -1040,6 +1078,9 @@ module.exports.saveNewMap = (data) => {
 //     console.log(tiles);
 // };
 
+
+let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
@@ -1080,7 +1121,6 @@ let tilesToDraw = [];
 let gemImage = new Image();
 gemImage.src = "./img/gems.png";
 
-
 // Angular
 
 let players = ['two'];
@@ -1094,7 +1134,12 @@ let app = angular.module("myApp", []);
 app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
-            $scope.players = Object.keys(e.detail.players);
+            if(e.detail!== null){
+                $scope.players = Object.keys(e.detail.players);
+            } else {
+                $scope.players = [];
+            }
+            
         });
     });
 }]);
@@ -1321,19 +1366,26 @@ const drawGems = (gems, players) => {
     }
 };
 
+
+
+
 const drawHealth = (health) => {
     if(health > 0){
-        $("#player-health").html(health);
+        $("#player-health").html("Health: " + health);
     } else {
         $("#player-health").html("<p>You are Dead</p>");
     }
 };
 
-module.exports.draw = (playerId, tiles, players, gems) => {
+const drawLag = (lag) => {
+    $("#lag").text("Lag: " + lag.toString().slice(0, 4));
+};
+
+module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
     drawHealth(thisPlayer.health.points);
-
+    drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
     drawTiles(tiles, players);
     drawPlayers(players, playerId, tiles);
@@ -1362,12 +1414,11 @@ module.exports.viewGame = () => {
 
 const showScreen = (screen) => {
 
-    let allScreens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
 
-    for(let i = 0; i < allScreens.length; i++){
-        if(allScreens[i] !== screen){
-            if(!$(allScreens[i]).hasClass("hide")){
-                $(allScreens[i]).addClass("hide");
+    for(let i = 0; i < screens.length; i++){
+        if(screens[i] !== screen){
+            if(!$(screens[i]).hasClass("hide")){
+                $(screens[i]).addClass("hide");
             }
         }
     }
