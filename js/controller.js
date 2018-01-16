@@ -247,7 +247,9 @@ const parseRequestId = (requestId) => {
 };
 
 const calculateLag = (miliseconds) => {
-    lag = Date.now() - miliseconds;
+    if(miliseconds !== 0){
+        lag = Date.now() - miliseconds;
+    }
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
@@ -276,7 +278,7 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         for(let i = 0; i < newData.length; i++){
 
             if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
-                if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] ){
+                if(typeof newData[i].requestId !== "undefined" && newData[i].requestId !== currentData[i].requestId ){
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
@@ -290,13 +292,15 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
-                    if(typeof newData[i][valuesToCheck[j]] !== "undefined"){ 
+                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
                         calculateLag(newRequestId);
+                        
+                        // console.log(newData[i][valuesToCheck[j]].requestId, currentData[i][valuesToCheck[j]].requestId, newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId  );
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
-                            if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
+                            if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
                                 previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
     
                                 currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
@@ -575,6 +579,22 @@ const activateButtons = () => {
     // document.getElementById("main-menu-play").addEventListener("click", () => {
     //     startPlay();
     // });
+
+   
+    $("canvas").on("click", function(e){
+    
+        let rect = g.c.getBoundingClientRect();
+        let x = e.clientX - rect.left,
+        y = e.clientY - rect.top;
+    
+        let tile = tiles.find(data => function(){
+            let t = g.calcTilePos(data);
+    
+            return x > t.x && x < t.r && y > t.y && y < t.b;
+        });
+    
+        console.log(tile);
+    });
 
     document.getElementById("main-menu-new").addEventListener("click", () => {
         gameMaker.newGame();

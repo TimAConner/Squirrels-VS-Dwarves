@@ -287,16 +287,19 @@ const drawGems = (gems, players) => {
     }
 };
 
+
+
+
 const drawHealth = (health) => {
     if(health > 0){
-        $("#player-health").html(health);
+        $("#player-health").html("Health: " + health);
     } else {
         $("#player-health").html("<p>You are Dead</p>");
     }
 };
 
 const drawLag = (lag) => {
-    $("#lag").text("Lag: " + lag.toString().slice(0, 3));
+    $("#lag").text("Lag: " + lag.toString().slice(0, 4));
 };
 
 module.exports.draw = (playerId, tiles, players, gems, lag) => {

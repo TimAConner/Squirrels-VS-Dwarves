@@ -19,9 +19,10 @@ module.exports.playerId = 0;
 // Returns tile position based on their x and y and tilesize
 module.exports.calcTilePos = (tile) => {
     let x = tile.pos.x * module.exports.tileSize,
-    y = tile.pos.y * module.exports.tileSize;
-
-    return {x, y};
+    y = tile.pos.y * module.exports.tileSize,
+    b = y + module.exports.tileSize, // Bottom
+    r = x + module.exports.tileSize; // Right
+    return {x, y, b, r};
 };
 
 module.exports.findTileBelowPlayer = (player, tiles) => {
