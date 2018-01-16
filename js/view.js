@@ -60,7 +60,12 @@ let app = angular.module("myApp", []);
 app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
-            $scope.players = Object.keys(e.detail.players);
+            if(e.detail!== null){
+                $scope.players = Object.keys(e.detail.players);
+            } else {
+                $scope.players = [];
+            }
+            
         });
     });
 }]);
