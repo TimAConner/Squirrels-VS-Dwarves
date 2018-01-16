@@ -308,43 +308,34 @@ module.exports.draw = (playerId, tiles, players, gems) => {
 
 
 module.exports.showLoadingScreen = () => {
-    hideAllMenus();
-    
-    document.getElementById("loading-screen").classList.remove("hide");
+    showScreen("#loading-screen");
 };
 
 module.exports.viewMainMenu = () => {
-    hideAllMenus();
-    
-
-    document.getElementById("main-menu-screen").classList.remove("hide");
+    showScreen("#main-menu-screen");
 };
 
-
-
-// module.exports.viewSelectPlayerScreen = () => {
-//     hideAllMenus();
-
-//     document.getElementById("select-player-screen").classList.remove("hide");
-// };
-
 module.exports.viewWinnerScreen =  (winnerId) => {
-    hideAllMenus();
-
-    document.getElementById("victory-screen").classList.remove("hide");
-    document.getElementById("winner").textContent = winnerId;
+    showScreen("#victory-screen");
+    $("#winner").text(winnerId);
 };  
 
 module.exports.viewGame = () => {
-    hideAllMenus();
-
-    $("#game-screen").removeClass("hide");
+    showScreen("#game-screen");
 };
 
-const hideAllMenus = () => {
+const showScreen = (screen) => {
 
-    document.getElementById("victory-screen").classList.add("hide");
-    document.getElementById("main-menu-screen").classList.add("hide");
-    document.getElementById("game-screen").classList.add("hide");
-    document.getElementById("loading-screen").classList.add("hide");
+    let allScreens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+
+    for(let i = 0; i < allScreens.length; i++){
+        if(allScreens[i] !== screen){
+            if(!$(allScreens[i]).hasClass("hide")){
+                $(allScreens[i]).addClass("hide");
+            }
+        }
+    }
+    if($(screen).hasClass("hide")){
+        $(screen).removeClass("hide");
+    }
 };
