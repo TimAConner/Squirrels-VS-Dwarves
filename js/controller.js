@@ -247,13 +247,14 @@ const parseRequestId = (requestId) => {
 };
 
 const calculateLag = (miliseconds) => {
+    console.log(miliseconds);
     if(miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
-    if(newData !== null && typeof newData !== "undefined"){
+    if(newData !== null && typeof newData !== "undefined" && newData.length !== 0){
 
         // Create an array of new and olds ids
         let curIdList = currentData.map(data => data.id),
@@ -282,10 +283,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    calculateLag(newRequestId); 
+                    // calculateLag(newRequestId); 
                     if(!previousPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){
-                            currentData[i] = newData[i];
+                            currentData[i] = Object.assign({}, newData[i]);
                             previousPlayerActions.push(newData[i].requestId);
                         }
                     }
@@ -296,14 +297,13 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
                         calculateLag(newRequestId);
-                        
-                        // console.log(newData[i][valuesToCheck[j]].requestId, currentData[i][valuesToCheck[j]].requestId, newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId  );
+                
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
                             if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
                                 previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
-    
-                                currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
+                                
+                                currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
                         }   
@@ -312,7 +312,9 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
             }
         }
     }
-    newData = null;
+    
+    // console.log('a newData', newData);
+    // console.log('a currentData', currentData);
 };
 
 // const updateGemPosition = () => {   
@@ -517,6 +519,10 @@ const mainLoop = (timestamp) => {
             proccessNewData(tiles, newTiles, ["hard"]);
             proccessNewData(gems, newGems);
             
+            newPlayers = null;
+            newTiles = null;
+            newGems = null;
+
             update(timestep);
 
             delta -= timestep;
