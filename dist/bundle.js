@@ -253,6 +253,13 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         let curIdList = currentData.map(data => data.id),
         newIdList = newData.map(data => data.id);
 
+        // Remove values not present
+        // for(let i = 0; i < curIdList.length; i ++){
+        //     if(!newIdList.includes(curIdList[i])){
+        //         curIdList.splice(curIdList.indexOf(curIdList[i]), 1);
+        //     }
+        // }
+
         let distinctValues =  _.difference(newIdList, curIdList);
 
         for(let i = 0; i < distinctValues.length; i++){
@@ -502,7 +509,7 @@ const mainLoop = (timestamp) => {
             // console.log('playerIds', playerIds);
             view.setPlayers(playerIds);
         } else {
-            let playerIds = newPlayers.map(x => x.id);
+            let playerIds = players.map(x => x.id);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
