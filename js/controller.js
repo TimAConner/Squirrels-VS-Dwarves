@@ -247,7 +247,7 @@ const parseRequestId = (requestId) => {
 };
 
 const calculateLag = (miliseconds) => {
-    lag = Date.now() - mostRecentRecieved;
+    lag = Date.now() - miliseconds;
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
@@ -276,31 +276,29 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
         for(let i = 0; i < newData.length; i++){
 
             if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
+                let newRequestId = +parseRequestId(newData[i].requestId)[1];
+                let curRequestId = +parseRequestId(currentData[i].requestId)[1];
+                // If the new values also have a newer timestamp
+                calculateLag(newRequestId); 
                 if(typeof newData[i].requestId !== "undefined" && newData[i] !== currentData[i] && !previousPlayerActions.includes(newData[i].requestId)){
-                    let newRequestId = +parseRequestId(newData[i].requestId)[1];
-                    let curRequestId = +parseRequestId(currentData[i].requestId)[1];
-                    // If the new values also have a newer timestamp
-                    mostRecentRecieved = parseRequestId(newData[i].requestId)[1];
                     if((newRequestId >= curRequestId)){
                         currentData[i] = newData[i];
                         previousPlayerActions.push(newData[i].requestId);
-                        calculateLag(newRequestId);
                     }
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
+                    let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
+                    let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
+                    calculateLag(newRequestId);
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && !previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){ 
-                        let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
-                        let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId) && (newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
                             previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
  
                             currentData[i][valuesToCheck[j]] = newData[i][valuesToCheck[j]];
                             // console.log('newRequestId, lag', newRequestId, lag);
-                            calculateLag(newRequestId);
                         }
-                        mostRecentRecieved = parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                     }
                 }
             }
