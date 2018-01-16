@@ -10,8 +10,8 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [x] Smaller Modules / Refactor code
 - [x] See vision around ally
     - [x] Only see enemy player if can see their tile.
-- [ ] Squirrel & Nut image
-- [ ] See direction player is facing
+- [x] Squirrel & Nut image
+- [x] See direction player is facing
 - [x] Face direction of keys even if cant move
 
 ## MVP Goals
