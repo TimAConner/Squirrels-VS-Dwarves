@@ -18,11 +18,6 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "requestId": "0--0",
             "dir": "up"
         },
-        "size": {
-            "w": g.playerSize,
-            "h": g.playerSize
-        },
-        
         "health": {
             "points": 100,
             "requestId": "0--0"

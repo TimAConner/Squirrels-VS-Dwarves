@@ -11,8 +11,7 @@
                     "id": id,
                     "pos": {
                         "x": x,
-                        "y": y,
-                        "z": 0
+                        "y": y
                     },
                     "hard": {
                         "points": 1,
