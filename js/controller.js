@@ -509,10 +509,10 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
-        view.showLoadingScreen();
-    } else if (g.owner === ""){
+    if (g.owner === ""){
         view.showSignIn();
+    }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
+        view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
@@ -575,11 +575,9 @@ const mainLoop = (timestamp) => {
 
 
 module.exports.startGame = () => {
-    model.fetchData();
     activateServerListener();
     activateButtons();
     requestAnimationFrame(mainLoop);
-
 };
 
 const startPlay = () => {
@@ -595,6 +593,8 @@ const activateButtons = () => {
         //     g.owner = data.email;
         // });
         g.owner = "timaconner1@gmail.com";
+        console.log(g.owner);
+        model.fetchData();
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
