@@ -30,7 +30,7 @@ let waitingForGame = false;
 let winner = 0;
 
 
-let players = [];
+let players = null;
 let tiles = [];
 let gems = [];
 
@@ -504,7 +504,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if(onlineGameState === null){ // Page is loading
+    if(onlineGameState === null || players === null){ // Page is loading
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
