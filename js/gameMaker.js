@@ -21,7 +21,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
         "health": {
             "points": 100,
             "requestId": "0--0"
-        }
+        },
+        "owner": g.owner
     };
 
     model.addNewPlayer(player);  
