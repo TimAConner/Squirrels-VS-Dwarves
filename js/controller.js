@@ -251,7 +251,8 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-const calculateLag = (miliseconds) => {
+const calcLag = (miliseconds) => {
+    console.log('miliseconds', miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
@@ -287,7 +288,7 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    // calculateLag(newRequestId); 
+                    calcLag(newRequestId); 
                     if(!previousPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
@@ -300,7 +301,9 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
-                        calculateLag(newRequestId);
+                        console.log('newData[i][valuesToCheck[j]]', newData[i][valuesToCheck[j]]);
+                        calcLag(newRequestId);
+                        console.log('lag', lag);
                 
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
@@ -402,7 +405,7 @@ const update = (delta) => { // new delta parameter
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
-                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
