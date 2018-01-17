@@ -15,6 +15,7 @@ module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
 
 module.exports.playerId = 0;
+module.exports.owner = "";
 
 
 // Returns tile position based on their x and y and tilesize
