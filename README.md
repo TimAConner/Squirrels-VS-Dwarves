@@ -2,6 +2,14 @@
 This is the testing ground for my front end capstone at the [Nashville Software School](http://nashvillesoftwareschool.com/)
 
 
+## Version 3.0 Goals
+- [ ] Health Bars
+- [ ] Can't move through allys
+- [ ] Create player and join through Google
+- [ ] Block being destroyed animation
+- [ ] Player Animation?
+- [ ] Lobbys for multiple Ggames?
+
 ## Version 2.0 Goals
 - [x] Restrict movement to map
 - [x] Streamline adding a player and starting game as player
