@@ -326,6 +326,10 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
 
 
 
+module.exports.drawSignIn = () => {
+    $("#signInText").text(`${g.fullName}`);
+};
+
 
 module.exports.showLoadingScreen = () => {
     showScreen("#loading-screen");
@@ -333,6 +337,7 @@ module.exports.showLoadingScreen = () => {
 
 module.exports.viewMainMenu = () => {
     showScreen("#main-menu-screen");
+    module.exports.drawSignIn();
 };
 
 module.exports.viewWinnerScreen =  (winnerId) => {

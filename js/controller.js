@@ -590,9 +590,13 @@ const activateButtons = () => {
 
     $("#signIn").on("click", function(){
         // login.googleSignin().then((data) => {
+        //      console.log(data);
         //     g.owner = data.email;
+        //     g.name = data.name;
         // });
         g.owner = "timaconner1@gmail.com";
+        g.fullName = "Tim Conner";
+        view.showSignIn();
         model.fetchData();
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
