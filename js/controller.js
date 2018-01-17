@@ -22,15 +22,15 @@ const _ = require("lodash");
 
 // 0 menu, 1 game, 2 winner
 
-let onlineGameState = null;
-let localGameState = 0;
-let waitingForGame = false;
+let onlineGameState = 0,
+localGameState = 0,
+waitingForGame = false;
 
 
 let winner = 0;
 
 
-let players = null;
+let players = [];
 let tiles = [];
 let gems = [];
 
@@ -62,6 +62,8 @@ let keys = {
 let initialTileDraw = true;
 let initialPlayerDraw = true;
 let initialGemDraw = true;
+let initialGameState = true;
+
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -504,7 +506,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if(onlineGameState === null || players === null){ // Page is loading
+    if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -631,6 +633,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
+        console.log("listened");
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
@@ -638,20 +641,21 @@ const activateServerListener = () => {
             let player = e.detail.players[key];
             player.id = key;
             return player;
-        });
+        }); 
 
-        // console.log("player", e.detail);
+        console.log("player", e.detail);
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                // console.log(players);
-                initialPlayerDraw = false;
+                console.log(players);
             } else {
                 console.log("new data");
                 newPlayers = filteredPlayers;
             }
         }
         
+
+        initialPlayerDraw = false;
 
         // Update list of players
         
@@ -680,6 +684,7 @@ const activateServerListener = () => {
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
         console.log("loaded");
+        initialGameState = false;
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
