@@ -3,7 +3,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 
 
 ## Version 3.0 Goals
-- [ ] Health Bars
+- [x] Health Bars
 - [ ] Can't move through allys
 - [ ] Create player and join through Google
 - [ ] Block being destroyed animation
