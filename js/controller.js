@@ -591,9 +591,10 @@ const startPlay = () => {
 const activateButtons = () => {
 
     $("#signIn").on("click", function(){
-        login.googleSignin().then((data) => {
-            g.owner = data.email;
-        });
+        // login.googleSignin().then((data) => {
+        //     g.owner = data.email;
+        // });
+        g.owner = "timaconner1@gmail.com";
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
