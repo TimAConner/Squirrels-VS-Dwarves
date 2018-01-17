@@ -511,6 +511,8 @@ const mainLoop = (timestamp) => {
 
     if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
+    } else if (g.owner === ""){
+        view.showSignIn();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing

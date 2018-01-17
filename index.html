@@ -24,9 +24,10 @@
             <h1>Team <span id="winner"></span> wins!</h1>
             <button id="back-to-main-menu">Main Menu</button>
         </div>
+        <div id="sign-in-screen" class="hide">
+                <button id="signIn">Sign in With Google</button>
+        </div>
         <div id="main-menu-screen" class="hide">
-
-            <button id="signIn">Sign in With Google</button>
             <button id="add-player">Add New Dwarf</button>
             <button id="add-player-2">Add New Squirrel</button>
             <!-- <button id="main-menu-play">Continue</button> -->
@@ -36,6 +37,7 @@
                 <div ng-app="myApp" ng-controller="myCtrl">
                     <ul ng-repeat="x in players" >
                         <li>
+                            {{x.owner}}
                             <button class="select" playerId={{x}}>Select Player {{x}}</button>
                             <button  class="remove" playerId={{x}}>Delete Player {{x}}</button>
                         </li>
