@@ -510,7 +510,9 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
+    if (g.owner === ""){
+        view.showSignIn();
+    }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -574,11 +576,9 @@ const mainLoop = (timestamp) => {
 
 
 module.exports.startGame = () => {
-    model.fetchData();
     activateServerListener();
     activateButtons();
     requestAnimationFrame(mainLoop);
-
 };
 
 const startPlay = () => {
@@ -590,9 +590,11 @@ const startPlay = () => {
 const activateButtons = () => {
 
     $("#signIn").on("click", function(){
-        login.googleSignin().then((data) => {
-            g.owner = data.email;
-        });
+        // login.googleSignin().then((data) => {
+        //     g.owner = data.email;
+        // });
+        g.owner = "timaconner1@gmail.com";
+        model.fetchData();
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
@@ -670,11 +672,9 @@ const activateServerListener = () => {
             return player;
         }); 
 
-        console.log("player", e.detail);
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                console.log(players);
             } else {
                 console.log("new data");
                 newPlayers = filteredPlayers;
@@ -1129,7 +1129,7 @@ module.exports.saveNewMap = (data) => {
 // };
 
 
-let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 
 const g = require("./game");
 const $ = require("jquery");
@@ -1190,10 +1190,15 @@ let app = angular.module("myApp", []);
 app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
-            if(e.detail!== null){
-                $scope.players = Object.keys(e.detail.players);
+            if(e.detail !== null){
+                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner == g.owner).map(x => e.detail.players[x]);
+
+                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner != g.owner).map(x => e.detail.players[x]);
+                $scope.ownedPlayers = ownedPlayers;
+                $scope.otherPlayers = otherPlayers;
             } else {
-                $scope.players = [];
+                $scope.otherPlayers = [];
+                $scope.ownedPlayers = [];
             }
             
         });
@@ -1461,6 +1466,10 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 
 module.exports.viewGame = () => {
     showScreen("#game-screen");
+};
+
+module.exports.showSignIn = () => {
+    showScreen("#sign-in-screen");
 };
 
 const showScreen = (screen) => {
