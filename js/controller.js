@@ -14,11 +14,14 @@ https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 */
 const model = require("./model");
 const view = require("./view");
+const login = require("./login");
 const g = require("./game");
 const $ = require("jquery");
 const gameMaker = require("./gameMaker");
 
 const _ = require("lodash");
+
+
 
 // 0 menu, 1 game, 2 winner
 
@@ -519,9 +522,22 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers, ["health", "pos"]);
-            proccessNewData(tiles, newTiles, ["hard"]);
-            proccessNewData(gems, newGems);
+            // if(lag > 2000){
+            //     if(newPlayers.length !== 0){
+            //         players = newPlayers;
+            //     }
+            //     if(newTiles.length !== 0){
+            //         tiles = newTiles;
+            //     }
+            //     if(newGems.length !== 0){
+            //         gems = newGems;
+            //     }
+            //     lag = 0;
+            // } else {
+                proccessNewData(players, newPlayers, ["health", "pos"]);
+                proccessNewData(tiles, newTiles, ["hard"]);
+                proccessNewData(gems, newGems);
+            // }
       
             update(timestep);
 
@@ -571,6 +587,12 @@ const startPlay = () => {
 };
 
 const activateButtons = () => {
+
+    $("#signIn").on("click", function(){
+        login.googleSignin().then((data) => {
+            g.owner = data.email;
+        });
+    });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
     });
@@ -607,7 +629,11 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        g.playerId = $(this).attr("playerId");
+        let player = players.find(x => x.owner === g.owner);
+        console.log(player);
+        if(player !== undefined){
+            g.playerId = $(this).attr("playerId");
+        }
         startPlay();
     });
     $("#player-lobby").on("click", ".remove", function(){
