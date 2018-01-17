@@ -71,9 +71,6 @@ app.controller("myCtrl", ['$scope', function($scope) {
                 let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner == g.owner).map(x => e.detail.players[x]);
 
                 let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner != g.owner).map(x => e.detail.players[x]);
-
-                console.log('otherPlayer', otherPlayers);
-                console.log('ownedPlayers', ownedPlayers);
                 $scope.ownedPlayers = ownedPlayers;
                 $scope.otherPlayers = otherPlayers;
             } else {
