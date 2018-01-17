@@ -12,7 +12,8 @@
             "health": {
                 "points": 100,
                 "requestId": 0 
-            }
+            },
+            "owner": "timaconner1@gmail.com"
         },
         {
             "id": "1",
@@ -26,7 +27,8 @@
             "health": {
                 "points": 100,
                 "requestId": 0
-            }
+            },
+            "owner": "timaconner1@gmail.com"
         }
     ]   
 }
