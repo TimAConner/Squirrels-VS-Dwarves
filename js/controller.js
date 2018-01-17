@@ -593,7 +593,6 @@ const activateButtons = () => {
         //     g.owner = data.email;
         // });
         g.owner = "timaconner1@gmail.com";
-        console.log(g.owner);
         model.fetchData();
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
@@ -672,11 +671,9 @@ const activateServerListener = () => {
             return player;
         }); 
 
-        console.log("player", e.detail);
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                console.log(players);
             } else {
                 console.log("new data");
                 newPlayers = filteredPlayers;
