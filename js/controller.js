@@ -50,11 +50,11 @@ let speedMultiplier = 0.1;
 
 
 let localPlayer =  {  
-    damageDelt: 234,
-    mined: 234,
-    team: 1,
-    spawnTime: 234000,
-    deathTime: 234234
+    damageDelt: 0,
+    mined: 0,
+    team: 0,
+    spawnTime: 0,
+    deathTime: 0
 };
 
 //  Use timestamp instead?
@@ -363,7 +363,7 @@ const updateGemPosition = () => {
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
     
- 
+
     // console.log("gems", gems);
     
     updateGemPosition();
@@ -376,6 +376,10 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
 
+        if(player.health <= 0 && localPlayer.deathTime !== 0){
+            localPlayer.deathTime = Date.now();
+        }
+        
         if(typeof player !== "undefined" && player.health.points > 0){
 
             let requestId = `${Date.now()}-${g.playerId}`;
@@ -410,6 +414,9 @@ const update = (delta) => { // new delta parameter
                     
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
                         targetPlayer.health.points -= g.attackStrength;
+
+                        localPlayer.damageDelt += g.attackStrength;
+
                         addRequestId(targetPlayer.health, requestId);
                         // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer); 
@@ -417,6 +424,7 @@ const update = (delta) => { // new delta parameter
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
+                            localPlayer.mined += g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
 
@@ -650,6 +658,10 @@ const activateButtons = () => {
     });
     $("#player-lobby").on("click", ".select", function(){
         let player = players.find(x => x.uid === g.uid);
+
+        localPlayer.spawnTime = Date.now();
+        localPlayer.team = player.team; 
+
         if(player !== undefined){
             g.playerId = $(this).attr("playerId");
         }
