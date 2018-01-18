@@ -49,13 +49,15 @@ let newGems = [];
 let speedMultiplier = 0.1;
 
 
-let localPlayer =  {  
+let localPlayerStats =  {  
+    id: 0,
     damageDelt: 0,
     mined: 0,
     team: 0,
     spawnTime: 0,
     deathTime: 0
 };
+let statsSent = false;
 
 //  Use timestamp instead?
 let keys = {
@@ -376,8 +378,8 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
 
-        if(player.health <= 0 && localPlayer.deathTime !== 0){
-            localPlayer.deathTime = Date.now();
+        if(player.health <= 0 && localPlayerStats.deathTime !== 0){
+            localPlayerStats.deathTime = Date.now();
         }
         
         if(typeof player !== "undefined" && player.health.points > 0){
@@ -415,7 +417,7 @@ const update = (delta) => { // new delta parameter
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
                         targetPlayer.health.points -= g.attackStrength;
 
-                        localPlayer.damageDelt += g.attackStrength;
+                        localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
                         // console.log(targetPlayer.health);
@@ -424,10 +426,8 @@ const update = (delta) => { // new delta parameter
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
-                            localPlayer.mined += g.mineStrength;
+                            localPlayerStats.mined += g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
-                            console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
-
                             // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
 
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
@@ -657,14 +657,15 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        let player = players.find(x => x.uid === g.uid);
-
-        localPlayer.spawnTime = Date.now();
-        localPlayer.team = player.team; 
+        g.playerId = $(this).attr("playerId");      
+        let player = players.find(x => x.id === g.playerId);
 
         if(player !== undefined){
-            g.playerId = $(this).attr("playerId");
+            localPlayerStats.id = g.playerId;
+            localPlayerStats.spawnTime = Date.now();
+            localPlayerStats.team = player.team;       
         }
+
         startPlay();
     });
     $("#player-lobby").on("click", ".remove", function(){
@@ -743,7 +744,14 @@ const activateServerListener = () => {
         console.log("new data");
         initialGameState = false;
         onlineGameState = e.detail.gameState; 
-        winner = e.detail.winningTeam; 
+        winner = e.detail.winningTeam;
+        
+        if(onlineGameState === 2 && statsSent === false){
+            statsSent = true;
+            console.log('localPlayerStats', localPlayerStats);
+            model.savePlayerStats(localPlayerStats, "1");
+        }
+        
     });
 
 };
