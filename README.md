@@ -9,6 +9,8 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [ ] Block being destroyed animation
 - [ ] Player Animation?
 - [ ] Lobbys for multiple Games?
+- [ ] Refactor to use auth.currentUser()
+- [ ] Implement logout
 
 ## Version 2.0 Goals
 - [x] Restrict movement to map
