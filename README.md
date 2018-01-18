@@ -30,6 +30,6 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [x] Mine through blocks
 - [x] Only see your team and team base
 - [x] See squares around you
-- [x] Can't pic up your own gem
+- [x] Can't pick up your own gem
 - [x] Move around with arrow keys
 - [x] Spacebar to mine through object
