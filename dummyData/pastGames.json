@@ -1,0 +1,44 @@
+{
+    "--GameId": { // Game
+        "winner": 0,
+        "players": [
+            {
+                "--userId": {  // Player
+                    "damageDelt": 234,
+                    "mined": 234,
+                    "team": 1,
+                    "spawnTime": 234000,
+                    "deathTime": 234234
+                },
+                "--userId": {  // Player
+                    "damageDelt": 234,
+                    "mined": 234,
+                    "team": 1,
+                    "spawnTime": 234000,
+                    "deathTime": 234234
+                }
+            }       
+        ],
+        "gameStart": 1928341203,
+        "gameEnd": 1928391203
+    }
+}
+
+{
+    "--User": [
+        "--gameId": { 
+            "damageDelt": 100,
+            "mined": 234,
+            "team": 0,
+            "spawnTime": 0,
+            "deathTime": 0,
+        },
+        "--gameId": { 
+            "damageDelt": 100,
+            "mined": 234,
+            "team": 0,
+            "spawnTime": 0,
+            "deathTime": 0,
+        }
+    ]
+}
