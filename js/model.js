@@ -4,7 +4,7 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
-const $ = ("jquery");
+const $ = require("jquery");
 
 let url = "https://squirrelsvsdwarves.firebaseio.com";
 
@@ -84,6 +84,15 @@ module.exports.savePlayerPos = (player) => {
         // console.log("save player");
         JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.savePlayerStats = (playerStats, gameId) => {
+    $.ajax({
+        url:`${url}/games/${gameId}/players/${playerStats.id}/.json`,
+        type: 'PUT',
+        dataType: 'json',
+        data: JSON.stringify(playerStats),
     });
 };
 
