@@ -6,6 +6,8 @@ let c = document.getElementById('game-canvas');
 
 const $ = ("jquery");
 
+let url = "https://squirrelsvsdwarves.firebaseio.com";
+
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -80,7 +82,7 @@ module.exports.savePlayerPos = (player) => {
         });
         let JSONRequest = new XMLHttpRequest();
         // console.log("save player");
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
+        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -91,7 +93,7 @@ module.exports.savePlayerHealth = (player) => {
             "health": player.health
         });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
+        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -100,7 +102,7 @@ module.exports.savePlayerHealth = (player) => {
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+        JSONRequest.open("DELETE", `${url}/players/players/${player.id}.json`);
         JSONRequest.send();
     });
 };
@@ -111,7 +113,7 @@ module.exports.saveTileHard = (tile) => {
             hard: tile.hard
         });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
+        JSONRequest.open("PATCH", `${url}/tiles/tiles/${+tile.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -120,7 +122,7 @@ module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tiles);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+        JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -129,7 +131,7 @@ module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(gem);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
+        JSONRequest.open("PATCH", `${url}/gems/gems/${+gem.id}.json`);
         JSONRequest.send(jsonString);
         resolve();
     });
@@ -139,7 +141,7 @@ module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(state);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
+        JSONRequest.open("PUT", `${url}/gameState.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -147,7 +149,7 @@ module.exports.saveGameState = (state) => {
 module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/players/players/.json`);
+    JSONRequest.open("POST", `${url}/players/players/.json`);
     JSONRequest.send(jsonString);
 };
 
@@ -155,7 +157,7 @@ module.exports.addNewPlayer = (player) => {
 module.exports.saveNewMap = (data) => {
     let jsonString = JSON.stringify(data);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+    JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
     JSONRequest.send(jsonString);
 };
 
