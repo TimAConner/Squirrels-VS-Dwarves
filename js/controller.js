@@ -252,9 +252,11 @@ const parseRequestId = (requestId) => {
 };
 
 const calcLag = (miliseconds) => {
+    console.log('miliseconds', miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
+    console.log('lag', lag);
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
@@ -287,7 +289,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    calcLag(newRequestId); 
+                    if((newRequestId >= curRequestId)) calcLag(newRequestId);
+
+                        // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
+
                     if(!previousPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
@@ -297,10 +302,12 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
+
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
-                        calcLag(newRequestId);
+
+                        if((newRequestId >= curRequestId)) calcLag(newRequestId);
                 
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
@@ -405,6 +412,10 @@ const update = (delta) => { // new delta parameter
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
+                            console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
+
+                            // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
+
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
@@ -449,7 +460,6 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
                         }
                     }
@@ -621,10 +631,8 @@ const activateButtons = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-    
-        let tile = tiles.find(data => function(){
+        let tile = tiles.find(data => {
             let t = g.calcTilePos(data);
-    
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
     

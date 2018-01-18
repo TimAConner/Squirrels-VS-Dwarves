@@ -252,10 +252,12 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-const calculateLag = (miliseconds) => {
+const calcLag = (miliseconds) => {
+    console.log('miliseconds', miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
+    console.log('lag', lag);
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
@@ -288,7 +290,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    // calculateLag(newRequestId); 
+                    if((newRequestId >= curRequestId)) calcLag(newRequestId);
+
+                        // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
+
                     if(!previousPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
@@ -298,10 +303,12 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
+
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
-                        calculateLag(newRequestId);
+
+                        if((newRequestId >= curRequestId)) calcLag(newRequestId);
                 
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
@@ -403,9 +410,13 @@ const update = (delta) => { // new delta parameter
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
-                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
+                            console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
+
+                            // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
+
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
@@ -450,7 +461,6 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
                         }
                     }
@@ -558,7 +568,7 @@ const mainLoop = (timestamp) => {
             view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
-            console.log(players);
+            // console.log(players);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
@@ -591,9 +601,13 @@ const activateButtons = () => {
 
     $("#signIn").on("click", function(){
         // login.googleSignin().then((data) => {
+        //      console.log(data);
         //     g.owner = data.email;
+        //     g.name = data.name;
         // });
         g.owner = "timaconner1@gmail.com";
+        g.fullName = "Tim Conner";
+        view.showSignIn();
         model.fetchData();
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
@@ -618,10 +632,8 @@ const activateButtons = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-    
-        let tile = tiles.find(data => function(){
+        let tile = tiles.find(data => {
             let t = g.calcTilePos(data);
-    
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
     
@@ -633,7 +645,6 @@ const activateButtons = () => {
     });
     $("#player-lobby").on("click", ".select", function(){
         let player = players.find(x => x.owner === g.owner);
-        console.log(player);
         if(player !== undefined){
             g.playerId = $(this).attr("playerId");
         }
@@ -662,7 +673,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
-        console.log("listened");
+        // console.log("listened");
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
@@ -710,7 +721,9 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
-        console.log("loaded");
+        // console.log("loaded");
+        
+        console.log("new data");
         initialGameState = false;
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
@@ -765,6 +778,8 @@ module.exports.mineStrength = 0.01;
 
 module.exports.playerId = 0;
 module.exports.owner = "";
+module.exports.fullName = "";
+
 
 
 // Returns tile position based on their x and y and tilesize
@@ -884,16 +899,16 @@ module.exports.googleSignin = () => {
     });
 };
 
-module.exports.googleSignout = (logOutFunction) => {
-   firebase.auth()
-   .signOut().then(
-    () => {
-      logOutFunction();
-   }, 
-   (error) => {
-      console.log('Signout Failed');
-   });
-};
+// module.exports.googleSignout = (logOutFunction) => {
+//    firebase.auth()
+//    .signOut().then(
+//     () => {
+//       logOutFunction();
+//    }, 
+//    (error) => {
+//       console.log('Signout Failed');
+//    });
+// };
 },{"firebase":164}],5:[function(require,module,exports){
 "use strict";
 let controller = require("./controller");
@@ -1006,7 +1021,6 @@ module.exports.fetchData = () => {
             c.dispatchEvent(serverUpdate);
         });
         firebase.database().ref("players").on('value', function(snapshot) {
-            console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
@@ -1450,6 +1464,10 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
 
 
 
+module.exports.drawSignIn = () => {
+    $("#signInText").text(`${g.fullName}`);
+};
+
 
 module.exports.showLoadingScreen = () => {
     showScreen("#loading-screen");
@@ -1457,6 +1475,7 @@ module.exports.showLoadingScreen = () => {
 
 module.exports.viewMainMenu = () => {
     showScreen("#main-menu-screen");
+    module.exports.drawSignIn();
 };
 
 module.exports.viewWinnerScreen =  (winnerId) => {

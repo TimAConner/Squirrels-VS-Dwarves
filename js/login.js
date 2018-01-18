@@ -15,13 +15,13 @@ module.exports.googleSignin = () => {
     });
 };
 
-module.exports.googleSignout = (logOutFunction) => {
-   firebase.auth()
-   .signOut().then(
-    () => {
-      logOutFunction();
-   }, 
-   (error) => {
-      console.log('Signout Failed');
-   });
-};
+// module.exports.googleSignout = (logOutFunction) => {
+//    firebase.auth()
+//    .signOut().then(
+//     () => {
+//       logOutFunction();
+//    }, 
+//    (error) => {
+//       console.log('Signout Failed');
+//    });
+// };
