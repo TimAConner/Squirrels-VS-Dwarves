@@ -15,17 +15,20 @@ https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 */
 const model = require("./model");
 const view = require("./view");
+const login = require("./login");
 const g = require("./game");
 const $ = require("jquery");
 const gameMaker = require("./gameMaker");
 
 const _ = require("lodash");
 
+
+
 // 0 menu, 1 game, 2 winner
 
-let onlineGameState = null;
-let localGameState = 0;
-let waitingForGame = false;
+let onlineGameState = 0,
+localGameState = 0,
+waitingForGame = false;
 
 
 let winner = 0;
@@ -63,6 +66,8 @@ let keys = {
 let initialTileDraw = true;
 let initialPlayerDraw = true;
 let initialGemDraw = true;
+let initialGameState = true;
+
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -247,7 +252,7 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-const calculateLag = (miliseconds) => {
+const calcLag = (miliseconds) => {
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
@@ -283,7 +288,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    // calculateLag(newRequestId); 
+                    if((newRequestId >= curRequestId)) calcLag(newRequestId);
+
+                        // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
+
                     if(!previousPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
@@ -293,10 +301,12 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
+
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
-                        calculateLag(newRequestId);
+
+                        if((newRequestId >= curRequestId)) calcLag(newRequestId);
                 
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
@@ -398,9 +408,13 @@ const update = (delta) => { // new delta parameter
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
-                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
+                            console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
+
+                            // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
+
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
@@ -445,7 +459,6 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
                         }
                     }
@@ -505,7 +518,9 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if(onlineGameState === null){ // Page is loading
+    if (g.uid === ""){
+        view.showSignIn();
+    }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -518,9 +533,22 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers, ["health", "pos"]);
-            proccessNewData(tiles, newTiles, ["hard"]);
-            proccessNewData(gems, newGems);
+            // if(lag > 2000){
+            //     if(newPlayers.length !== 0){
+            //         players = newPlayers;
+            //     }
+            //     if(newTiles.length !== 0){
+            //         tiles = newTiles;
+            //     }
+            //     if(newGems.length !== 0){
+            //         gems = newGems;
+            //     }
+            //     lag = 0;
+            // } else {
+                proccessNewData(players, newPlayers, ["health", "pos"]);
+                proccessNewData(tiles, newTiles, ["hard"]);
+                proccessNewData(gems, newGems);
+            // }
       
             update(timestep);
 
@@ -538,7 +566,7 @@ const mainLoop = (timestamp) => {
             view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
-            console.log(players);
+            // console.log(players);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
@@ -556,11 +584,9 @@ const mainLoop = (timestamp) => {
 
 
 module.exports.startGame = () => {
-    model.fetchData();
     activateServerListener();
     activateButtons();
     requestAnimationFrame(mainLoop);
-
 };
 
 const startPlay = () => {
@@ -570,6 +596,18 @@ const startPlay = () => {
 };
 
 const activateButtons = () => {
+
+    $("#signIn").on("click", function(){
+        // login.googleSignin().then((data) => {
+        //      console.log(data);
+        //     g.uid = data.email;
+        //     g.name = data.name;
+        // });
+        g.uid = "timaconner1@gmail.com";
+        g.fullName = "Tim Conner";
+        view.showSignIn();
+        model.fetchData();
+    });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
     });
@@ -592,10 +630,8 @@ const activateButtons = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-    
-        let tile = tiles.find(data => function(){
+        let tile = tiles.find(data => {
             let t = g.calcTilePos(data);
-    
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
     
@@ -606,7 +642,10 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        g.playerId = $(this).attr("playerId");
+        let player = players.find(x => x.uid === g.uid);
+        if(player !== undefined){
+            g.playerId = $(this).attr("playerId");
+        }
         startPlay();
     });
     $("#player-lobby").on("click", ".remove", function(){
@@ -632,6 +671,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
+        // console.log("listened");
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
@@ -639,20 +679,19 @@ const activateServerListener = () => {
             let player = e.detail.players[key];
             player.id = key;
             return player;
-        });
+        }); 
 
-        // console.log("player", e.detail);
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                // console.log(players);
-                initialPlayerDraw = false;
             } else {
                 console.log("new data");
                 newPlayers = filteredPlayers;
             }
         }
         
+
+        initialPlayerDraw = false;
 
         // Update list of players
         
@@ -680,7 +719,10 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
-        console.log("loaded");
+        // console.log("loaded");
+        
+        console.log("new data");
+        initialGameState = false;
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
@@ -715,7 +757,7 @@ window.onkeyup = function(event) {
         }
     }
 };
-},{"./game":2,"./gameMaker":3,"./model":6,"./view":7,"jquery":166,"lodash":167}],2:[function(require,module,exports){
+},{"./game":2,"./gameMaker":3,"./login":4,"./model":7,"./view":8,"jquery":167,"lodash":168}],2:[function(require,module,exports){
 "use strict";
 
 // Holds information that needs to be accessible by multiple modules
@@ -733,6 +775,9 @@ module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
 
 module.exports.playerId = 0;
+module.exports.uid = "";
+module.exports.fullName = "";
+
 
 
 // Returns tile position based on their x and y and tilesize
@@ -793,7 +838,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
         "health": {
             "points": 100,
             "requestId": "0--0"
-        }
+        },
+        "uid": g.uid
     };
 
     model.addNewPlayer(player);  
@@ -833,13 +879,41 @@ module.exports.newGame = () => {
     model.saveGem(newGems[1]);
     model.saveNewMap(createdTiles);
 };
-},{"./game":2,"./mapMaker":5,"./model":6}],4:[function(require,module,exports){
+},{"./game":2,"./mapMaker":6,"./model":7}],4:[function(require,module,exports){
+"use strict";
+const firebase = require("firebase");
+let provider = new firebase.auth.GoogleAuthProvider();
+
+
+module.exports.googleSignin = () => {
+    return new Promise((resolve, reject) => { 
+        firebase.auth()
+        .signInWithPopup(provider).then((userData) => {
+            resolve(userData.user);
+        }).catch((error) => {
+            console.log(error.code);
+            console.log(error.message);
+        });
+    });
+};
+
+// module.exports.googleSignout = (logOutFunction) => {
+//    firebase.auth()
+//    .signOut().then(
+//     () => {
+//       logOutFunction();
+//    }, 
+//    (error) => {
+//       console.log('Signout Failed');
+//    });
+// };
+},{"firebase":164}],5:[function(require,module,exports){
 "use strict";
 let controller = require("./controller");
 controller.startGame();
 
 
-},{"./controller":1}],5:[function(require,module,exports){
+},{"./controller":1}],6:[function(require,module,exports){
   "use strict";
 
   const g = require("./game");
@@ -884,7 +958,7 @@ controller.startGame();
   };
 
  
-},{"./game":2}],6:[function(require,module,exports){
+},{"./game":2}],7:[function(require,module,exports){
 "use strict";
 
 let firebase = require('firebase');
@@ -945,7 +1019,6 @@ module.exports.fetchData = () => {
             c.dispatchEvent(serverUpdate);
         });
         firebase.database().ref("players").on('value', function(snapshot) {
-          //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
@@ -1060,7 +1133,7 @@ module.exports.saveNewMap = (data) => {
 //         JSONRequest.send();
 //     });
 // };
-},{"firebase":163}],7:[function(require,module,exports){
+},{"firebase":164}],8:[function(require,module,exports){
 "use strict";
 
 // module.exports.showTiles = (tiles) => {
@@ -1068,7 +1141,7 @@ module.exports.saveNewMap = (data) => {
 // };
 
 
-let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 
 const g = require("./game");
 const $ = require("jquery");
@@ -1129,10 +1202,15 @@ let app = angular.module("myApp", []);
 app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
-            if(e.detail!== null){
-                $scope.players = Object.keys(e.detail.players);
+            if(e.detail !== null){
+                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
+
+                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
+                $scope.ownedPlayers = ownedPlayers;
+                $scope.otherPlayers = otherPlayers;
             } else {
-                $scope.players = [];
+                $scope.otherPlayers = [];
+                $scope.ownedPlayers = [];
             }
             
         });
@@ -1307,6 +1385,13 @@ const drawPlayers = (players, playerId, tiles) => {
         //     if(players[i].pos.dir === "right"){
         //         g.ctx.rotate(90); // rotate
         //     }
+
+        // Draw health
+        g.ctx.fillStyle = "red";
+        g.ctx.strokeRect(players[i].pos.x, players[i].pos.y - 10, g.playerSize, 5);
+        g.ctx.fillRect(players[i].pos.x+1, players[i].pos.y - 9, g.playerSize*(players[i].health.points*0.01)-1, 3);
+        g.ctx.stroke();
+
         if(players[i].team === 1){
             g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
@@ -1377,6 +1462,10 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
 
 
 
+module.exports.drawSignIn = () => {
+    $("#signInText").text(`${g.fullName}`);
+};
+
 
 module.exports.showLoadingScreen = () => {
     showScreen("#loading-screen");
@@ -1384,6 +1473,7 @@ module.exports.showLoadingScreen = () => {
 
 module.exports.viewMainMenu = () => {
     showScreen("#main-menu-screen");
+    module.exports.drawSignIn();
 };
 
 module.exports.viewWinnerScreen =  (winnerId) => {
@@ -1393,6 +1483,10 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 
 module.exports.viewGame = () => {
     showScreen("#game-screen");
+};
+
+module.exports.showSignIn = () => {
+    showScreen("#sign-in-screen");
 };
 
 const showScreen = (screen) => {
@@ -1409,7 +1503,7 @@ const showScreen = (screen) => {
         $(screen).removeClass("hide");
     }
 };
-},{"./game":2,"angular":159,"jquery":166,"lodash":167}],8:[function(require,module,exports){
+},{"./game":2,"angular":160,"jquery":167,"lodash":168}],9:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -1434,7 +1528,7 @@ exports.default = exports.firebase;
 
 
 
-},{"./src/firebaseApp":9}],9:[function(require,module,exports){
+},{"./src/firebaseApp":10}],10:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -1799,7 +1893,7 @@ var appErrors = new util_1.ErrorFactory('app', 'Firebase', errors);
 
 
 
-},{"@firebase/util":141}],10:[function(require,module,exports){
+},{"@firebase/util":142}],11:[function(require,module,exports){
 (function (global){
 (function() {
   var firebase = require('@firebase/app').default;
@@ -2092,7 +2186,7 @@ c){a=new ul(a);c({INTERNAL:{getUid:r(a.getUid,a),getToken:r(a.Vb,a),addAuthToken
 }).call(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {});
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"@firebase/app":8}],11:[function(require,module,exports){
+},{"@firebase/app":9}],12:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2151,7 +2245,7 @@ exports.OnDisconnect = onDisconnect_1.OnDisconnect;
 
 
 
-},{"./src/api/DataSnapshot":12,"./src/api/Database":13,"./src/api/Query":14,"./src/api/Reference":15,"./src/api/internal":17,"./src/api/onDisconnect":18,"./src/api/test_access":19,"./src/core/RepoManager":26,"./src/core/util/util":70,"@firebase/app":8,"@firebase/util":141}],12:[function(require,module,exports){
+},{"./src/api/DataSnapshot":13,"./src/api/Database":14,"./src/api/Query":15,"./src/api/Reference":16,"./src/api/internal":18,"./src/api/onDisconnect":19,"./src/api/test_access":20,"./src/core/RepoManager":27,"./src/core/util/util":71,"@firebase/app":9,"@firebase/util":142}],13:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2326,7 +2420,7 @@ exports.DataSnapshot = DataSnapshot;
 
 
 
-},{"../core/snap/indexes/PriorityIndex":48,"../core/util/Path":64,"../core/util/validation":71,"@firebase/util":141}],13:[function(require,module,exports){
+},{"../core/snap/indexes/PriorityIndex":49,"../core/util/Path":65,"../core/util/validation":72,"@firebase/util":142}],14:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2461,7 +2555,7 @@ exports.DatabaseInternals = DatabaseInternals;
 
 
 
-},{"../core/Repo":24,"../core/RepoManager":26,"../core/util/Path":64,"../core/util/libs/parser":69,"../core/util/util":70,"../core/util/validation":71,"./Reference":15,"@firebase/util":141}],14:[function(require,module,exports){
+},{"../core/Repo":25,"../core/RepoManager":27,"../core/util/Path":65,"../core/util/libs/parser":70,"../core/util/util":71,"../core/util/validation":72,"./Reference":16,"@firebase/util":142}],15:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2969,7 +3063,7 @@ exports.Query = Query;
 
 
 
-},{"../core/snap/indexes/KeyIndex":46,"../core/snap/indexes/PathIndex":47,"../core/snap/indexes/PriorityIndex":48,"../core/snap/indexes/ValueIndex":49,"../core/util/Path":64,"../core/util/util":70,"../core/util/validation":71,"../core/view/EventRegistration":79,"@firebase/util":141}],15:[function(require,module,exports){
+},{"../core/snap/indexes/KeyIndex":47,"../core/snap/indexes/PathIndex":48,"../core/snap/indexes/PriorityIndex":49,"../core/snap/indexes/ValueIndex":50,"../core/util/Path":65,"../core/util/util":71,"../core/util/validation":72,"../core/view/EventRegistration":80,"@firebase/util":142}],16:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3279,7 +3373,7 @@ SyncPoint_1.SyncPoint.__referenceConstructor = Reference;
 
 
 
-},{"../core/Repo":24,"../core/SyncPoint":31,"../core/util/NextPushId":62,"../core/util/Path":64,"../core/util/util":70,"../core/util/validation":71,"../core/view/QueryParams":80,"./Query":14,"./TransactionResult":16,"./onDisconnect":18,"@firebase/util":141}],16:[function(require,module,exports){
+},{"../core/Repo":25,"../core/SyncPoint":32,"../core/util/NextPushId":63,"../core/util/Path":65,"../core/util/util":71,"../core/util/validation":72,"../core/view/QueryParams":81,"./Query":15,"./TransactionResult":17,"./onDisconnect":19,"@firebase/util":142}],17:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3322,7 +3416,7 @@ exports.TransactionResult = TransactionResult;
 
 
 
-},{"@firebase/util":141}],17:[function(require,module,exports){
+},{"@firebase/util":142}],18:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3378,7 +3472,7 @@ exports.interceptServerData = function (ref, callback) {
 
 
 
-},{"../realtime/BrowserPollConnection":87,"../realtime/WebSocketConnection":91}],18:[function(require,module,exports){
+},{"../realtime/BrowserPollConnection":88,"../realtime/WebSocketConnection":92}],19:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3494,7 +3588,7 @@ exports.OnDisconnect = OnDisconnect;
 
 
 
-},{"../core/util/util":70,"../core/util/validation":71,"@firebase/util":141}],19:[function(require,module,exports){
+},{"../core/util/util":71,"../core/util/validation":72,"@firebase/util":142}],20:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3578,7 +3672,7 @@ exports.forceRestClient = function (forceRestClient) {
 
 
 
-},{"../core/PersistentConnection":22,"../core/RepoInfo":25,"../core/RepoManager":26,"../realtime/Connection":88}],20:[function(require,module,exports){
+},{"../core/PersistentConnection":23,"../core/RepoInfo":26,"../core/RepoManager":27,"../realtime/Connection":89}],21:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3665,7 +3759,7 @@ exports.AuthTokenProvider = AuthTokenProvider;
 
 
 
-},{"./util/util":70}],21:[function(require,module,exports){
+},{"./util/util":71}],22:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3884,7 +3978,7 @@ exports.CompoundWrite = CompoundWrite;
 
 
 
-},{"./snap/Node":42,"./snap/indexes/PriorityIndex":48,"./util/ImmutableTree":61,"./util/Path":64,"@firebase/util":141}],22:[function(require,module,exports){
+},{"./snap/Node":43,"./snap/indexes/PriorityIndex":49,"./util/ImmutableTree":62,"./util/Path":65,"@firebase/util":142}],23:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -4695,7 +4789,7 @@ exports.PersistentConnection = PersistentConnection;
 
 
 
-},{"../realtime/Connection":88,"./ServerActions":28,"./util/OnlineMonitor":63,"./util/Path":64,"./util/VisibilityMonitor":68,"./util/util":70,"@firebase/app":8,"@firebase/util":141}],23:[function(require,module,exports){
+},{"../realtime/Connection":89,"./ServerActions":29,"./util/OnlineMonitor":64,"./util/Path":65,"./util/VisibilityMonitor":69,"./util/util":71,"@firebase/app":9,"@firebase/util":142}],24:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -4887,7 +4981,7 @@ exports.ReadonlyRestClient = ReadonlyRestClient;
 
 
 
-},{"./ServerActions":28,"./util/util":70,"@firebase/util":141}],24:[function(require,module,exports){
+},{"./ServerActions":29,"./util/util":71,"@firebase/util":142}],25:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5417,7 +5511,7 @@ exports.Repo = Repo;
 
 
 
-},{"../api/Database":13,"./AuthTokenProvider":20,"./PersistentConnection":22,"./ReadonlyRestClient":23,"./SnapshotHolder":29,"./SparseSnapshotTree":30,"./SyncTree":32,"./snap/nodeFromJSON":50,"./stats/StatsListener":53,"./stats/StatsManager":54,"./stats/StatsReporter":55,"./util/Path":64,"./util/ServerValues":65,"./util/util":70,"./view/EventQueue":78,"@firebase/util":141}],25:[function(require,module,exports){
+},{"../api/Database":14,"./AuthTokenProvider":21,"./PersistentConnection":23,"./ReadonlyRestClient":24,"./SnapshotHolder":30,"./SparseSnapshotTree":31,"./SyncTree":33,"./snap/nodeFromJSON":51,"./stats/StatsListener":54,"./stats/StatsManager":55,"./stats/StatsReporter":56,"./util/Path":65,"./util/ServerValues":66,"./util/util":71,"./view/EventQueue":79,"@firebase/util":142}],26:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5530,7 +5624,7 @@ exports.RepoInfo = RepoInfo;
 
 
 
-},{"../realtime/Constants":89,"./storage/storage":58,"@firebase/util":141}],26:[function(require,module,exports){
+},{"../realtime/Constants":90,"./storage/storage":59,"@firebase/util":142}],27:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5665,7 +5759,7 @@ exports.RepoManager = RepoManager;
 
 
 
-},{"./Repo":24,"./Repo_transaction":27,"./util/libs/parser":69,"./util/util":70,"./util/validation":71,"@firebase/util":141}],27:[function(require,module,exports){
+},{"./Repo":25,"./Repo_transaction":28,"./util/libs/parser":70,"./util/util":71,"./util/validation":72,"@firebase/util":142}],28:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6232,7 +6326,7 @@ Repo_1.Repo.prototype.abortTransactionsOnNode_ = function (node) {
 
 
 
-},{"../api/DataSnapshot":12,"../api/Reference":15,"./Repo":24,"./snap/ChildrenNode":39,"./snap/indexes/PriorityIndex":48,"./snap/nodeFromJSON":50,"./util/Path":64,"./util/ServerValues":65,"./util/Tree":67,"./util/util":70,"./util/validation":71,"@firebase/util":141}],28:[function(require,module,exports){
+},{"../api/DataSnapshot":13,"../api/Reference":16,"./Repo":25,"./snap/ChildrenNode":40,"./snap/indexes/PriorityIndex":49,"./snap/nodeFromJSON":51,"./util/Path":65,"./util/ServerValues":66,"./util/Tree":68,"./util/util":71,"./util/validation":72,"@firebase/util":142}],29:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6305,7 +6399,7 @@ exports.ServerActions = ServerActions;
 
 
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6345,7 +6439,7 @@ exports.SnapshotHolder = SnapshotHolder;
 
 
 
-},{"./snap/ChildrenNode":39}],30:[function(require,module,exports){
+},{"./snap/ChildrenNode":40}],31:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6523,7 +6617,7 @@ exports.SparseSnapshotTree = SparseSnapshotTree;
 
 
 
-},{"./snap/indexes/PriorityIndex":48,"./util/CountedSet":59,"./util/Path":64}],31:[function(require,module,exports){
+},{"./snap/indexes/PriorityIndex":49,"./util/CountedSet":60,"./util/Path":65}],32:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6775,7 +6869,7 @@ exports.SyncPoint = SyncPoint;
 
 
 
-},{"./snap/ChildrenNode":39,"./view/CacheNode":72,"./view/View":81,"./view/ViewCache":82,"@firebase/util":141}],32:[function(require,module,exports){
+},{"./snap/ChildrenNode":40,"./view/CacheNode":73,"./view/View":82,"./view/ViewCache":83,"@firebase/util":142}],33:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -7488,7 +7582,7 @@ exports.SyncTree = SyncTree;
 
 
 
-},{"./SyncPoint":31,"./WriteTree":33,"./operation/AckUserWrite":34,"./operation/ListenComplete":35,"./operation/Merge":36,"./operation/Operation":37,"./operation/Overwrite":38,"./snap/ChildrenNode":39,"./util/ImmutableTree":61,"./util/Path":64,"./util/util":70,"@firebase/util":141}],33:[function(require,module,exports){
+},{"./SyncPoint":32,"./WriteTree":34,"./operation/AckUserWrite":35,"./operation/ListenComplete":36,"./operation/Merge":37,"./operation/Operation":38,"./operation/Overwrite":39,"./snap/ChildrenNode":40,"./util/ImmutableTree":62,"./util/Path":65,"./util/util":71,"@firebase/util":142}],34:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8123,7 +8217,7 @@ exports.WriteTreeRef = WriteTreeRef;
 
 
 
-},{"./CompoundWrite":21,"./snap/ChildrenNode":39,"./snap/indexes/PriorityIndex":48,"./util/Path":64,"@firebase/util":141}],34:[function(require,module,exports){
+},{"./CompoundWrite":22,"./snap/ChildrenNode":40,"./snap/indexes/PriorityIndex":49,"./util/Path":65,"@firebase/util":142}],35:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8187,7 +8281,7 @@ exports.AckUserWrite = AckUserWrite;
 
 
 
-},{"../util/Path":64,"./Operation":37,"@firebase/util":141}],35:[function(require,module,exports){
+},{"../util/Path":65,"./Operation":38,"@firebase/util":142}],36:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8234,7 +8328,7 @@ exports.ListenComplete = ListenComplete;
 
 
 
-},{"../util/Path":64,"./Operation":37}],36:[function(require,module,exports){
+},{"../util/Path":65,"./Operation":38}],37:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8316,7 +8410,7 @@ exports.Merge = Merge;
 
 
 
-},{"../util/Path":64,"./Operation":37,"./Overwrite":38,"@firebase/util":141}],37:[function(require,module,exports){
+},{"../util/Path":65,"./Operation":38,"./Overwrite":39,"@firebase/util":142}],38:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8390,7 +8484,7 @@ exports.OperationSource = OperationSource;
 
 
 
-},{"@firebase/util":141}],38:[function(require,module,exports){
+},{"@firebase/util":142}],39:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8439,7 +8533,7 @@ exports.Overwrite = Overwrite;
 
 
 
-},{"../util/Path":64,"./Operation":37}],39:[function(require,module,exports){
+},{"../util/Path":65,"./Operation":38}],40:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8945,7 +9039,7 @@ PriorityIndex_1.setMaxNode(exports.MAX_NODE);
 
 
 
-},{"../util/SortedMap":66,"../util/util":70,"./IndexMap":40,"./LeafNode":41,"./Node":42,"./comparators":44,"./indexes/KeyIndex":46,"./indexes/PriorityIndex":48,"./snap":51,"@firebase/util":141}],40:[function(require,module,exports){
+},{"../util/SortedMap":67,"../util/util":71,"./IndexMap":41,"./LeafNode":42,"./Node":43,"./comparators":45,"./indexes/KeyIndex":47,"./indexes/PriorityIndex":49,"./snap":52,"@firebase/util":142}],41:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9128,7 +9222,7 @@ exports.IndexMap = IndexMap;
 
 
 
-},{"./Node":42,"./childSet":43,"./indexes/KeyIndex":46,"./indexes/PriorityIndex":48,"@firebase/util":141}],41:[function(require,module,exports){
+},{"./Node":43,"./childSet":44,"./indexes/KeyIndex":47,"./indexes/PriorityIndex":49,"@firebase/util":142}],42:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9397,7 +9491,7 @@ exports.LeafNode = LeafNode;
 
 
 
-},{"../util/util":70,"./snap":51,"@firebase/util":141}],42:[function(require,module,exports){
+},{"../util/util":71,"./snap":52,"@firebase/util":142}],43:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9442,7 +9536,7 @@ exports.NamedNode = NamedNode;
 
 
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9574,7 +9668,7 @@ exports.buildChildSet = function (childList, cmp, keyFn, mapSortFn) {
 
 
 
-},{"../util/SortedMap":66}],44:[function(require,module,exports){
+},{"../util/SortedMap":67}],45:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9604,7 +9698,7 @@ exports.NAME_COMPARATOR = NAME_COMPARATOR;
 
 
 
-},{"../util/util":70}],45:[function(require,module,exports){
+},{"../util/util":71}],46:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9664,7 +9758,7 @@ exports.Index = Index;
 
 
 
-},{"../../util/util":70,"../Node":42}],46:[function(require,module,exports){
+},{"../../util/util":71,"../Node":43}],47:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9769,7 +9863,7 @@ exports.KEY_INDEX = new KeyIndex();
 
 
 
-},{"../../util/util":70,"../Node":42,"./Index":45,"@firebase/util":141}],47:[function(require,module,exports){
+},{"../../util/util":71,"../Node":43,"./Index":46,"@firebase/util":142}],48:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9871,7 +9965,7 @@ exports.PathIndex = PathIndex;
 
 
 
-},{"../../util/util":70,"../ChildrenNode":39,"../Node":42,"../nodeFromJSON":50,"./Index":45,"@firebase/util":141}],48:[function(require,module,exports){
+},{"../../util/util":71,"../ChildrenNode":40,"../Node":43,"../nodeFromJSON":51,"./Index":46,"@firebase/util":142}],49:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9983,7 +10077,7 @@ exports.PRIORITY_INDEX = new PriorityIndex();
 
 
 
-},{"../../util/util":70,"../LeafNode":41,"../Node":42,"./Index":45}],49:[function(require,module,exports){
+},{"../../util/util":71,"../LeafNode":42,"../Node":43,"./Index":46}],50:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10083,7 +10177,7 @@ exports.VALUE_INDEX = new ValueIndex();
 
 
 
-},{"../../util/util":70,"../Node":42,"../nodeFromJSON":50,"./Index":45}],50:[function(require,module,exports){
+},{"../../util/util":71,"../Node":43,"../nodeFromJSON":51,"./Index":46}],51:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10186,7 +10280,7 @@ PriorityIndex_1.setNodeFromJSON(nodeFromJSON);
 
 
 
-},{"./ChildrenNode":39,"./IndexMap":40,"./LeafNode":41,"./Node":42,"./childSet":43,"./comparators":44,"./indexes/PriorityIndex":48,"@firebase/util":141}],51:[function(require,module,exports){
+},{"./ChildrenNode":40,"./IndexMap":41,"./LeafNode":42,"./Node":43,"./childSet":44,"./comparators":45,"./indexes/PriorityIndex":49,"@firebase/util":142}],52:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10243,7 +10337,7 @@ exports.validatePriorityNode = function (priorityNode) {
 
 
 
-},{"../util/util":70,"@firebase/util":141}],52:[function(require,module,exports){
+},{"../util/util":71,"@firebase/util":142}],53:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10287,7 +10381,7 @@ exports.StatsCollection = StatsCollection;
 
 
 
-},{"@firebase/util":141}],53:[function(require,module,exports){
+},{"@firebase/util":142}],54:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10334,7 +10428,7 @@ exports.StatsListener = StatsListener;
 
 
 
-},{"@firebase/util":141}],54:[function(require,module,exports){
+},{"@firebase/util":142}],55:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10378,7 +10472,7 @@ exports.StatsManager = StatsManager;
 
 
 
-},{"./StatsCollection":52}],55:[function(require,module,exports){
+},{"./StatsCollection":53}],56:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10448,7 +10542,7 @@ exports.StatsReporter = StatsReporter;
 
 
 
-},{"../util/util":70,"./StatsListener":53,"@firebase/util":141}],56:[function(require,module,exports){
+},{"../util/util":71,"./StatsListener":54,"@firebase/util":142}],57:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10533,7 +10627,7 @@ exports.DOMStorageWrapper = DOMStorageWrapper;
 
 
 
-},{"@firebase/util":141}],57:[function(require,module,exports){
+},{"@firebase/util":142}],58:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10586,7 +10680,7 @@ exports.MemoryStorage = MemoryStorage;
 
 
 
-},{"@firebase/util":141}],58:[function(require,module,exports){
+},{"@firebase/util":142}],59:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10640,7 +10734,7 @@ exports.SessionStorage = createStoragefor('sessionStorage');
 
 
 
-},{"./DOMStorageWrapper":56,"./MemoryStorage":57}],59:[function(require,module,exports){
+},{"./DOMStorageWrapper":57,"./MemoryStorage":58}],60:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10738,7 +10832,7 @@ exports.CountedSet = CountedSet;
 
 
 
-},{"@firebase/util":141}],60:[function(require,module,exports){
+},{"@firebase/util":142}],61:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10819,7 +10913,7 @@ exports.EventEmitter = EventEmitter;
 
 
 
-},{"@firebase/util":141}],61:[function(require,module,exports){
+},{"@firebase/util":142}],62:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11178,7 +11272,7 @@ exports.ImmutableTree = ImmutableTree;
 
 
 
-},{"./Path":64,"./SortedMap":66,"./util":70,"@firebase/util":141}],62:[function(require,module,exports){
+},{"./Path":65,"./SortedMap":67,"./util":71,"@firebase/util":142}],63:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11258,7 +11352,7 @@ exports.nextPushId = (function () {
 
 
 
-},{"@firebase/util":141}],63:[function(require,module,exports){
+},{"@firebase/util":142}],64:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11348,7 +11442,7 @@ exports.OnlineMonitor = OnlineMonitor;
 
 
 
-},{"./EventEmitter":60,"@firebase/util":141}],64:[function(require,module,exports){
+},{"./EventEmitter":61,"@firebase/util":142}],65:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11676,7 +11770,7 @@ exports.ValidationPath = ValidationPath;
 
 
 
-},{"./util":70,"@firebase/util":141}],65:[function(require,module,exports){
+},{"./util":71,"@firebase/util":142}],66:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11781,7 +11875,7 @@ exports.resolveDeferredValueSnapshot = function (node, serverValues) {
 
 
 
-},{"../SparseSnapshotTree":30,"../snap/LeafNode":41,"../snap/indexes/PriorityIndex":48,"../snap/nodeFromJSON":50,"./Path":64,"@firebase/util":141}],66:[function(require,module,exports){
+},{"../SparseSnapshotTree":31,"../snap/LeafNode":42,"../snap/indexes/PriorityIndex":49,"../snap/nodeFromJSON":51,"./Path":65,"@firebase/util":142}],67:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12441,7 +12535,7 @@ exports.SortedMap = SortedMap;
 
 
 
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12670,7 +12764,7 @@ exports.Tree = Tree;
 
 
 
-},{"./Path":64,"@firebase/util":141}],68:[function(require,module,exports){
+},{"./Path":65,"@firebase/util":142}],69:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12762,7 +12856,7 @@ exports.VisibilityMonitor = VisibilityMonitor;
 
 
 
-},{"./EventEmitter":60,"@firebase/util":141}],69:[function(require,module,exports){
+},{"./EventEmitter":61,"@firebase/util":142}],70:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12881,7 +12975,7 @@ exports.parseURL = function (dataURL) {
 
 
 
-},{"../../RepoInfo":25,"../Path":64,"../util":70}],70:[function(require,module,exports){
+},{"../../RepoInfo":26,"../Path":65,"../util":71}],71:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13514,7 +13608,7 @@ exports.setTimeoutNonBlocking = function (fn, time) {
 
 
 
-},{"../storage/storage":58,"@firebase/util":141}],71:[function(require,module,exports){
+},{"../storage/storage":59,"@firebase/util":142}],72:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13897,7 +13991,7 @@ exports.validateObjectContainsKey = function (fnName, argumentNumber, obj, key, 
 
 
 
-},{"./Path":64,"./util":70,"@firebase/util":141}],72:[function(require,module,exports){
+},{"./Path":65,"./util":71,"@firebase/util":142}],73:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13976,7 +14070,7 @@ exports.CacheNode = CacheNode;
 
 
 
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14068,7 +14162,7 @@ exports.Change = Change;
 
 
 
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14151,7 +14245,7 @@ exports.ChildChangeAccumulator = ChildChangeAccumulator;
 
 
 
-},{"./Change":73,"@firebase/util":141}],75:[function(require,module,exports){
+},{"./Change":74,"@firebase/util":142}],76:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14256,7 +14350,7 @@ exports.WriteTreeCompleteChildSource = WriteTreeCompleteChildSource;
 
 
 
-},{"./CacheNode":72}],76:[function(require,module,exports){
+},{"./CacheNode":73}],77:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14370,7 +14464,7 @@ exports.CancelEvent = CancelEvent;
 
 
 
-},{"@firebase/util":141}],77:[function(require,module,exports){
+},{"@firebase/util":142}],78:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14502,7 +14596,7 @@ exports.EventGenerator = EventGenerator;
 
 
 
-},{"../snap/Node":42,"./Change":73,"@firebase/util":141}],78:[function(require,module,exports){
+},{"../snap/Node":43,"./Change":74,"@firebase/util":142}],79:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14676,7 +14770,7 @@ exports.EventList = EventList;
 
 
 
-},{"../util/util":70}],79:[function(require,module,exports){
+},{"../util/util":71}],80:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14893,7 +14987,7 @@ exports.ChildEventRegistration = ChildEventRegistration;
 
 
 
-},{"../../api/DataSnapshot":12,"./Event":76,"@firebase/util":141}],80:[function(require,module,exports){
+},{"../../api/DataSnapshot":13,"./Event":77,"@firebase/util":142}],81:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15301,7 +15395,7 @@ exports.QueryParams = QueryParams;
 
 
 
-},{"../snap/indexes/KeyIndex":46,"../snap/indexes/PathIndex":47,"../snap/indexes/PriorityIndex":48,"../snap/indexes/ValueIndex":49,"../util/util":70,"./filter/IndexedFilter":84,"./filter/LimitedFilter":85,"./filter/RangedFilter":86,"@firebase/util":141}],81:[function(require,module,exports){
+},{"../snap/indexes/KeyIndex":47,"../snap/indexes/PathIndex":48,"../snap/indexes/PriorityIndex":49,"../snap/indexes/ValueIndex":50,"../util/util":71,"./filter/IndexedFilter":85,"./filter/LimitedFilter":86,"./filter/RangedFilter":87,"@firebase/util":142}],82:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15511,7 +15605,7 @@ exports.View = View;
 
 
 
-},{"../operation/Operation":37,"../snap/ChildrenNode":39,"../snap/indexes/PriorityIndex":48,"./CacheNode":72,"./Change":73,"./EventGenerator":77,"./ViewCache":82,"./ViewProcessor":83,"./filter/IndexedFilter":84,"@firebase/util":141}],82:[function(require,module,exports){
+},{"../operation/Operation":38,"../snap/ChildrenNode":40,"../snap/indexes/PriorityIndex":49,"./CacheNode":73,"./Change":74,"./EventGenerator":78,"./ViewCache":83,"./ViewProcessor":84,"./filter/IndexedFilter":85,"@firebase/util":142}],83:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15609,7 +15703,7 @@ exports.ViewCache = ViewCache;
 
 
 
-},{"../snap/ChildrenNode":39,"./CacheNode":72}],83:[function(require,module,exports){
+},{"../snap/ChildrenNode":40,"./CacheNode":73}],84:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16206,7 +16300,7 @@ exports.ViewProcessor = ViewProcessor;
 
 
 
-},{"../operation/Operation":37,"../snap/ChildrenNode":39,"../snap/indexes/KeyIndex":46,"../util/ImmutableTree":61,"../util/Path":64,"./Change":73,"./ChildChangeAccumulator":74,"./CompleteChildSource":75,"@firebase/util":141}],84:[function(require,module,exports){
+},{"../operation/Operation":38,"../snap/ChildrenNode":40,"../snap/indexes/KeyIndex":47,"../util/ImmutableTree":62,"../util/Path":65,"./Change":74,"./ChildChangeAccumulator":75,"./CompleteChildSource":76,"@firebase/util":142}],85:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16341,7 +16435,7 @@ exports.IndexedFilter = IndexedFilter;
 
 
 
-},{"../../snap/ChildrenNode":39,"../../snap/indexes/PriorityIndex":48,"../Change":73,"@firebase/util":141}],85:[function(require,module,exports){
+},{"../../snap/ChildrenNode":40,"../../snap/indexes/PriorityIndex":49,"../Change":74,"@firebase/util":142}],86:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16602,7 +16696,7 @@ exports.LimitedFilter = LimitedFilter;
 
 
 
-},{"../../snap/ChildrenNode":39,"../../snap/Node":42,"../Change":73,"./RangedFilter":86,"@firebase/util":141}],86:[function(require,module,exports){
+},{"../../snap/ChildrenNode":40,"../../snap/Node":43,"../Change":74,"./RangedFilter":87,"@firebase/util":142}],87:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16747,7 +16841,7 @@ exports.RangedFilter = RangedFilter;
 
 
 
-},{"../../../core/snap/Node":42,"../../snap/ChildrenNode":39,"../../snap/indexes/PriorityIndex":48,"./IndexedFilter":84}],87:[function(require,module,exports){
+},{"../../../core/snap/Node":43,"../../snap/ChildrenNode":40,"../../snap/indexes/PriorityIndex":49,"./IndexedFilter":85}],88:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -17378,7 +17472,7 @@ exports.FirebaseIFrameScriptHolder = FirebaseIFrameScriptHolder;
 
 
 
-},{"../core/stats/StatsManager":54,"../core/util/CountedSet":59,"../core/util/util":70,"./Constants":89,"./polling/PacketReceiver":92,"@firebase/util":141}],88:[function(require,module,exports){
+},{"../core/stats/StatsManager":55,"../core/util/CountedSet":60,"../core/util/util":71,"./Constants":90,"./polling/PacketReceiver":93,"@firebase/util":142}],89:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -17873,7 +17967,7 @@ exports.Connection = Connection;
 
 
 
-},{"../core/storage/storage":58,"../core/util/util":70,"./Constants":89,"./TransportManager":90}],89:[function(require,module,exports){
+},{"../core/storage/storage":59,"../core/util/util":71,"./Constants":90,"./TransportManager":91}],90:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -17903,7 +17997,7 @@ exports.LONG_POLLING = 'long_polling';
 
 
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -18004,7 +18098,7 @@ exports.TransportManager = TransportManager;
 
 
 
-},{"../core/util/util":70,"./BrowserPollConnection":87,"./WebSocketConnection":91}],91:[function(require,module,exports){
+},{"../core/util/util":71,"./BrowserPollConnection":88,"./WebSocketConnection":92}],92:[function(require,module,exports){
 (function (process){
 "use strict";
 /**
@@ -18359,7 +18453,7 @@ exports.WebSocketConnection = WebSocketConnection;
 
 
 }).call(this,require('_process'))
-},{"../core/stats/StatsManager":54,"../core/storage/storage":58,"../core/util/util":70,"./Constants":89,"@firebase/app":8,"@firebase/util":141,"_process":168}],92:[function(require,module,exports){
+},{"../core/stats/StatsManager":55,"../core/storage/storage":59,"../core/util/util":71,"./Constants":90,"@firebase/app":9,"@firebase/util":142,"_process":169}],93:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -18447,7 +18541,7 @@ exports.PacketReceiver = PacketReceiver;
 
 
 
-},{"../../core/util/util":70}],93:[function(require,module,exports){
+},{"../../core/util/util":71}],94:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -18488,7 +18582,7 @@ registerMessaging(app_1.firebase);
 
 
 
-},{"./src/controllers/sw-controller":95,"./src/controllers/window-controller":96,"@firebase/app":8}],94:[function(require,module,exports){
+},{"./src/controllers/sw-controller":96,"./src/controllers/window-controller":97,"@firebase/app":9}],95:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -18660,7 +18754,7 @@ exports.default = ControllerInterface;
 
 
 
-},{"../models/errors":99,"../models/notification-permission":101,"../models/token-manager":102,"@firebase/util":141}],95:[function(require,module,exports){
+},{"../models/errors":100,"../models/notification-permission":102,"../models/token-manager":103,"@firebase/util":142}],96:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -18975,7 +19069,7 @@ exports.default = SWController;
 
 
 
-},{"../models/errors":99,"../models/fcm-details":100,"../models/worker-page-message":103,"./controller-interface":94}],96:[function(require,module,exports){
+},{"../models/errors":100,"../models/fcm-details":101,"../models/worker-page-message":104,"./controller-interface":95}],97:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19295,7 +19389,7 @@ exports.default = WindowController;
 
 
 
-},{"../models/default-sw":98,"../models/errors":99,"../models/notification-permission":101,"../models/worker-page-message":103,"./controller-interface":94,"@firebase/util":141}],97:[function(require,module,exports){
+},{"../models/default-sw":99,"../models/errors":100,"../models/notification-permission":102,"../models/worker-page-message":104,"./controller-interface":95,"@firebase/util":142}],98:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -19327,7 +19421,7 @@ exports.default = function (arrayBuffer) {
 
 
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19352,7 +19446,7 @@ exports.default = {
 
 
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19465,7 +19559,7 @@ var _a;
 
 
 
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19562,7 +19656,7 @@ exports.default = {
 
 
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19588,7 +19682,7 @@ exports.default = {
 
 
 
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19957,7 +20051,7 @@ exports.default = TokenManager;
 
 
 
-},{"../helpers/array-buffer-to-base64":97,"./errors":99,"./fcm-details":100,"@firebase/util":141}],103:[function(require,module,exports){
+},{"../helpers/array-buffer-to-base64":98,"./errors":100,"./fcm-details":101,"@firebase/util":142}],104:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20003,7 +20097,7 @@ exports.default = {
 
 
 
-},{}],104:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20027,7 +20121,7 @@ require("./src/shims/findIndex");
 
 
 
-},{"./src/polyfills/promise":105,"./src/shims/find":106,"./src/shims/findIndex":107}],105:[function(require,module,exports){
+},{"./src/polyfills/promise":106,"./src/shims/find":107,"./src/shims/findIndex":108}],106:[function(require,module,exports){
 (function (global){
 /**
  * Copyright 2017 Google Inc.
@@ -20065,7 +20159,7 @@ if (typeof Promise === 'undefined') {
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"promise-polyfill":169}],106:[function(require,module,exports){
+},{"promise-polyfill":170}],107:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20125,7 +20219,7 @@ if (!Array.prototype.find) {
 
 
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20185,7 +20279,7 @@ if (!Array.prototype.findIndex) {
 
 
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20235,7 +20329,7 @@ registerStorage(app_1.default);
 
 
 
-},{"./src/implementation/string":130,"./src/implementation/taskenums":131,"./src/implementation/xhriopool":136,"./src/reference":137,"./src/service":138,"@firebase/app":8}],109:[function(require,module,exports){
+},{"./src/implementation/string":131,"./src/implementation/taskenums":132,"./src/implementation/xhriopool":137,"./src/reference":138,"./src/service":139,"@firebase/app":9}],110:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -20382,7 +20476,7 @@ exports.nullFunctionSpec = nullFunctionSpec;
 
 
 
-},{"./error":116,"./metadata":121,"./type":132}],110:[function(require,module,exports){
+},{"./error":117,"./metadata":122,"./type":133}],111:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20431,7 +20525,7 @@ exports.remove = remove;
 
 
 
-},{}],111:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20473,7 +20567,7 @@ exports.async = async;
 
 
 
-},{"./promise_external":125}],112:[function(require,module,exports){
+},{"./promise_external":126}],113:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var constants = require("./constants");
@@ -20598,7 +20692,7 @@ exports.AuthWrapper = AuthWrapper;
 
 
 
-},{"./constants":115,"./error":116,"./failrequest":117,"./location":120,"./promise_external":125,"./requestmap":128,"./type":132}],113:[function(require,module,exports){
+},{"./constants":116,"./error":117,"./failrequest":118,"./location":121,"./promise_external":126,"./requestmap":129,"./type":133}],114:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20721,7 +20815,7 @@ exports.stop = stop;
 
 
 
-},{}],114:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20854,7 +20948,7 @@ exports.FbsBlob = FbsBlob;
 
 
 
-},{"./fs":118,"./string":130,"./type":132}],115:[function(require,module,exports){
+},{"./fs":119,"./string":131,"./type":133}],116:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20916,7 +21010,7 @@ exports.minSafeInteger = -9007199254740991;
 
 
 
-},{}],116:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -21159,7 +21253,7 @@ exports.internalError = internalError;
 
 
 
-},{"./constants":115}],117:[function(require,module,exports){
+},{"./constants":116}],118:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var promiseimpl = require("./promise_external");
@@ -21186,7 +21280,7 @@ exports.FailRequest = FailRequest;
 
 
 
-},{"./promise_external":125}],118:[function(require,module,exports){
+},{"./promise_external":126}],119:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var type = require("./type");
@@ -21255,7 +21349,7 @@ exports.sliceBlob = sliceBlob;
 
 
 
-},{"./type":132}],119:[function(require,module,exports){
+},{"./type":133}],120:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -21297,7 +21391,7 @@ exports.jsonObjectOrNull = jsonObjectOrNull;
 
 
 
-},{"./type":132}],120:[function(require,module,exports){
+},{"./type":133}],121:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21412,7 +21506,7 @@ exports.Location = Location;
 
 
 
-},{"./error":116}],121:[function(require,module,exports){
+},{"./error":117}],122:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21599,7 +21693,7 @@ exports.metadataValidator = metadataValidator;
 
 
 
-},{"./json":119,"./location":120,"./path":124,"./type":132,"./url":133}],122:[function(require,module,exports){
+},{"./json":120,"./location":121,"./path":125,"./type":133,"./url":134}],123:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21646,7 +21740,7 @@ exports.clone = clone;
 
 
 
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -21691,7 +21785,7 @@ exports.Observer = Observer;
 
 
 
-},{"./type":132}],124:[function(require,module,exports){
+},{"./type":133}],125:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21761,7 +21855,7 @@ exports.lastComponent = lastComponent;
 
 
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21806,7 +21900,7 @@ exports.reject = reject;
 
 
 
-},{}],126:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22033,7 +22127,7 @@ exports.makeRequest = makeRequest;
 
 
 
-},{"./array":110,"./backoff":113,"./error":116,"./object":122,"./promise_external":125,"./type":132,"./url":133,"./xhrio":134,"@firebase/app":8}],127:[function(require,module,exports){
+},{"./array":111,"./backoff":114,"./error":117,"./object":123,"./promise_external":126,"./type":133,"./url":134,"./xhrio":135,"@firebase/app":9}],128:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var RequestInfo = /** @class */ (function () {
@@ -22068,7 +22162,7 @@ exports.RequestInfo = RequestInfo;
 
 
 
-},{}],128:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -22128,7 +22222,7 @@ exports.RequestMap = RequestMap;
 
 
 
-},{"./constants":115,"./object":122}],129:[function(require,module,exports){
+},{"./constants":116,"./object":123}],130:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22477,7 +22571,7 @@ exports.continueResumableUpload = continueResumableUpload;
 
 
 
-},{"./array":110,"./blob":114,"./error":116,"./metadata":121,"./object":122,"./requestinfo":127,"./type":132,"./url":133}],130:[function(require,module,exports){
+},{"./array":111,"./blob":115,"./error":117,"./metadata":122,"./object":123,"./requestinfo":128,"./type":133,"./url":134}],131:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -22685,7 +22779,7 @@ function endsWith(s, end) {
 
 
 
-},{"./error":116}],131:[function(require,module,exports){
+},{"./error":117}],132:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22751,7 +22845,7 @@ exports.taskStateFromInternalTaskState = taskStateFromInternalTaskState;
 
 
 
-},{}],132:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22815,7 +22909,7 @@ exports.isNativeBlobDefined = isNativeBlobDefined;
 
 
 
-},{}],133:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22865,7 +22959,7 @@ exports.makeQueryString = makeQueryString;
 
 
 
-},{"./constants":115,"./object":122}],134:[function(require,module,exports){
+},{"./constants":116,"./object":123}],135:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22895,7 +22989,7 @@ var ErrorCode;
 
 
 
-},{}],135:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -23033,7 +23127,7 @@ exports.NetworkXhrIo = NetworkXhrIo;
 
 
 
-},{"./error":116,"./object":122,"./promise_external":125,"./type":132,"./xhrio":134}],136:[function(require,module,exports){
+},{"./error":117,"./object":123,"./promise_external":126,"./type":133,"./xhrio":135}],137:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23067,7 +23161,7 @@ exports.XhrIoPool = XhrIoPool;
 
 
 
-},{"./xhrio_network":135}],137:[function(require,module,exports){
+},{"./xhrio_network":136}],138:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23310,7 +23404,7 @@ exports.Reference = Reference;
 
 
 
-},{"./implementation/args":109,"./implementation/blob":114,"./implementation/error":116,"./implementation/location":120,"./implementation/metadata":121,"./implementation/object":122,"./implementation/path":124,"./implementation/requests":129,"./implementation/string":130,"./implementation/type":132,"./task":139}],138:[function(require,module,exports){
+},{"./implementation/args":110,"./implementation/blob":115,"./implementation/error":117,"./implementation/location":121,"./implementation/metadata":122,"./implementation/object":123,"./implementation/path":125,"./implementation/requests":130,"./implementation/string":131,"./implementation/type":133,"./task":140}],139:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23460,7 +23554,7 @@ exports.ServiceInternals = ServiceInternals;
 
 
 
-},{"./implementation/args":109,"./implementation/authwrapper":112,"./implementation/location":120,"./implementation/promise_external":125,"./implementation/request":126,"./reference":137}],139:[function(require,module,exports){
+},{"./implementation/args":110,"./implementation/authwrapper":113,"./implementation/location":121,"./implementation/promise_external":126,"./implementation/request":127,"./reference":138}],140:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24026,7 +24120,7 @@ exports.UploadTask = UploadTask;
 
 
 
-},{"./implementation/args":109,"./implementation/array":110,"./implementation/async":111,"./implementation/error":116,"./implementation/observer":123,"./implementation/promise_external":125,"./implementation/requests":129,"./implementation/taskenums":131,"./implementation/type":132,"./tasksnapshot":140}],140:[function(require,module,exports){
+},{"./implementation/args":110,"./implementation/array":111,"./implementation/async":112,"./implementation/error":117,"./implementation/observer":124,"./implementation/promise_external":126,"./implementation/requests":130,"./implementation/taskenums":132,"./implementation/type":133,"./tasksnapshot":141}],141:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UploadTaskSnapshot = /** @class */ (function () {
@@ -24062,7 +24156,7 @@ exports.UploadTaskSnapshot = UploadTaskSnapshot;
 
 
 
-},{}],141:[function(require,module,exports){
+},{}],142:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24101,7 +24195,7 @@ __export(require("./src/utf8"));
 
 
 
-},{"./src/assert":142,"./src/constants":143,"./src/crypt":144,"./src/deepCopy":145,"./src/deferred":146,"./src/environment":147,"./src/errors":148,"./src/json":150,"./src/jwt":151,"./src/obj":152,"./src/query":153,"./src/sha1":154,"./src/subscribe":155,"./src/utf8":156,"./src/validation":157}],142:[function(require,module,exports){
+},{"./src/assert":143,"./src/constants":144,"./src/crypt":145,"./src/deepCopy":146,"./src/deferred":147,"./src/environment":148,"./src/errors":149,"./src/json":151,"./src/jwt":152,"./src/obj":153,"./src/query":154,"./src/sha1":155,"./src/subscribe":156,"./src/utf8":157,"./src/validation":158}],143:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24144,7 +24238,7 @@ exports.assertionError = function (message) {
 
 
 
-},{"./constants":143}],143:[function(require,module,exports){
+},{"./constants":144}],144:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24182,7 +24276,7 @@ exports.CONSTANTS = {
 
 
 
-},{}],144:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24495,7 +24589,7 @@ exports.base64Decode = function (str) {
 
 
 
-},{}],145:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24572,7 +24666,7 @@ exports.patchProperty = patchProperty;
 
 
 
-},{}],146:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24635,7 +24729,7 @@ exports.Deferred = Deferred;
 
 
 
-},{}],147:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24699,7 +24793,7 @@ exports.isNodeSdk = function () {
 
 
 
-},{"./constants":143}],148:[function(require,module,exports){
+},{"./constants":144}],149:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ERROR_NAME = 'FirebaseError';
@@ -24784,7 +24878,7 @@ exports.ErrorFactory = ErrorFactory;
 
 
 
-},{}],149:[function(require,module,exports){
+},{}],150:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24841,7 +24935,7 @@ exports.Hash = Hash;
 
 
 
-},{}],150:[function(require,module,exports){
+},{}],151:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24881,7 +24975,7 @@ exports.stringify = stringify;
 
 
 
-},{}],151:[function(require,module,exports){
+},{}],152:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25011,7 +25105,7 @@ exports.isAdmin = function (token) {
 
 
 
-},{"./crypt":144,"./json":150}],152:[function(require,module,exports){
+},{"./crypt":145,"./json":151}],153:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25148,7 +25242,7 @@ exports.every = function (obj, fn) {
 
 
 
-},{}],153:[function(require,module,exports){
+},{}],154:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25209,7 +25303,7 @@ exports.querystringDecode = function (querystring) {
 
 
 
-},{"./obj":152}],154:[function(require,module,exports){
+},{"./obj":153}],155:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25490,7 +25584,7 @@ exports.Sha1 = Sha1;
 
 
 
-},{"./hash":149}],155:[function(require,module,exports){
+},{"./hash":150}],156:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -25712,7 +25806,7 @@ function noop() {
 
 
 
-},{}],156:[function(require,module,exports){
+},{}],157:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25806,7 +25900,7 @@ exports.stringLength = function (str) {
 
 
 
-},{"./assert":142}],157:[function(require,module,exports){
+},{"./assert":143}],158:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25918,7 +26012,7 @@ exports.validateContextObject = validateContextObject;
 
 
 
-},{}],158:[function(require,module,exports){
+},{}],159:[function(require,module,exports){
 /**
  * @license AngularJS v1.6.8
  * (c) 2010-2017 Google, Inc. http://angularjs.org
@@ -60174,11 +60268,11 @@ $provide.value("$locale", {
 })(window);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],159:[function(require,module,exports){
+},{}],160:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":158}],160:[function(require,module,exports){
+},{"./angular":159}],161:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60198,7 +60292,7 @@ module.exports = angular;
 require('@firebase/polyfill');
 module.exports = require('@firebase/app').default;
 
-},{"@firebase/app":8,"@firebase/polyfill":104}],161:[function(require,module,exports){
+},{"@firebase/app":9,"@firebase/polyfill":105}],162:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60217,7 +60311,7 @@ module.exports = require('@firebase/app').default;
 
 require('@firebase/auth');
 
-},{"@firebase/auth":10}],162:[function(require,module,exports){
+},{"@firebase/auth":11}],163:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60236,7 +60330,7 @@ require('@firebase/auth');
 
 module.exports = require('@firebase/database');
 
-},{"@firebase/database":11}],163:[function(require,module,exports){
+},{"@firebase/database":12}],164:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60261,7 +60355,7 @@ require('./storage');
 
 module.exports = firebase;
 
-},{"./app":160,"./auth":161,"./database":162,"./messaging":164,"./storage":165}],164:[function(require,module,exports){
+},{"./app":161,"./auth":162,"./database":163,"./messaging":165,"./storage":166}],165:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60280,7 +60374,7 @@ module.exports = firebase;
 
 require('@firebase/messaging');
 
-},{"@firebase/messaging":93}],165:[function(require,module,exports){
+},{"@firebase/messaging":94}],166:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60299,7 +60393,7 @@ require('@firebase/messaging');
 
 require('@firebase/storage');
 
-},{"@firebase/storage":108}],166:[function(require,module,exports){
+},{"@firebase/storage":109}],167:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.2.1
  * https://jquery.com/
@@ -70554,7 +70648,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],167:[function(require,module,exports){
+},{}],168:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -87642,7 +87736,7 @@ return jQuery;
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],168:[function(require,module,exports){
+},{}],169:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -87828,7 +87922,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],169:[function(require,module,exports){
+},{}],170:[function(require,module,exports){
 (function (root) {
 
   // Store setTimeout reference so promise-polyfill will be unaffected by
@@ -88063,4 +88157,4 @@ process.umask = function() { return 0; };
 
 })(this);
 
-},{}]},{},[4]);
+},{}]},{},[5]);

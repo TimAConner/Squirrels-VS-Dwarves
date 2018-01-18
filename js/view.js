@@ -5,7 +5,7 @@
 // };
 
 
-let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen"];
+let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 
 const g = require("./game");
 const $ = require("jquery");
@@ -66,10 +66,15 @@ let app = angular.module("myApp", []);
 app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
-            if(e.detail!== null){
-                $scope.players = Object.keys(e.detail.players);
+            if(e.detail !== null){
+                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
+
+                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
+                $scope.ownedPlayers = ownedPlayers;
+                $scope.otherPlayers = otherPlayers;
             } else {
-                $scope.players = [];
+                $scope.otherPlayers = [];
+                $scope.ownedPlayers = [];
             }
             
         });
@@ -244,6 +249,13 @@ const drawPlayers = (players, playerId, tiles) => {
         //     if(players[i].pos.dir === "right"){
         //         g.ctx.rotate(90); // rotate
         //     }
+
+        // Draw health
+        g.ctx.fillStyle = "red";
+        g.ctx.strokeRect(players[i].pos.x, players[i].pos.y - 10, g.playerSize, 5);
+        g.ctx.fillRect(players[i].pos.x+1, players[i].pos.y - 9, g.playerSize*(players[i].health.points*0.01)-1, 3);
+        g.ctx.stroke();
+
         if(players[i].team === 1){
             g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
@@ -314,6 +326,10 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
 
 
 
+module.exports.drawSignIn = () => {
+    $("#signInText").text(`${g.fullName}`);
+};
+
 
 module.exports.showLoadingScreen = () => {
     showScreen("#loading-screen");
@@ -321,6 +337,7 @@ module.exports.showLoadingScreen = () => {
 
 module.exports.viewMainMenu = () => {
     showScreen("#main-menu-screen");
+    module.exports.drawSignIn();
 };
 
 module.exports.viewWinnerScreen =  (winnerId) => {
@@ -330,6 +347,10 @@ module.exports.viewWinnerScreen =  (winnerId) => {
 
 module.exports.viewGame = () => {
     showScreen("#game-screen");
+};
+
+module.exports.showSignIn = () => {
+    showScreen("#sign-in-screen");
 };
 
 const showScreen = (screen) => {

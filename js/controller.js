@@ -14,17 +14,20 @@ https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 */
 const model = require("./model");
 const view = require("./view");
+const login = require("./login");
 const g = require("./game");
 const $ = require("jquery");
 const gameMaker = require("./gameMaker");
 
 const _ = require("lodash");
 
+
+
 // 0 menu, 1 game, 2 winner
 
-let onlineGameState = null;
-let localGameState = 0;
-let waitingForGame = false;
+let onlineGameState = 0,
+localGameState = 0,
+waitingForGame = false;
 
 
 let winner = 0;
@@ -62,6 +65,8 @@ let keys = {
 let initialTileDraw = true;
 let initialPlayerDraw = true;
 let initialGemDraw = true;
+let initialGameState = true;
+
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -246,7 +251,7 @@ const parseRequestId = (requestId) => {
     return values;
 };
 
-const calculateLag = (miliseconds) => {
+const calcLag = (miliseconds) => {
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
@@ -282,7 +287,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
                     // If the new values also have a newer timestamp
-                    // calculateLag(newRequestId); 
+                    if((newRequestId >= curRequestId)) calcLag(newRequestId);
+
+                        // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
+
                     if(!previousPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
@@ -292,10 +300,12 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 }
             } else { // If specific values should be proccesed, update only those values.
                 for(let j = 0; j < valuesToCheck.length; j++){
+
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
-                        calculateLag(newRequestId);
+
+                        if((newRequestId >= curRequestId)) calcLag(newRequestId);
                 
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
@@ -397,9 +407,13 @@ const update = (delta) => { // new delta parameter
                         model.savePlayerHealth(targetPlayer); 
 
                     } else { // Else mine a block
-                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2){ // -1 is mined, -2 is unbreakable
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
+                            console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
+
+                            // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
+
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
                         }
                     }
@@ -444,7 +458,6 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
                         }
                     }
@@ -504,7 +517,9 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if(onlineGameState === null){ // Page is loading
+    if (g.uid === ""){
+        view.showSignIn();
+    }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -517,9 +532,22 @@ const mainLoop = (timestamp) => {
 
         while (delta >= timestep) {
 
-            proccessNewData(players, newPlayers, ["health", "pos"]);
-            proccessNewData(tiles, newTiles, ["hard"]);
-            proccessNewData(gems, newGems);
+            // if(lag > 2000){
+            //     if(newPlayers.length !== 0){
+            //         players = newPlayers;
+            //     }
+            //     if(newTiles.length !== 0){
+            //         tiles = newTiles;
+            //     }
+            //     if(newGems.length !== 0){
+            //         gems = newGems;
+            //     }
+            //     lag = 0;
+            // } else {
+                proccessNewData(players, newPlayers, ["health", "pos"]);
+                proccessNewData(tiles, newTiles, ["hard"]);
+                proccessNewData(gems, newGems);
+            // }
       
             update(timestep);
 
@@ -537,7 +565,7 @@ const mainLoop = (timestamp) => {
             view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
-            console.log(players);
+            // console.log(players);
             view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
@@ -555,11 +583,9 @@ const mainLoop = (timestamp) => {
 
 
 module.exports.startGame = () => {
-    model.fetchData();
     activateServerListener();
     activateButtons();
     requestAnimationFrame(mainLoop);
-
 };
 
 const startPlay = () => {
@@ -569,6 +595,18 @@ const startPlay = () => {
 };
 
 const activateButtons = () => {
+
+    $("#signIn").on("click", function(){
+        // login.googleSignin().then((data) => {
+        //      console.log(data);
+        //     g.uid = data.email;
+        //     g.name = data.name;
+        // });
+        g.uid = "timaconner1@gmail.com";
+        g.fullName = "Tim Conner";
+        view.showSignIn();
+        model.fetchData();
+    });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
     });
@@ -591,10 +629,8 @@ const activateButtons = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-    
-        let tile = tiles.find(data => function(){
+        let tile = tiles.find(data => {
             let t = g.calcTilePos(data);
-    
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
     
@@ -605,7 +641,10 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        g.playerId = $(this).attr("playerId");
+        let player = players.find(x => x.uid === g.uid);
+        if(player !== undefined){
+            g.playerId = $(this).attr("playerId");
+        }
         startPlay();
     });
     $("#player-lobby").on("click", ".remove", function(){
@@ -631,6 +670,7 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
+        // console.log("listened");
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
@@ -638,20 +678,19 @@ const activateServerListener = () => {
             let player = e.detail.players[key];
             player.id = key;
             return player;
-        });
+        }); 
 
-        // console.log("player", e.detail);
           
             if(initialPlayerDraw === true){
                 players = filteredPlayers;
-                // console.log(players);
-                initialPlayerDraw = false;
             } else {
                 console.log("new data");
                 newPlayers = filteredPlayers;
             }
         }
         
+
+        initialPlayerDraw = false;
 
         // Update list of players
         
@@ -679,7 +718,10 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
-        console.log("loaded");
+        // console.log("loaded");
+        
+        console.log("new data");
+        initialGameState = false;
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam; 
     });
