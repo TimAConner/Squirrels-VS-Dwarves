@@ -50,6 +50,16 @@ let newGems = [];
 let speedMultiplier = 0.1;
 
 
+let localPlayerStats =  {  
+    id: 0,
+    damageDelt: 0,
+    mined: 0,
+    team: 0,
+    spawnTime: 0,
+    deathTime: 0
+};
+let statsSent = false;
+
 //  Use timestamp instead?
 let keys = {
     ArrowLeft: false,
@@ -356,7 +366,7 @@ const updateGemPosition = () => {
 const update = (delta) => { // new delta parameter
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
     
- 
+
     // console.log("gems", gems);
     
     updateGemPosition();
@@ -369,6 +379,10 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
 
+        if(player.health <= 0 && localPlayerStats.deathTime !== 0){
+            localPlayerStats.deathTime = Date.now();
+        }
+        
         if(typeof player !== "undefined" && player.health.points > 0){
 
             let requestId = `${Date.now()}-${g.playerId}`;
@@ -403,6 +417,9 @@ const update = (delta) => { // new delta parameter
                     
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
                         targetPlayer.health.points -= g.attackStrength;
+
+                        localPlayerStats.damageDelt += g.attackStrength;
+
                         addRequestId(targetPlayer.health, requestId);
                         // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer); 
@@ -410,9 +427,8 @@ const update = (delta) => { // new delta parameter
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
                             tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
+                            localPlayerStats.mined += g.mineStrength;
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
-                            console.log('requestId', tiles[tiles.indexOf(selectedTile)].hard.requestId, Date.now());
-
                             // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
 
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
@@ -642,10 +658,15 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        let player = players.find(x => x.uid === g.uid);
+        g.playerId = $(this).attr("playerId");      
+        let player = players.find(x => x.id === g.playerId);
+
         if(player !== undefined){
-            g.playerId = $(this).attr("playerId");
+            localPlayerStats.id = g.playerId;
+            localPlayerStats.spawnTime = Date.now();
+            localPlayerStats.team = player.team;       
         }
+
         startPlay();
     });
     $("#player-lobby").on("click", ".remove", function(){
@@ -724,7 +745,14 @@ const activateServerListener = () => {
         console.log("new data");
         initialGameState = false;
         onlineGameState = e.detail.gameState; 
-        winner = e.detail.winningTeam; 
+        winner = e.detail.winningTeam;
+        
+        if(onlineGameState === 2 && statsSent === false){
+            statsSent = true;
+            console.log('localPlayerStats', localPlayerStats);
+            model.savePlayerStats(localPlayerStats, "1");
+        }
+        
     });
 
 };
@@ -965,7 +993,9 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
-const $ = ("jquery");
+const $ = require("jquery");
+
+let url = "https://squirrelsvsdwarves.firebaseio.com";
 
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
@@ -1041,8 +1071,18 @@ module.exports.savePlayerPos = (player) => {
         });
         let JSONRequest = new XMLHttpRequest();
         // console.log("save player");
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
+        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
+    });
+};
+
+module.exports.savePlayerStats = (playerStats, gameId) => {
+    console.log('playerStats.id', playerStats.id);
+    $.ajax({
+        url:`${url}/games/${gameId}/players/${playerStats.id}/.json`,
+        type: 'PUT',
+        dataType: 'json',
+        data: JSON.stringify(playerStats),
     });
 };
 
@@ -1052,7 +1092,7 @@ module.exports.savePlayerHealth = (player) => {
             "health": player.health
         });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
+        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -1061,7 +1101,7 @@ module.exports.savePlayerHealth = (player) => {
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+        JSONRequest.open("DELETE", `${url}/players/players/${player.id}.json`);
         JSONRequest.send();
     });
 };
@@ -1072,7 +1112,7 @@ module.exports.saveTileHard = (tile) => {
             hard: tile.hard
         });
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
+        JSONRequest.open("PATCH", `${url}/tiles/tiles/${+tile.id}/.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -1081,7 +1121,7 @@ module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tiles);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+        JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -1090,7 +1130,7 @@ module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(gem);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
+        JSONRequest.open("PATCH", `${url}/gems/gems/${+gem.id}.json`);
         JSONRequest.send(jsonString);
         resolve();
     });
@@ -1100,7 +1140,7 @@ module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(state);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
+        JSONRequest.open("PUT", `${url}/gameState.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -1108,7 +1148,7 @@ module.exports.saveGameState = (state) => {
 module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/players/players/.json`);
+    JSONRequest.open("POST", `${url}/players/players/.json`);
     JSONRequest.send(jsonString);
 };
 
@@ -1116,7 +1156,7 @@ module.exports.addNewPlayer = (player) => {
 module.exports.saveNewMap = (data) => {
     let jsonString = JSON.stringify(data);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+    JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
     JSONRequest.send(jsonString);
 };
 
@@ -1133,7 +1173,7 @@ module.exports.saveNewMap = (data) => {
 //         JSONRequest.send();
 //     });
 // };
-},{"firebase":164}],8:[function(require,module,exports){
+},{"firebase":164,"jquery":167}],8:[function(require,module,exports){
 "use strict";
 
 // module.exports.showTiles = (tiles) => {
