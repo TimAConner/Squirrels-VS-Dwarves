@@ -520,7 +520,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if (g.owner === ""){
+    if (g.uid === ""){
         view.showSignIn();
     }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
@@ -602,10 +602,10 @@ const activateButtons = () => {
     $("#signIn").on("click", function(){
         // login.googleSignin().then((data) => {
         //      console.log(data);
-        //     g.owner = data.email;
+        //     g.uid = data.email;
         //     g.name = data.name;
         // });
-        g.owner = "timaconner1@gmail.com";
+        g.uid = "timaconner1@gmail.com";
         g.fullName = "Tim Conner";
         view.showSignIn();
         model.fetchData();
@@ -644,7 +644,7 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        let player = players.find(x => x.owner === g.owner);
+        let player = players.find(x => x.uid === g.uid);
         if(player !== undefined){
             g.playerId = $(this).attr("playerId");
         }
@@ -777,7 +777,7 @@ module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
 
 module.exports.playerId = 0;
-module.exports.owner = "";
+module.exports.uid = "";
 module.exports.fullName = "";
 
 
@@ -841,7 +841,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "points": 100,
             "requestId": "0--0"
         },
-        "owner": g.owner
+        "uid": g.uid
     };
 
     model.addNewPlayer(player);  
@@ -1205,9 +1205,9 @@ app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
             if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner == g.owner).map(x => e.detail.players[x]);
+                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
 
-                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner != g.owner).map(x => e.detail.players[x]);
+                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
                 $scope.ownedPlayers = ownedPlayers;
                 $scope.otherPlayers = otherPlayers;
             } else {
