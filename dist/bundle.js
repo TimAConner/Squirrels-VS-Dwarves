@@ -253,11 +253,9 @@ const parseRequestId = (requestId) => {
 };
 
 const calcLag = (miliseconds) => {
-    console.log('miliseconds', miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
-    console.log('lag', lag);
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
