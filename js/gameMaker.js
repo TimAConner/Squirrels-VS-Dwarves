@@ -22,7 +22,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "points": 100,
             "requestId": "0--0"
         },
-        "owner": g.owner
+        "uid": g.uid
     };
 
     model.addNewPlayer(player);  

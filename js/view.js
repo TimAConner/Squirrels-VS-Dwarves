@@ -67,9 +67,9 @@ app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
             if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner == g.owner).map(x => e.detail.players[x]);
+                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
 
-                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].owner != g.owner).map(x => e.detail.players[x]);
+                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
                 $scope.ownedPlayers = ownedPlayers;
                 $scope.otherPlayers = otherPlayers;
             } else {
