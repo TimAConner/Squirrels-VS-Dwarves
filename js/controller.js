@@ -49,6 +49,14 @@ let newGems = [];
 let speedMultiplier = 0.1;
 
 
+let playerStats =  {  
+    damageDelt,
+    mined,
+    team,
+    spawnTime,
+    deathTime,
+},
+
 //  Use timestamp instead?
 let keys = {
     ArrowLeft: false,
