@@ -252,11 +252,9 @@ const parseRequestId = (requestId) => {
 };
 
 const calcLag = (miliseconds) => {
-    console.log('miliseconds', miliseconds);
     if(+miliseconds !== 0){
         lag = Date.now() - miliseconds;
     }
-    console.log('lag', lag);
 };
 
 const proccessNewData = (currentData, newData, valuesToCheck) => {
@@ -519,7 +517,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 const mainLoop = (timestamp) => {
 
-    if (g.owner === ""){
+    if (g.uid === ""){
         view.showSignIn();
     }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
@@ -601,10 +599,10 @@ const activateButtons = () => {
     $("#signIn").on("click", function(){
         // login.googleSignin().then((data) => {
         //      console.log(data);
-        //     g.owner = data.email;
+        //     g.uid = data.email;
         //     g.name = data.name;
         // });
-        g.owner = "timaconner1@gmail.com";
+        g.uid = "timaconner1@gmail.com";
         g.fullName = "Tim Conner";
         view.showSignIn();
         model.fetchData();
@@ -643,7 +641,7 @@ const activateButtons = () => {
         gameMaker.newGame();
     });
     $("#player-lobby").on("click", ".select", function(){
-        let player = players.find(x => x.owner === g.owner);
+        let player = players.find(x => x.uid === g.uid);
         if(player !== undefined){
             g.playerId = $(this).attr("playerId");
         }
