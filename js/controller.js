@@ -83,8 +83,9 @@ delta = 0,
 lastFrameTimeMs = 0;
 
 
-let lag = 0,
-mostRecentRecieved = 0;
+let lag = 0; // Time between current timestamp and new peices of data timestamp.
+let countDataReturned = 0, // Count of data returned after sending information.
+countDataSent = 0; // Count of data sent to  firebase.
 
 
 const canMove = (direction, obj, delta) => {
@@ -520,12 +521,16 @@ const updatePlayerState = (direction,  changeIn, options) => {
         options.speedMultiplier = -options.speedMultiplier;
     }
 
-
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
     options.player.pos.dir = direction;
 
     addRequestId(options.player.pos, options.requestId);
-    model.savePlayerPos(options.player);
+
+    countDataSent ++;
+
+    model.savePlayerPos(options.player).then(data => {
+        countDataReturned ++;
+    });
 };
 
 
