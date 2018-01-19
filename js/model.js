@@ -77,13 +77,15 @@ module.exports.fetchData = () => {
 
 module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            "pos": player.pos
-        });
-        let JSONRequest = new XMLHttpRequest();
-        // console.log("save player");
-        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/players/players/${player.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "pos": player.pos
+            }),
+        })
+        .done(data => resolve(data));
     });
 };
 
