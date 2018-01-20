@@ -98,6 +98,19 @@ module.exports.savePlayerStats = (playerStats, gameId) => {
     });
 };
 
+module.exports.addGame = (startTime) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/games/.json`,
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({
+                "gameStart": startTime,
+            }),
+        });
+    });
+};
+
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
         $.ajax({
@@ -155,6 +168,8 @@ module.exports.saveGem = (gem) => {
         .done(data => resolve(data));
     });
 };
+
+
 
 module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
