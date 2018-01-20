@@ -8,6 +8,14 @@ const $ = require("jquery");
 
 let url = "https://squirrelsvsdwarves.firebaseio.com";
 
+let gameId = "-L3KC9l-1W5f-2YZxW-t";
+
+module.exports.setGameId = (id) => {
+    gameId = id;
+};
+module.exports.getGameId = () => gameId;
+
+
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
