@@ -421,8 +421,12 @@ const update = (delta) => { // new delta parameter
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
+                        countDataSent++;
+
                         // console.log(targetPlayer.health);
-                        model.savePlayerHealth(targetPlayer); 
+                        model.savePlayerHealth(targetPlayer).then(data => {
+                            countDataReturned ++;
+                        });
 
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable

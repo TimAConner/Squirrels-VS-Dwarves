@@ -100,12 +100,15 @@ module.exports.savePlayerStats = (playerStats, gameId) => {
 
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            "health": player.health
-        });
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/players/players/${player.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "health": player.health
+            }),
+        })
+        .done(data => resolve(data));
     });
 };
 
