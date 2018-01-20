@@ -353,6 +353,10 @@ module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
 };
 
+module.exports.printDataCount = (returned, sent) => {
+    $("#dataCount").text(`Sent/Recieved: ${returned}/${sent}`);
+};
+
 const showScreen = (screen) => {
 
 

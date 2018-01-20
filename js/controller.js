@@ -574,7 +574,7 @@ const mainLoop = (timestamp) => {
 
             delta -= timestep;
         }
-        view.drawDataCount(countDataReturned, countDataSent);
+        view.printDataCount(countDataReturned, countDataSent);
 
         view.draw(g.playerId, tiles, players, gems, lag);
 
