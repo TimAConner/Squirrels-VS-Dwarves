@@ -111,6 +111,19 @@ module.exports.addGame = (startTime) => {
     });
 };
 
+module.exports.finishGame = (endTime, gameId) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/games/${gameId}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "gameEnd": endTime,
+            }),
+        });
+    });
+};
+
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
         $.ajax({
