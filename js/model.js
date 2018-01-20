@@ -123,12 +123,15 @@ module.exports.deletePlayer = (player) => {
 
 module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            hard: tile.hard
-        });
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `${url}/tiles/tiles/${+tile.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/tiles/tiles/${+tile.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                hard: tile.hard
+            })
+        })
+        .done(data => resolve(data));
     });
 };
 
@@ -143,11 +146,13 @@ module.exports.saveNewTileSet = (tiles) => {
 
 module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(gem);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `${url}/gems/gems/${+gem.id}.json`);
-        JSONRequest.send(jsonString);
-        resolve();
+        $.ajax({
+            url:`${url}/gems/gems/${+gem.id}.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify(gem)
+        })
+        .done(data => resolve(data));
     });
 };
 

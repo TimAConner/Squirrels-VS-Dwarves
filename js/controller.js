@@ -435,7 +435,11 @@ const update = (delta) => { // new delta parameter
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
 
-                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
+                            countDataSent++;
+
+                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]).then(data => {
+                                countDataReturned ++;
+                            });
                         }
                     }
                     
@@ -450,7 +454,11 @@ const update = (delta) => { // new delta parameter
                     if(typeof gemOnTile !== "undefined" && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
-                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
+
+                        countDataSent ++;
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {
+                            countDataReturned ++;
+                        }); 
                     }
                 } 
             
@@ -479,7 +487,10 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
+                            countDataSent ++;
+                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {
+                                countDataReturned++;
+                            }); 
                         }
                     }
                 }      
