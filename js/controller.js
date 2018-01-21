@@ -22,6 +22,8 @@ const gameMaker = require("./gameMaker");
 const _ = require("lodash");
 
 
+const angular = require("angular");
+
 
 // 0 menu, 1 game, 2 winner
 
@@ -36,6 +38,7 @@ let winner = 0;
 let players = [];
 let tiles = [];
 let gems = [];
+let games = [];
 
 let previousPlayerActions = [];
 let completedActions = [];
@@ -71,11 +74,13 @@ let keys = {
 };
 
 
+let initialLobbyLoad = true;
 
 let initialTileDraw = true;
 let initialPlayerDraw = true;
 let initialGemDraw = true;
 let initialGameState = true;
+
 
 
 let timestep = 1000 / 60,
@@ -87,6 +92,32 @@ let lag = 0; // Time between current timestamp and new peices of data timestamp.
 let countDataReturned = 0, // Count of data returned after sending information.
 countDataSent = 0; // Count of data sent to  firebase.
 
+let app = angular.module("myApp", []);
+
+app.controller("myCtrl", ['$scope', function($scope) {
+    $("#game-canvas").on("serverUpdatePlayer", (e) => {
+        $scope.$apply(function(){
+            if(e.detail !== null){
+                let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
+
+                let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
+                $scope.ownedPlayers = ownedPlayers;
+                $scope.otherPlayers = otherPlayers;
+            } else {
+                $scope.otherPlayers = [];
+                $scope.ownedPlayers = [];
+            }
+            
+        });
+    });
+    $("#game-canvas").on("serverUpdateGames", (e) => {
+        $scope.$apply(function(){
+            if(e.detail !== null){
+                $scope.games = Object.keys(e.detail);
+            }
+        });
+    });
+}]);
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
@@ -562,7 +593,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 const mainLoop = (timestamp) => {
     if (g.uid === ""){
         view.showSignIn();
-    }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
+    }  else if(initialLobbyLoad){//initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -721,6 +752,11 @@ const activateServerListener = () => {
             console.log("new data");
             newGems = filteredGems;
         }        
+    });
+
+    g.c.addEventListener("serverUpdateGames", (e) => {
+        games = e.detail;
+        initialLobbyLoad = false;
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
