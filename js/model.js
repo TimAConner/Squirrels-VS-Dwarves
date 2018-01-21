@@ -6,12 +6,15 @@ let c = document.getElementById('game-canvas');
 
 const $ = require("jquery");
 
-let url = "https://squirrelsvsdwarves.firebaseio.com";
+let baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
+
+let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/-L3KC9l-1W5f-2YZxW-t";
 
 let gameId = "-L3KC9l-1W5f-2YZxW-t";
 
 module.exports.setGameId = (id) => {
     gameId = id;
+    url = `${baseUrl}/gameData/${gameId}`;
 };
 module.exports.getGameId = () => gameId;
 
@@ -57,21 +60,21 @@ module.exports.fetchData = () => {
 
       
       // Try listening to only one of them.  One listens to tiles one listens to other.
-        firebase.database().ref("gameState").on('value', function(snapshot) {
+        firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
             //   console.log("-------Gem Update");
             let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
-        firebase.database().ref("tiles").on('value', function(snapshot) {
+        firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
           //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
-        firebase.database().ref("players").on('value', function(snapshot) {
+        firebase.database().ref(`gameData/${gameId}/players`).on('value', function(snapshot) {
             let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
         });
-        firebase.database().ref("gems").on('value', function(snapshot) {
+        firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
         //   console.log("Update");
             let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
             c.dispatchEvent(serverUpdate);
@@ -86,7 +89,7 @@ module.exports.fetchData = () => {
 module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
         $.ajax({
-            url:`${url}/players/players/${player.id}/.json`,
+            url:`${url}/players/${player.id}/.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify({
@@ -99,7 +102,7 @@ module.exports.savePlayerPos = (player) => {
 
 module.exports.savePlayerStats = (playerStats, gameId) => {
     $.ajax({
-        url:`${url}/games/${gameId}/players/${playerStats.id}/.json`,
+        url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
         type: 'PUT',
         dataType: 'json',
         data: JSON.stringify(playerStats),
@@ -109,7 +112,7 @@ module.exports.savePlayerStats = (playerStats, gameId) => {
 module.exports.addGame = (startTime) => {
     return new Promise(function (resolve, reject){
         $.ajax({
-            url:`${url}/games/.json`,
+            url:`${baseUrl}/games/.json`,
             type: 'POST',
             dataType: 'json',
             data: JSON.stringify({
@@ -122,7 +125,7 @@ module.exports.addGame = (startTime) => {
 module.exports.finishGame = (endTime, gameId) => {
     return new Promise(function (resolve, reject){
         $.ajax({
-            url:`${url}/games/${gameId}/.json`,
+            url:`${baseUrl}/games/${gameId}/.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify({
@@ -135,7 +138,7 @@ module.exports.finishGame = (endTime, gameId) => {
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
         $.ajax({
-            url:`${url}/players/players/${player.id}/.json`,
+            url:`${url}/players/${player.id}/.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify({
@@ -150,7 +153,7 @@ module.exports.savePlayerHealth = (player) => {
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `${url}/players/players/${player.id}.json`);
+        JSONRequest.open("DELETE", `${url}/players/${player.id}.json`);
         JSONRequest.send();
     });
 };
@@ -158,7 +161,7 @@ module.exports.deletePlayer = (player) => {
 module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
         $.ajax({
-            url:`${url}/tiles/tiles/${+tile.id}/.json`,
+            url:`${url}/tiles/${+tile.id}/.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify({
@@ -173,7 +176,7 @@ module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tiles);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
+        JSONRequest.open("PUT", `${url}/tiles.json`);
         JSONRequest.send(jsonString);
     });
 };
@@ -181,7 +184,7 @@ module.exports.saveNewTileSet = (tiles) => {
 module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
         $.ajax({
-            url:`${url}/gems/gems/${+gem.id}.json`,
+            url:`${url}/gems/${+gem.id}.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify(gem)
@@ -204,7 +207,7 @@ module.exports.saveGameState = (state) => {
 module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `${url}/players/players/.json`);
+    JSONRequest.open("POST", `${url}/players/.json`);
     JSONRequest.send(jsonString);
 };
 
@@ -212,7 +215,7 @@ module.exports.addNewPlayer = (player) => {
 module.exports.saveNewMap = (data) => {
     let jsonString = JSON.stringify(data);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
+    JSONRequest.open("PUT", `${url}/tiles.json`);
     JSONRequest.send(jsonString);
 };
 

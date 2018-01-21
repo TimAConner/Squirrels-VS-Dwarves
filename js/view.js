@@ -67,9 +67,9 @@ app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
             if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
+                let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
 
-                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
+                let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
                 $scope.ownedPlayers = ownedPlayers;
                 $scope.otherPlayers = otherPlayers;
             } else {
@@ -354,7 +354,7 @@ module.exports.showSignIn = () => {
 };
 
 module.exports.printDataCount = (returned, sent) => {
-    $("#dataCount").text(`Sent/Recieved: ${returned}/${sent}`);
+    $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
 };
 
 const showScreen = (screen) => {

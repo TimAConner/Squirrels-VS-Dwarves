@@ -253,11 +253,13 @@ const initiateGameState = () => {
         gameState: 1,
         winningTeam: 0
     };
+    
     model.saveGameState(winningObject);
     
 };
 
 const parseRequestId = (requestId) => {
+    console.log('requestId', requestId);
     let values = requestId.match("(.*)-(-.*)");
     return values;
 };
@@ -426,6 +428,7 @@ const update = (delta) => { // new delta parameter
                         // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer).then(data => {
                             countDataReturned ++;
+                            calcLag(parseRequestId(data.health.requestId)[1]);
                         });
 
                     } else { // Else mine a block
@@ -439,6 +442,7 @@ const update = (delta) => { // new delta parameter
 
                             model.saveTileHard(tiles[tiles.indexOf(selectedTile)]).then(data => {
                                 countDataReturned ++;
+                                calcLag(parseRequestId(data.hard.requestId)[1]);
                             });
                         }
                     }
@@ -456,8 +460,9 @@ const update = (delta) => { // new delta parameter
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
 
                         countDataSent ++;
-                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(data => {
                             countDataReturned ++;
+                            calcLag(parseRequestId(data.requestId)[1]);
                         }); 
                     }
                 } 
@@ -488,8 +493,9 @@ const update = (delta) => { // new delta parameter
                                 setWinner(player.team);
                             }
                             countDataSent ++;
-                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {
+                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(data => {
                                 countDataReturned++;
+                                calcLag(parseRequestId(data.requestId)[1]);
                             }); 
                         }
                     }
@@ -544,7 +550,9 @@ const updatePlayerState = (direction,  changeIn, options) => {
     countDataSent ++;
 
     model.savePlayerPos(options.player).then(data => {
+        console.log('data', data);
         countDataReturned ++;
+        calcLag(parseRequestId(data.pos.requestId)[1]);
     });
 };
 
@@ -552,7 +560,6 @@ const updatePlayerState = (direction,  changeIn, options) => {
 
 
 const mainLoop = (timestamp) => {
-
     if (g.uid === ""){
         view.showSignIn();
     }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
@@ -584,8 +591,9 @@ const mainLoop = (timestamp) => {
                 proccessNewData(tiles, newTiles, ["hard"]);
                 proccessNewData(gems, newGems);
             // }
-      
-            update(timestep);
+            // if(countDataSent - countDataReturned < 50){
+                update(timestep);
+            // }
 
             delta -= timestep;
         }
@@ -674,9 +682,13 @@ const activateButtons = () => {
         console.log(tile);
     });
 
-    document.getElementById("main-menu-new").addEventListener("click", () => {
+    $("#main-menu-new").on("click", () => {
+        model.addGame(Date.now());
         gameMaker.newGame();
+        initialGemDraw = true;
+        initialTileDraw = true;
     });
+
     $("#player-lobby").on("click", ".select", function(){
         g.playerId = $(this).attr("playerId");      
         let player = players.find(x => x.id === g.playerId);
@@ -700,7 +712,7 @@ const activateButtons = () => {
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
-        let filteredGems = _.compact(e.detail.gems);
+        let filteredGems = _.compact(e.detail);
         if(initialGemDraw === true){
             // console.log(gems);
             gems = filteredGems;
@@ -713,11 +725,12 @@ const activateServerListener = () => {
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
         // console.log("listened");
+        console.log('e.detail', e.detail);
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
-        let filteredPlayers = Object.keys(e.detail.players).map(key => {
-            let player = e.detail.players[key];
+        let filteredPlayers = Object.keys(e.detail).map(key => {
+            let player = e.detail[key];
             player.id = key;
             return player;
         }); 
@@ -743,7 +756,7 @@ const activateServerListener = () => {
     g.c.addEventListener("serverUpdateTiles", (e) => {
         // console.log("tile", e.detail);
 
-        let filteredTiles = _.compact(e.detail.tiles);
+        let filteredTiles = _.compact(e.detail);
 
         for(let i = 0; i < filteredTiles.length; i++){
             filteredTiles[i].id = i;
@@ -770,7 +783,8 @@ const activateServerListener = () => {
         if(onlineGameState === 2 && statsSent === false){
             statsSent = true;
             console.log('localPlayerStats', localPlayerStats);
-            model.savePlayerStats(localPlayerStats, "1");
+            model.savePlayerStats(localPlayerStats, "-L3KC9l-1W5f-2YZxW-t");
+            model.finishGame(Date.now(), "-L3KC9l-1W5f-2YZxW-t");
         }
         
     });

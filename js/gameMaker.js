@@ -61,4 +61,8 @@ module.exports.newGame = () => {
     model.saveGem(newGems[0]);  
     model.saveGem(newGems[1]);
     model.saveNewMap(createdTiles);
+    model.saveGameState({
+        "gameState" : 1,
+        "winningTeam": 0
+    });
 };
