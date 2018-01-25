@@ -30,39 +30,46 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 };
 
 module.exports.newGame = () => {
-    let createdTiles = mapMaker.generateTiles(20, 20);
-    
-    let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
-    teamBaseOne = createdTiles.find(x => x.teamBase === 1);
+    return new Promise(function (resolve, reject){
+        let createdTiles = mapMaker.generateTiles(20, 20);
+        
+        let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
+        teamBaseOne = createdTiles.find(x => x.teamBase === 1);
 
-    let newGems = [
-        {
-            "pos": {
-                "x": teamBaseZero.pos.x*g.tileSize,
-                "y": teamBaseZero.pos.y*g.tileSize
+        let newGems = [
+            {
+                "pos": {
+                    "x": teamBaseZero.pos.x*g.tileSize,
+                    "y": teamBaseZero.pos.y*g.tileSize
+                },
+                "carrier": -1,
+                "team": 0,
+                "type": "gem",
+                "id": 0
             },
-            "carrier": -1,
-            "team": 0,
-            "type": "gem",
-            "id": 0
-        },
-        {
-            "pos": {
-                "x": teamBaseOne.pos.x*g.tileSize,
-                "y": teamBaseOne.pos.y*g.tileSize
-            },
-            "carrier": -1,
-            "team": 1,
-            "type": "gem",
-            "id": 1
-        }
-    ];
+            {
+                "pos": {
+                    "x": teamBaseOne.pos.x*g.tileSize,
+                    "y": teamBaseOne.pos.y*g.tileSize
+                },
+                "carrier": -1,
+                "team": 1,
+                "type": "gem",
+                "id": 1
+            }
+        ];
 
-    model.saveGem(newGems[0]);  
-    model.saveGem(newGems[1]);
-    model.saveNewMap(createdTiles);
-    model.saveGameState({
-        "gameState" : 1,
-        "winningTeam": 0
+        let gemPromise1 = model.saveGem(newGems[0]);  
+        let gemPromise2 =  model.saveGem(newGems[1]);
+        let mapPromise = model.saveNewMap(createdTiles);
+        let gameStatePromise = model.saveGameState({
+            "gameState" : 1,
+            "winningTeam": 0
+        });
+
+        Promise.all([gemPromise1, gemPromise2, mapPromise, gameStatePromise]).then(function(values) {
+            resolve();
+        });
+
     });
 };

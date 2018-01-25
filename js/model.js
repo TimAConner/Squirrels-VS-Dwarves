@@ -8,9 +8,9 @@ const $ = require("jquery");
 
 let baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
 
-let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/-L3KC9l-1W5f-2YZxW-t";
+let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
 
-let gameId = "-L3KC9l-1W5f-2YZxW-t";
+let gameId = "";
 
 module.exports.setGameId = (id) => {
     gameId = id;
@@ -18,7 +18,7 @@ module.exports.setGameId = (id) => {
 };
 module.exports.getGameId = () => gameId;
 
-
+// Loads apiKey.  Resolves when complete.
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -33,61 +33,66 @@ const loadAPI = () => {
     });
 };
 
-module.exports.fetchData = () => {
-    let config = {
-        apiKey: "",
-        authDomain: "squirrelsvsdwarves.firebaseapp.com",
-        databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
-        projectId: "squirrelsvsdwarves",
-        storageBucket: "squirrelsvsdwarves.appspot.com",
-        messagingSenderId: ""
-    };
+// Initiliaze firebase. Resolves when complete.
+module.exports.initFirebase = () => {
+    return new Promise(function (resolve, reject){
+        let config = {
+            apiKey: "",
+            authDomain: "squirrelsvsdwarves.firebaseapp.com",
+            databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
+            projectId: "squirrelsvsdwarves",
+            storageBucket: "squirrelsvsdwarves.appspot.com",
+            messagingSenderId: ""
+        };
 
-    loadAPI().then(data => {
-        config.apiKey = data.apiKey;
-        config.messagingSenderId = data.messagingSenderId;
-        firebase.initializeApp(config);
-        
-        
-  
-      //   module.exports.getTiles("https://squirrelsvsdwarves.firebaseio.com/tiles.json").then((data) => {
-      //       return convertObjectsToArray(data);
-      //   });
-  
-  
-
-      // Listening is not the issue.  It is how quicklyi an xhr request is sent.
-
-      
-      // Try listening to only one of them.  One listens to tiles one listens to other.
-        firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
-            //   console.log("-------Gem Update");
-            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
+        loadAPI().then(data => {
+            config.apiKey = data.apiKey;
+            config.messagingSenderId = data.messagingSenderId;
+            firebase.initializeApp(config);
+            resolve();
         });
-        firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
-          //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref(`gameData/${gameId}/players`).on('value', function(snapshot) {
-            let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
-        //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref(`games`).on('value', function(snapshot) {
-        //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateGames", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-
     });
+};
 
 
+/*
+Listen to games table for all games.
+Thiis will create an event that bubble up from the game canvas when data changes or on first load.
+Runs once by default.
+*/
+module.exports.listenToLobbys = () => {
+    firebase.database().ref(`games`).on('value', function(snapshot) {
+        let serverUpdate = new CustomEvent("serverUpdateGames", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+};
+
+/* 
+Start the listener on gameState, tiles, players, and gems that are on server nested inside games.
+They will create events that bubble up from the game canvas when data changes or on first load.
+Runs once by default.
+*/
+module.exports.listenToGame = () => {
+    // Try listening to only one of them.  One listens to tiles one listens to other.
+    firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
+        //   console.log("-------Gem Update");
+        let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
+    //   console.log("Update");
+        let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/players`).on('value', function(snapshot) {
+        let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
+    //   console.log("Update");
+        let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
 };
 
 module.exports.savePlayerPos = (player) => {
@@ -113,6 +118,7 @@ module.exports.savePlayerStats = (playerStats, gameId) => {
     });
 };
 
+// Adds a blank game with a start date to games and returns its key.
 module.exports.addGame = (startTime) => {
     return new Promise(function (resolve, reject){
         $.ajax({
@@ -122,7 +128,8 @@ module.exports.addGame = (startTime) => {
             data: JSON.stringify({
                 "gameStart": startTime,
             }),
-        });
+        })
+        .done(gameKey => resolve(gameKey.name));
     });
 };
 
@@ -201,10 +208,12 @@ module.exports.saveGem = (gem) => {
 
 module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(state);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `${url}/gameState.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/gameState.json`,
+            type: 'PUT',
+            dataType: 'json',   
+            data: JSON.stringify(state),
+        }).done(data => resolve(data));
     });
 };
 
@@ -216,11 +225,16 @@ module.exports.addNewPlayer = (player) => {
 };
 
 
-module.exports.saveNewMap = (data) => {
-    let jsonString = JSON.stringify(data);
-    let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PUT", `${url}/tiles.json`);
-    JSONRequest.send(jsonString);
+module.exports.saveNewMap = (tiles) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/tiles.json`,
+            type: 'PUT',
+            dataType: 'json',
+            data: JSON.stringify(tiles)
+        })
+        .done(data => resolve(data));
+    });
 };
 
 // module.exports.getTiles = (url) => {

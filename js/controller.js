@@ -98,8 +98,9 @@ app.controller("myCtrl", ['$scope', function($scope) {
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
             if(e.detail !== null){
+                console.log(e.detail);
                 let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
-
+                console.log(ownedPlayers);
                 let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
                 $scope.ownedPlayers = ownedPlayers;
                 $scope.otherPlayers = otherPlayers;
@@ -656,7 +657,11 @@ const mainLoop = (timestamp) => {
     requestAnimationFrame(mainLoop);
 };
 
-
+// Resets variables on whether or not the map has been drawn for the first time or not.
+const resetMapDraw = () => {
+    initialGemDraw = true;
+    initialTileDraw = true;
+};
 
 module.exports.startGame = () => {
     activateServerListener();
@@ -673,15 +678,21 @@ const startPlay = () => {
 const activateButtons = () => {
 
     $("#signIn").on("click", function(){
-        // login.googleSignin().then((data) => {
-        //      console.log(data);
-        //     g.uid = data.email;
-        //     g.name = data.name;
-        // });
+        // Commented out for testing purpose.  Comment back in to test with multiple users.
+            // login.googleSignin().then((data) => {
+            //      console.log(data);
+            //     g.uid = data.email;
+            //     g.name = data.name;
+            // });
         g.uid = "timaconner1@gmail.com";
         g.fullName = "Tim Conner";
         view.showSignIn();
-        model.fetchData();
+
+        // Initialize firebase and start listening to the list of lobbys
+        model.initFirebase().then(() => {
+            model.listenToLobbys();
+        });
+
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
@@ -699,6 +710,12 @@ const activateButtons = () => {
     //     startPlay();
     // });
 
+    // Get and set gameId on model
+    $("#player-lobby").on("click", ".lobby-select-button", function(){
+        let lobbyId = $(this).data("lobbyid");
+        model.setGameId(lobbyId);
+        model.listenToGame();
+    });
    
     $("canvas").on("click", function(e){
     
@@ -713,11 +730,25 @@ const activateButtons = () => {
         console.log(tile);
     });
 
+
+    /* When new game button is clicked:
+     add a new game, 
+     populate it with initial data, 
+     starts game listener,
+     and set initial draws to true.
+    */
     $("#main-menu-new").on("click", () => {
-        model.addGame(Date.now());
-        gameMaker.newGame();
-        initialGemDraw = true;
-        initialTileDraw = true;
+        model.addGame(Date.now()).then(gameId => {
+            model.setGameId(gameId);
+
+            // When game has finished being saved on server, start listening.
+            gameMaker.newGame().then(() => {
+                model.listenToGame();
+            });
+
+            resetMapDraw();
+        });
+        
     });
 
     $("#player-lobby").on("click", ".select", function(){
