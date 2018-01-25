@@ -67,6 +67,11 @@ module.exports.listenToLobbys = () => {
     });
 };
 
+// Detaches Firebase listeners that are listening to gameData/gameId
+module.exports.detachGameListeners = () => {
+    firebase.database().ref(`gameData/${gameId}`).off();
+};
+
 /* 
 Start the listener on gameState, tiles, players, and gems that are on server nested inside games.
 They will create events that bubble up from the game canvas when data changes or on first load.

@@ -714,7 +714,8 @@ const activateButtons = () => {
     $("#player-lobby").on("click", ".lobby-select-button", function(){
         let lobbyId = $(this).data("lobbyid");
         model.setGameId(lobbyId);
-        model.listenToGame();
+        model.detachGameListeners(); // Detach previous game listeners
+        model.listenToGame();// Listen to new game data
     });
    
     $("canvas").on("click", function(e){
