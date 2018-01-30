@@ -26,6 +26,33 @@ enemyGemColor = "yellow",
 edgeColor = "gray";
 
 
+/* 
+Variable for testing animation
+*/
+
+let curFrame = 0;
+let animFrame = [1,2];// 0, 1, 2, 3 total animFrame
+
+    
+// Dwarft animation is 20 by 20
+let animationDimension = {
+    x: 21,
+    y: 21
+};
+
+let animationInterval = 250,
+    lastAnimationTimestamp = 0;
+
+    console.log(Date.now());
+
+let dwarfAnimation = new Image();
+dwarfAnimation.src = "./img/dwarfAnimation.png";
+
+/* 
+End Animation Testing Variables
+*/
+
+
 let dwarfImage = new Image(); 
 dwarfImage.src = './img/dwarf.png'; 
 
@@ -34,6 +61,7 @@ squirrelImage.src = './img/squirrel.png';
 
 let dirtImage = new Image();
 dirtImage.src = "./img/dirt.png";
+
 
 let stoneImage = new Image();
 stoneImage.src = "./img/stone.jpeg";
@@ -52,6 +80,7 @@ gemImage.src = "./img/gems.png";
 let acornImage = new Image();
 acornImage.src = "./img/acorn.png";
 
+console.log(Date.now());
 // Angular
 
 let players = ['two'];
@@ -108,7 +137,7 @@ const drawTiles = (tiles, players) => {
         }
     }
 
-    if(playerTile !== undefined){
+    if(typeof playerTile !== "undefined"){
         tilesToDraw.push(playerTile);
     }
 
@@ -131,18 +160,18 @@ const drawTiles = (tiles, players) => {
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
-        if(typeof thisPlayer !== undefined){
+        if(typeof thisPlayer !== "undefined"){
             playerTile = findPlayerTile(thisPlayer);
         }
         
-        if(typeof playerTile !== undefined){
+        if(typeof playerTile !== "undefined"){
 
             // let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             // b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
             // distance = Math.sqrt(a*a + b*b);
 
             
-            if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
+            if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
                 if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
                     g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
@@ -207,7 +236,8 @@ const canSeePlayer = (p1, p2, sightDistance) => {
 
     let a = (player1.pos.x+0.5) - (player2.pos.x+0.5),
     b = (player1.pos.y+0.5) - (player2.pos.y+0.5),
-    distance = Math.sqrt(a*a + b*b);
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
 
     return Math.abs(distance) <= sightDistance;
 };
@@ -241,8 +271,24 @@ const drawPlayers = (players, playerId, tiles) => {
             g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            
-            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+
+            // Get the current animtion frame and multiply it by the dimension of each individual animation to find the position in the image to select as the animation. 
+            let curAnimationPos = (animFrame[curFrame%animFrame.length])*animationDimension.x;
+            g.ctx.drawImage(dwarfAnimation, curAnimationPos , 0, animationDimension.x, animationDimension.y, players[i].pos.x, players[i].pos.y, 20, 21);
+
+
+            /*
+            Get current time, and check if enough time has passed,  
+            In which case, increment the current frame, and set the new last animation tiemmstamp to curren time.
+            */
+
+            let currentTime = Date.now();
+            if(currentTime - lastAnimationTimestamp > animationInterval){
+                curFrame++;
+                lastAnimationTimestamp = currentTime;
+            }
+
+           // g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
         }
             
         g.ctx.stroke();

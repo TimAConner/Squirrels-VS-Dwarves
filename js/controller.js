@@ -112,9 +112,18 @@ app.controller("myCtrl", ['$scope', function($scope) {
         });
     });
     $("#game-canvas").on("serverUpdateGames", (e) => {
+
+        // Force Angular to digest new lobbies to update the html
         $scope.$apply(function(){
             if(e.detail !== null){
-                $scope.games = Object.keys(e.detail);
+                
+                // Add firebase key to lobbys
+                let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
+                    e.detail[lobbyKey].key = lobbyKey;
+                    return e.detail[lobbyKey];
+                });
+
+                $scope.lobbyList = lobbyDetails;
             }
         });
     });
@@ -230,7 +239,8 @@ const calcDistance = (posA,  posB) => {
     let a = (posA.x) - (posB.x),
     b = (posA.y) - (posB.y);
 
-    let distance = Math.sqrt(a*a + b*b);
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    let distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
 
     return Math.abs(distance); 
 };
@@ -243,8 +253,8 @@ const findCloseGem = (player) => {
         let a = (player.pos.x) - (gem.pos.x),
         b = (player.pos.y) - (gem.pos.y),
 
-        distance = Math.sqrt(a*a + b*b);
-        // console.log(Math.abs(distance));
+        // Line must be ignored, because JS Hint doesn't recognize ** operator.
+        distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
         return Math.abs(distance) <= 15; // 10 Pixels
     });
 
@@ -739,7 +749,7 @@ const activateButtons = () => {
      and set initial draws to true.
     */
     $("#main-menu-new").on("click", () => {
-        model.addGame(Date.now()).then(gameId => {
+        model.addGame(Date.now(), "A Battle").then(gameId => {
             model.setGameId(gameId);
 
             // When game has finished being saved on server, start listening.

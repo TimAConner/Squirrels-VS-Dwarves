@@ -23,6 +23,8 @@ const gameMaker = require("./gameMaker");
 const _ = require("lodash");
 
 
+const angular = require("angular");
+
 
 // 0 menu, 1 game, 2 winner
 
@@ -37,6 +39,7 @@ let winner = 0;
 let players = [];
 let tiles = [];
 let gems = [];
+let games = [];
 
 let previousPlayerActions = [];
 let completedActions = [];
@@ -72,6 +75,7 @@ let keys = {
 };
 
 
+let initialLobbyLoad = true;
 
 let initialTileDraw = true;
 let initialPlayerDraw = true;
@@ -79,14 +83,52 @@ let initialGemDraw = true;
 let initialGameState = true;
 
 
+
 let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
 
-let lag = 0,
-mostRecentRecieved = 0;
+let lag = 0; // Time between current timestamp and new peices of data timestamp.
+let countDataReturned = 0, // Count of data returned after sending information.
+countDataSent = 0; // Count of data sent to  firebase.
 
+let app = angular.module("myApp", []);
+
+app.controller("myCtrl", ['$scope', function($scope) {
+    $("#game-canvas").on("serverUpdatePlayer", (e) => {
+        $scope.$apply(function(){
+            if(e.detail !== null){
+                console.log(e.detail);
+                let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
+                console.log(ownedPlayers);
+                let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
+                $scope.ownedPlayers = ownedPlayers;
+                $scope.otherPlayers = otherPlayers;
+            } else {
+                $scope.otherPlayers = [];
+                $scope.ownedPlayers = [];
+            }
+            
+        });
+    });
+    $("#game-canvas").on("serverUpdateGames", (e) => {
+
+        // Force Angular to digest new lobbies to update the html
+        $scope.$apply(function(){
+            if(e.detail !== null){
+                
+                // Add firebase key to lobbys
+                let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
+                    e.detail[lobbyKey].key = lobbyKey;
+                    return e.detail[lobbyKey];
+                });
+
+                $scope.lobbyList = lobbyDetails;
+            }
+        });
+    });
+}]);
 
 const canMove = (direction, obj, delta) => {
     let objLeftPoint = obj.pos.x,
@@ -198,7 +240,8 @@ const calcDistance = (posA,  posB) => {
     let a = (posA.x) - (posB.x),
     b = (posA.y) - (posB.y);
 
-    let distance = Math.sqrt(a*a + b*b);
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    let distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
 
     return Math.abs(distance); 
 };
@@ -211,8 +254,8 @@ const findCloseGem = (player) => {
         let a = (player.pos.x) - (gem.pos.x),
         b = (player.pos.y) - (gem.pos.y),
 
-        distance = Math.sqrt(a*a + b*b);
-        // console.log(Math.abs(distance));
+        // Line must be ignored, because JS Hint doesn't recognize ** operator.
+        distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
         return Math.abs(distance) <= 15; // 10 Pixels
     });
 
@@ -253,11 +296,13 @@ const initiateGameState = () => {
         gameState: 1,
         winningTeam: 0
     };
+    
     model.saveGameState(winningObject);
     
 };
 
 const parseRequestId = (requestId) => {
+    console.log('requestId', requestId);
     let values = requestId.match("(.*)-(-.*)");
     return values;
 };
@@ -421,8 +466,13 @@ const update = (delta) => { // new delta parameter
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
+                        countDataSent++;
+
                         // console.log(targetPlayer.health);
-                        model.savePlayerHealth(targetPlayer); 
+                        model.savePlayerHealth(targetPlayer).then(data => {
+                            countDataReturned ++;
+                            calcLag(parseRequestId(data.health.requestId)[1]);
+                        });
 
                     } else { // Else mine a block
                         if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
@@ -431,7 +481,12 @@ const update = (delta) => { // new delta parameter
                             addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
                             // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
 
-                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]); 
+                            countDataSent++;
+
+                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]).then(data => {
+                                countDataReturned ++;
+                                calcLag(parseRequestId(data.hard.requestId)[1]);
+                            });
                         }
                     }
                     
@@ -446,7 +501,12 @@ const update = (delta) => { // new delta parameter
                     if(typeof gemOnTile !== "undefined" && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
-                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(() => {console.log("saved");}); 
+
+                        countDataSent ++;
+                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(data => {
+                            countDataReturned ++;
+                            calcLag(parseRequestId(data.requestId)[1]);
+                        }); 
                     }
                 } 
             
@@ -475,7 +535,11 @@ const update = (delta) => { // new delta parameter
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
                             }
-                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(() => {console.log("saved");}); 
+                            countDataSent ++;
+                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(data => {
+                                countDataReturned++;
+                                calcLag(parseRequestId(data.requestId)[1]);
+                            }); 
                         }
                     }
                 }      
@@ -521,22 +585,27 @@ const updatePlayerState = (direction,  changeIn, options) => {
         options.speedMultiplier = -options.speedMultiplier;
     }
 
-
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
     options.player.pos.dir = direction;
 
     addRequestId(options.player.pos, options.requestId);
-    model.savePlayerPos(options.player);
+
+    countDataSent ++;
+
+    model.savePlayerPos(options.player).then(data => {
+        console.log('data', data);
+        countDataReturned ++;
+        calcLag(parseRequestId(data.pos.requestId)[1]);
+    });
 };
 
 
 
 
 const mainLoop = (timestamp) => {
-
     if (g.uid === ""){
         view.showSignIn();
-    }  else if(initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
+    }  else if(initialLobbyLoad){//initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -565,11 +634,13 @@ const mainLoop = (timestamp) => {
                 proccessNewData(tiles, newTiles, ["hard"]);
                 proccessNewData(gems, newGems);
             // }
-      
-            update(timestep);
+            // if(countDataSent - countDataReturned < 50){
+                update(timestep);
+            // }
 
             delta -= timestep;
         }
+        view.printDataCount(countDataReturned, countDataSent);
 
         view.draw(g.playerId, tiles, players, gems, lag);
 
@@ -597,7 +668,11 @@ const mainLoop = (timestamp) => {
     requestAnimationFrame(mainLoop);
 };
 
-
+// Resets variables on whether or not the map has been drawn for the first time or not.
+const resetMapDraw = () => {
+    initialGemDraw = true;
+    initialTileDraw = true;
+};
 
 module.exports.startGame = () => {
     activateServerListener();
@@ -614,15 +689,21 @@ const startPlay = () => {
 const activateButtons = () => {
 
     $("#signIn").on("click", function(){
-        // login.googleSignin().then((data) => {
-        //      console.log(data);
-        //     g.uid = data.email;
-        //     g.name = data.name;
-        // });
+        // Commented out for testing purpose.  Comment back in to test with multiple users.
+            // login.googleSignin().then((data) => {
+            //      console.log(data);
+            //     g.uid = data.email;
+            //     g.name = data.name;
+            // });
         g.uid = "timaconner1@gmail.com";
         g.fullName = "Tim Conner";
         view.showSignIn();
-        model.fetchData();
+
+        // Initialize firebase and start listening to the list of lobbys
+        model.initFirebase().then(() => {
+            model.listenToLobbys();
+        });
+
     });
     document.getElementById("back-to-main-menu").addEventListener("click", () => {
         localGameState = 0;
@@ -640,6 +721,13 @@ const activateButtons = () => {
     //     startPlay();
     // });
 
+    // Get and set gameId on model
+    $("#player-lobby").on("click", ".lobby-select-button", function(){
+        let lobbyId = $(this).data("lobbyid");
+        model.setGameId(lobbyId);
+        model.detachGameListeners(); // Detach previous game listeners
+        model.listenToGame();// Listen to new game data
+    });
    
     $("canvas").on("click", function(e){
     
@@ -654,9 +742,27 @@ const activateButtons = () => {
         console.log(tile);
     });
 
-    document.getElementById("main-menu-new").addEventListener("click", () => {
-        gameMaker.newGame();
+
+    /* When new game button is clicked:
+     add a new game, 
+     populate it with initial data, 
+     starts game listener,
+     and set initial draws to true.
+    */
+    $("#main-menu-new").on("click", () => {
+        model.addGame(Date.now(), "A Battle").then(gameId => {
+            model.setGameId(gameId);
+
+            // When game has finished being saved on server, start listening.
+            gameMaker.newGame().then(() => {
+                model.listenToGame();
+            });
+
+            resetMapDraw();
+        });
+        
     });
+
     $("#player-lobby").on("click", ".select", function(){
         g.playerId = $(this).attr("playerId");      
         let player = players.find(x => x.id === g.playerId);
@@ -680,7 +786,7 @@ const activateButtons = () => {
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
-        let filteredGems = _.compact(e.detail.gems);
+        let filteredGems = _.compact(e.detail);
         if(initialGemDraw === true){
             // console.log(gems);
             gems = filteredGems;
@@ -691,13 +797,19 @@ const activateServerListener = () => {
         }        
     });
 
+    g.c.addEventListener("serverUpdateGames", (e) => {
+        games = e.detail;
+        initialLobbyLoad = false;
+    });
+
     g.c.addEventListener("serverUpdatePlayer", (e) => {
         // console.log("listened");
+        console.log('e.detail', e.detail);
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
-        let filteredPlayers = Object.keys(e.detail.players).map(key => {
-            let player = e.detail.players[key];
+        let filteredPlayers = Object.keys(e.detail).map(key => {
+            let player = e.detail[key];
             player.id = key;
             return player;
         }); 
@@ -723,7 +835,7 @@ const activateServerListener = () => {
     g.c.addEventListener("serverUpdateTiles", (e) => {
         // console.log("tile", e.detail);
 
-        let filteredTiles = _.compact(e.detail.tiles);
+        let filteredTiles = _.compact(e.detail);
 
         for(let i = 0; i < filteredTiles.length; i++){
             filteredTiles[i].id = i;
@@ -750,7 +862,8 @@ const activateServerListener = () => {
         if(onlineGameState === 2 && statsSent === false){
             statsSent = true;
             console.log('localPlayerStats', localPlayerStats);
-            model.savePlayerStats(localPlayerStats, "1");
+            model.savePlayerStats(localPlayerStats, "-L3KC9l-1W5f-2YZxW-t");
+            model.finishGame(Date.now(), "-L3KC9l-1W5f-2YZxW-t");
         }
         
     });
@@ -785,7 +898,7 @@ window.onkeyup = function(event) {
         }
     }
 };
-},{"./game":2,"./gameMaker":3,"./login":4,"./model":7,"./view":8,"jquery":167,"lodash":168}],2:[function(require,module,exports){
+},{"./game":2,"./gameMaker":3,"./login":4,"./model":7,"./view":8,"angular":160,"jquery":167,"lodash":168}],2:[function(require,module,exports){
 "use strict";
 
 // Holds information that needs to be accessible by multiple modules
@@ -875,37 +988,48 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 };
 
 module.exports.newGame = () => {
-    let createdTiles = mapMaker.generateTiles(20, 20);
-    
-    let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
-    teamBaseOne = createdTiles.find(x => x.teamBase === 1);
+    return new Promise(function (resolve, reject){
+        let createdTiles = mapMaker.generateTiles(20, 20);
+        
+        let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
+        teamBaseOne = createdTiles.find(x => x.teamBase === 1);
 
-    let newGems = [
-        {
-            "pos": {
-                "x": teamBaseZero.pos.x*g.tileSize,
-                "y": teamBaseZero.pos.y*g.tileSize
+        let newGems = [
+            {
+                "pos": {
+                    "x": teamBaseZero.pos.x*g.tileSize,
+                    "y": teamBaseZero.pos.y*g.tileSize
+                },
+                "carrier": -1,
+                "team": 0,
+                "type": "gem",
+                "id": 0
             },
-            "carrier": -1,
-            "team": 0,
-            "type": "gem",
-            "id": 0
-        },
-        {
-            "pos": {
-                "x": teamBaseOne.pos.x*g.tileSize,
-                "y": teamBaseOne.pos.y*g.tileSize
-            },
-            "carrier": -1,
-            "team": 1,
-            "type": "gem",
-            "id": 1
-        }
-    ];
+            {
+                "pos": {
+                    "x": teamBaseOne.pos.x*g.tileSize,
+                    "y": teamBaseOne.pos.y*g.tileSize
+                },
+                "carrier": -1,
+                "team": 1,
+                "type": "gem",
+                "id": 1
+            }
+        ];
 
-    model.saveGem(newGems[0]);  
-    model.saveGem(newGems[1]);
-    model.saveNewMap(createdTiles);
+        let gemPromise1 = model.saveGem(newGems[0]);  
+        let gemPromise2 =  model.saveGem(newGems[1]);
+        let mapPromise = model.saveNewMap(createdTiles);
+        let gameStatePromise = model.saveGameState({
+            "gameState" : 1,
+            "winningTeam": 0
+        });
+
+        Promise.all([gemPromise1, gemPromise2, mapPromise, gameStatePromise]).then(function(values) {
+            resolve();
+        });
+
+    });
 };
 },{"./game":2,"./mapMaker":6,"./model":7}],4:[function(require,module,exports){
 "use strict";
@@ -995,8 +1119,19 @@ let c = document.getElementById('game-canvas');
 
 const $ = require("jquery");
 
-let url = "https://squirrelsvsdwarves.firebaseio.com";
+let baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
 
+let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
+
+let gameId = "";
+
+module.exports.setGameId = (id) => {
+    gameId = id;
+    url = `${baseUrl}/gameData/${gameId}`;
+};
+module.exports.getGameId = () => gameId;
+
+// Loads apiKey.  Resolves when complete.
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -1011,89 +1146,136 @@ const loadAPI = () => {
     });
 };
 
-module.exports.fetchData = () => {
-    let config = {
-        apiKey: "",
-        authDomain: "squirrelsvsdwarves.firebaseapp.com",
-        databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
-        projectId: "squirrelsvsdwarves",
-        storageBucket: "squirrelsvsdwarves.appspot.com",
-        messagingSenderId: ""
-    };
+// Initiliaze firebase. Resolves when complete.
+module.exports.initFirebase = () => {
+    return new Promise(function (resolve, reject){
+        let config = {
+            apiKey: "",
+            authDomain: "squirrelsvsdwarves.firebaseapp.com",
+            databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
+            projectId: "squirrelsvsdwarves",
+            storageBucket: "squirrelsvsdwarves.appspot.com",
+            messagingSenderId: ""
+        };
 
-    loadAPI().then(data => {
-        config.apiKey = data.apiKey;
-        config.messagingSenderId = data.messagingSenderId;
-        firebase.initializeApp(config);
-        
-        
-  
-      //   module.exports.getTiles("https://squirrelsvsdwarves.firebaseio.com/tiles.json").then((data) => {
-      //       return convertObjectsToArray(data);
-      //   });
-  
-  
-
-      // Listening is not the issue.  It is how quicklyi an xhr request is sent.
-
-      
-      // Try listening to only one of them.  One listens to tiles one listens to other.
-        firebase.database().ref("gameState").on('value', function(snapshot) {
-            //   console.log("-------Gem Update");
-            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
+        loadAPI().then(data => {
+            config.apiKey = data.apiKey;
+            config.messagingSenderId = data.messagingSenderId;
+            firebase.initializeApp(config);
+            resolve();
         });
-        firebase.database().ref("tiles").on('value', function(snapshot) {
-          //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref("players").on('value', function(snapshot) {
-            let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref("gems").on('value', function(snapshot) {
-        //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-
-
     });
+};
 
 
+/*
+Listen to games table for all games.
+Thiis will create an event that bubble up from the game canvas when data changes or on first load.
+Runs once by default.
+*/
+module.exports.listenToLobbys = () => {
+    firebase.database().ref(`games`).on('value', function(snapshot) {
+        let serverUpdate = new CustomEvent("serverUpdateGames", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+};
+
+// Detaches Firebase listeners that are listening to gameData/gameId
+module.exports.detachGameListeners = () => {
+    firebase.database().ref(`gameData/${gameId}`).off();
+};
+
+/* 
+Start the listener on gameState, tiles, players, and gems that are on server nested inside games.
+They will create events that bubble up from the game canvas when data changes or on first load.
+Runs once by default.
+*/
+module.exports.listenToGame = () => {
+    // Try listening to only one of them.  One listens to tiles one listens to other.
+    firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
+        //   console.log("-------Gem Update");
+        let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
+    //   console.log("Update");
+        let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/players`).on('value', function(snapshot) {
+        let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
+    //   console.log("Update");
+        let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
 };
 
 module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            "pos": player.pos
-        });
-        let JSONRequest = new XMLHttpRequest();
-        // console.log("save player");
-        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/players/${player.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "pos": player.pos
+            }),
+        })
+        .done(data => resolve(data));
     });
 };
 
 module.exports.savePlayerStats = (playerStats, gameId) => {
-    console.log('playerStats.id', playerStats.id);
     $.ajax({
-        url:`${url}/games/${gameId}/players/${playerStats.id}/.json`,
+        url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
         type: 'PUT',
         dataType: 'json',
         data: JSON.stringify(playerStats),
     });
 };
 
+// Adds a blank game with a start date to games and returns its key.
+module.exports.addGame = (startTime, name) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/.json`,
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({
+                "gameStart": startTime,
+                "name": name
+            }),
+        })
+        .done(gameKey => resolve(gameKey.name));
+    });
+};
+
+module.exports.finishGame = (endTime, gameId) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/${gameId}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "gameEnd": endTime,
+            }),
+        });
+    });
+};
+
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            "health": player.health
-        });
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `${url}/players/players/${player.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/players/${player.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "health": player.health
+            }),
+        })
+        .done(data => resolve(data));
     });
 };
 
@@ -1101,19 +1283,22 @@ module.exports.savePlayerHealth = (player) => {
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `${url}/players/players/${player.id}.json`);
+        JSONRequest.open("DELETE", `${url}/players/${player.id}.json`);
         JSONRequest.send();
     });
 };
 
 module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            hard: tile.hard
-        });
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `${url}/tiles/tiles/${+tile.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/tiles/${+tile.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                hard: tile.hard
+            })
+        })
+        .done(data => resolve(data));
     });
 };
 
@@ -1121,43 +1306,54 @@ module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tiles);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
+        JSONRequest.open("PUT", `${url}/tiles.json`);
         JSONRequest.send(jsonString);
     });
 };
 
 module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(gem);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `${url}/gems/gems/${+gem.id}.json`);
-        JSONRequest.send(jsonString);
-        resolve();
+        $.ajax({
+            url:`${url}/gems/${+gem.id}.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify(gem)
+        })
+        .done(data => resolve(data));
     });
 };
 
+
+
 module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(state);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `${url}/gameState.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/gameState.json`,
+            type: 'PUT',
+            dataType: 'json',   
+            data: JSON.stringify(state),
+        }).done(data => resolve(data));
     });
 };
 
 module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `${url}/players/players/.json`);
+    JSONRequest.open("POST", `${url}/players/.json`);
     JSONRequest.send(jsonString);
 };
 
 
-module.exports.saveNewMap = (data) => {
-    let jsonString = JSON.stringify(data);
-    let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PUT", `${url}/tiles/tiles.json`);
-    JSONRequest.send(jsonString);
+module.exports.saveNewMap = (tiles) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/tiles.json`,
+            type: 'PUT',
+            dataType: 'json',
+            data: JSON.stringify(tiles)
+        })
+        .done(data => resolve(data));
+    });
 };
 
 // module.exports.getTiles = (url) => {
@@ -1186,7 +1382,6 @@ let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
-const angular = require("angular");
 
 // Number of squares that can be seen around player
 let sightDistance = 3;
@@ -1203,6 +1398,33 @@ enemyGemColor = "yellow",
 edgeColor = "gray";
 
 
+/* 
+Variable for testing animation
+*/
+
+let curFrame = 0;
+let animFrame = [1,2];// 0, 1, 2, 3 total animFrame
+
+    
+// Dwarft animation is 20 by 20
+let animationDimension = {
+    x: 21,
+    y: 21
+};
+
+let animationInterval = 250,
+    lastAnimationTimestamp = 0;
+
+    console.log(Date.now());
+
+let dwarfAnimation = new Image();
+dwarfAnimation.src = "./img/dwarfAnimation.png";
+
+/* 
+End Animation Testing Variables
+*/
+
+
 let dwarfImage = new Image(); 
 dwarfImage.src = './img/dwarf.png'; 
 
@@ -1211,6 +1433,7 @@ squirrelImage.src = './img/squirrel.png';
 
 let dirtImage = new Image();
 dirtImage.src = "./img/dirt.png";
+
 
 let stoneImage = new Image();
 stoneImage.src = "./img/stone.jpeg";
@@ -1229,6 +1452,7 @@ gemImage.src = "./img/gems.png";
 let acornImage = new Image();
 acornImage.src = "./img/acorn.png";
 
+console.log(Date.now());
 // Angular
 
 let players = ['two'];
@@ -1237,25 +1461,7 @@ module.exports.setPlayers = (x) => {
     players = x;
 };
 
-let app = angular.module("myApp", []);
 
-app.controller("myCtrl", ['$scope', function($scope) {
-    $("#game-canvas").on("serverUpdatePlayer", (e) => {
-        $scope.$apply(function(){
-            if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
-
-                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
-                $scope.ownedPlayers = ownedPlayers;
-                $scope.otherPlayers = otherPlayers;
-            } else {
-                $scope.otherPlayers = [];
-                $scope.ownedPlayers = [];
-            }
-            
-        });
-    });
-}]);
 
 // Set by draw()
 let thisPlayer;
@@ -1303,7 +1509,7 @@ const drawTiles = (tiles, players) => {
         }
     }
 
-    if(playerTile !== undefined){
+    if(typeof playerTile !== "undefined"){
         tilesToDraw.push(playerTile);
     }
 
@@ -1326,18 +1532,18 @@ const drawTiles = (tiles, players) => {
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
-        if(typeof thisPlayer !== undefined){
+        if(typeof thisPlayer !== "undefined"){
             playerTile = findPlayerTile(thisPlayer);
         }
         
-        if(typeof playerTile !== undefined){
+        if(typeof playerTile !== "undefined"){
 
             // let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             // b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
             // distance = Math.sqrt(a*a + b*b);
 
             
-            if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
+            if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
                 if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
                     g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
@@ -1402,7 +1608,8 @@ const canSeePlayer = (p1, p2, sightDistance) => {
 
     let a = (player1.pos.x+0.5) - (player2.pos.x+0.5),
     b = (player1.pos.y+0.5) - (player2.pos.y+0.5),
-    distance = Math.sqrt(a*a + b*b);
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
 
     return Math.abs(distance) <= sightDistance;
 };
@@ -1436,8 +1643,24 @@ const drawPlayers = (players, playerId, tiles) => {
             g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            
-            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+
+            // Get the current animtion frame and multiply it by the dimension of each individual animation to find the position in the image to select as the animation. 
+            let curAnimationPos = (animFrame[curFrame%animFrame.length])*animationDimension.x;
+            g.ctx.drawImage(dwarfAnimation, curAnimationPos , 0, animationDimension.x, animationDimension.y, players[i].pos.x, players[i].pos.y, 20, 21);
+
+
+            /*
+            Get current time, and check if enough time has passed,  
+            In which case, increment the current frame, and set the new last animation tiemmstamp to curren time.
+            */
+
+            let currentTime = Date.now();
+            if(currentTime - lastAnimationTimestamp > animationInterval){
+                curFrame++;
+                lastAnimationTimestamp = currentTime;
+            }
+
+           // g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
         }
             
         g.ctx.stroke();
@@ -1529,6 +1752,10 @@ module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
 };
 
+module.exports.printDataCount = (returned, sent) => {
+    $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
+};
+
 const showScreen = (screen) => {
 
 
@@ -1543,7 +1770,7 @@ const showScreen = (screen) => {
         $(screen).removeClass("hide");
     }
 };
-},{"./game":2,"angular":160,"jquery":167,"lodash":168}],9:[function(require,module,exports){
+},{"./game":2,"jquery":167,"lodash":168}],9:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.

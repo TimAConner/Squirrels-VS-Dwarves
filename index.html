@@ -51,9 +51,9 @@
                         </li>
                     </ul>
                     <h3>Lobbies</h3>
-                    <ul ng-repeat="x in games" >
+                    <ul ng-repeat="lobby in lobbyList" >
                         <li>
-                            <button class="lobby-select-button" data-lobbyid={{x}}>Select Lobby: {{x}}</button>
+                            <button class="lobby-select-button" data-lobbyid={{lobby.key}}>Select Lobby: {{lobby.name}}</button>
                         </li>
                     </ul>
                 </div>

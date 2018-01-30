@@ -124,7 +124,7 @@ module.exports.savePlayerStats = (playerStats, gameId) => {
 };
 
 // Adds a blank game with a start date to games and returns its key.
-module.exports.addGame = (startTime) => {
+module.exports.addGame = (startTime, name) => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/.json`,
@@ -132,6 +132,7 @@ module.exports.addGame = (startTime) => {
             dataType: 'json',
             data: JSON.stringify({
                 "gameStart": startTime,
+                "name": name
             }),
         })
         .done(gameKey => resolve(gameKey.name));
