@@ -11,6 +11,7 @@ const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
 const img = require("./imageController");
+const drawPlayerAnimation = require("./animationController");
 
 // Number of squares that can be seen around player
 let sightDistance = 3;
@@ -27,30 +28,23 @@ enemyGemColor = "yellow",
 edgeColor = "gray";
 
 
-/* 
-Variable for testing animation
-*/
-
-let curFrame = 0;
-let animFrame = [1,2];// 0, 1, 2, 3 total animFrame
-
-    
-// Dwarft animation is 20 by 20
-let animationDimension = {
-    x: 21,
-    y: 21
+let DwarfAnimation = {
+    frame: [1, 2],
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    h: 21
 };
 
-let animationInterval = 250,
-    lastAnimationTimestamp = 0;
 
-// Angular
+// // Angular
 
-let players = ['two'];
+// let players = ['two'];
 
-module.exports.setPlayers = (x) => {
-    players = x;
-};
+// module.exports.setPlayers = (x) => {
+//     players = x;
+// };
 
 
 // Cleared on each update.  Contains the tiles that should be drawn that frame.
@@ -140,7 +134,7 @@ const drawTiles = (tiles, players) => {
             if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
                 if(tiles[i].hard.points > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage(img.stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
@@ -150,13 +144,13 @@ const drawTiles = (tiles, players) => {
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage(img.dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
                         g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage(img.dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     }
                    
@@ -166,7 +160,7 @@ const drawTiles = (tiles, players) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage(img.dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
@@ -234,27 +228,10 @@ const drawPlayers = (players, playerId, tiles) => {
         g.ctx.stroke();
 
         if(players[i].team === 1){
-            g.ctx.drawImage(img.squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            g.ctx.drawImage(img('squirrel'),players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-
-            // Get the current animtion frame and multiply it by the dimension of each individual animation to find the position in the image to select as the animation. 
-            let curAnimationPos = (animFrame[curFrame%animFrame.length])*animationDimension.x;
-            g.ctx.drawImage(img.dwarfAnimation, curAnimationPos , 0, animationDimension.x, animationDimension.y, players[i].pos.x, players[i].pos.y, 20, 21);
-
-
-            /*
-            Get current time, and check if enough time has passed,  
-            In which case, increment the current frame, and set the new last animation tiemmstamp to curren time.
-            */
-
-            let currentTime = Date.now();
-            if(currentTime - lastAnimationTimestamp > animationInterval){
-                curFrame++;
-                lastAnimationTimestamp = currentTime;
-            }
-
-           // g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            drawPlayerAnimation('dwarfAnimation', DwarfAnimation, players[i].pos);
         }
             
         g.ctx.stroke();
@@ -274,17 +251,17 @@ const drawGems = (gems, players) => {
 
         if(gems[i].team === 1){
             if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(img.gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(img.gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         } else {
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(img.acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(img.acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();

@@ -6,47 +6,39 @@ Images are loaded and stored in this file so they don't clutter up the rest of t
 
 */
 
-let dwarfAnimation = new Image();
-dwarfAnimation.src = "./img/dwarfAnimation.png";
+// Array holding all images and names.
+let images = [];
+
+// Adds an image to images array
+const addImage = (name, src) => {
+    let newImage = new Image();
+    newImage.src = src;
+    images.push({
+        name,
+        'image': newImage
+    });
+};
 
 /* 
-End Animation Testing Variables
+Returns an image from images array based on a name given.
+Is called by passing into the required variable a name.  
+Example: const img = require("./imageController"); img('dwarfImage');
 */
+const findImage = (name) => {
+    return images.find(img => img.name === name).image;
+};
 
-
-let dwarfImage = new Image(); 
-dwarfImage.src = './img/dwarf.png'; 
-
-let squirrelImage = new Image(); 
-squirrelImage.src = './img/squirrel.png'; 
-
-let dirtImage = new Image();
-dirtImage.src = "./img/dirt.png";
-
-
-let stoneImage = new Image();
-stoneImage.src = "./img/stone.jpeg";
-
-// Gems
+addImage('dwarfAnimation', './img/dwarfAnimation.png');
+addImage('dwarf', './img/dwarf.png');
+addImage('squirrel', './img/squirrel.png');
+addImage('dirt', "./img/dirt.png");
+addImage('stone', "./img/stone.jpeg");
 
 // https://opengameart.org/content/32x32-pixel-gems
 // Copyright/Attribution Notice: 
 // Credit:Jianhui999 https://www.patreon.com/GamePixelArt Credit: http://opengameart.org/users/jianhui999
-
-let gemImage = new Image();
-gemImage.src = "./img/gems.png";
-
-let acornImage = new Image();
-acornImage.src = "./img/acorn.png";
+addImage('gem', "./img/gems.png");
+addImage("acorn", "./img/acorn.png");
 
 
-// Export images so that I don't have to write module.exports infront of every pair.
-module.exports = {
-    dwarfAnimation,
-    dwarfImage,
-    squirrelImage,
-    dirtImage,
-    stoneImage,
-    gemImage,
-    acornImage
-};
+module.exports = findImage;

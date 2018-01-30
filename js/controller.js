@@ -301,7 +301,6 @@ const initiateGameState = () => {
 };
 
 const parseRequestId = (requestId) => {
-    console.log('requestId', requestId);
     let values = requestId.match("(.*)-(-.*)");
     return values;
 };
@@ -649,11 +648,11 @@ const mainLoop = (timestamp) => {
         if($(".add").length === 0){
             let playerIds = players.map(x => x.id);
             // console.log('playerIds', playerIds);
-            view.setPlayers(playerIds);
+            // view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
             // console.log(players);
-            view.setPlayers(playerIds);
+            // view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
             // console.log('newPlayers', newPlayers);
