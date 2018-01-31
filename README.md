@@ -8,7 +8,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [x] Create player and join through Google
 - [ ] Block being destroyed animation
 - [ ] Player Animation?
-- [ ] Lobbys for multiple Games?
+- [ ] Lobbies for multiple Games?
 - [ ] Refactor to use auth.currentUser()
 - [ ] Implement logout
 - [ ] ? Health regen or..?
