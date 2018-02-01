@@ -127,6 +127,19 @@ app.controller("myCtrl", ['$scope', function($scope) {
             }
         });
     });
+
+    $scope.selectGame = id => {
+        console.log('id', id);
+        model.setGameId(id);
+        model.detachGameListeners(); // Detach previous game listeners
+        model.listenToGame();// Listen to new game data
+    };
+
+    $scope.deleteGame = id => {
+        console.log('id', id);
+        model.deleteLobby(id);
+        model.deleteMap(id);
+    };
 }]);
 
 const canMove = (direction, obj, delta) => {
@@ -720,12 +733,7 @@ const activateButtons = () => {
     // });
 
     // Get and set gameId on model
-    $("#player-lobby").on("click", ".lobby-select-button", function(){
-        let lobbyId = $(this).data("lobbyid");
-        model.setGameId(lobbyId);
-        model.detachGameListeners(); // Detach previous game listeners
-        model.listenToGame();// Listen to new game data
-    });
+
    
     $("canvas").on("click", function(e){
     

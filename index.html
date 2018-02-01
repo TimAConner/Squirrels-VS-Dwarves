@@ -53,7 +53,9 @@
                     <h3>Lobbies</h3>
                     <ul ng-repeat="lobby in lobbyList" >
                         <li>
-                            <button class="lobby-select-button" data-lobbyid={{lobby.key}}>Select Lobby: {{lobby.name}}</button>
+                            <p>{{lobby.name}}</p>
+                            <button ng-click="selectGame(lobby.key)">Select</button>
+                            <button ng-click="deleteGame(lobby.key)">Delete</button>
                         </li>
                     </ul>
                 </div>

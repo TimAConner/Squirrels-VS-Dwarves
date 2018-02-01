@@ -243,6 +243,27 @@ module.exports.saveNewMap = (tiles) => {
     });
 };
 
+module.exports.deleteMap = id => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/gameData/${id}.json`,
+            type: 'DELETE'
+        })
+        .done(data => resolve(data));
+    });
+};
+
+module.exports.deleteLobby = id => {
+    console.log('`${baseUrl}/games/${id}.json`', `${baseUrl}/games/${id}.json`);
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/${id}.json`,
+            type: 'DELETE'
+        })
+        .done(data => resolve(data));
+    });
+};
+
 // module.exports.getTiles = (url) => {
 //     return new Promise(function (resolve, reject){
 //         let JSONRequest = new XMLHttpRequest();
