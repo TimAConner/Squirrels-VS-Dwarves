@@ -1,4 +1,95 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+const g = require("./game");
+const img = require("./imageController");
+
+/*
+Animation Example:
+{
+    frames: [1, 2],
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    h: 21
+}
+*/
+
+// Current time in miliseconds updated on each shouldIncrementFrame()
+let currentTime = 0;
+
+// Array of total animations
+let animations = [];
+
+const addAnimation = (name, animation) => {
+    let {frames, curFrame, lastFrame, interval, w, h} = animation;
+    let animationObject = {
+        name,
+        frames,
+        curFrame,
+        lastFrame, 
+        interval,
+        w,
+        h
+    };
+    animations.push(animationObject);   
+};
+
+const findAnimation = name => {
+    let animation = animations.find(anim => anim.name === name);
+    if(typeof animation === "undefined") console.log(`Cannot find ${name} animation.`);
+    return animation;
+};
+
+addAnimation('dwarfAnimation', 
+    {
+        frames: [1, 2],
+        curFrame: 0,
+        lastFrame: 0,
+        interval: 250,
+        w: 21,
+        h: 21
+    }
+);
+
+// Calculates location in the spritesheet of the current frame.
+const calcFrame = ({frames, curFrame, w}) => {
+    let frameIndex = frames[curFrame%frames.length];
+    return (frameIndex * w);
+};
+
+// Returns true if enough time has passed between current and last frame.
+const shouldIncrementFrame = ({lastFrame, interval}) => {
+    currentTime = Date.now();
+    return (currentTime - lastFrame) > interval; 
+};
+
+// TODO: Link current time in shouldIncrement Frame and selectNextFrame.
+// Selects next frame
+const selectNextFrame = (animation) => {
+    // console.log('curFrame, lastFrame', curFrame, lastFrame);
+    animation.curFrame ++;
+    animation.lastFrame = currentTime;
+    // console.log('curFrame, lastFrame', curFrame, lastFrame);
+};
+
+// Draws player animation on the canvas then calls updateAnimation to get a new frame.
+// Animations run along x axis, so the animations must be in a horizontal strip.
+const drawPlayerAnimation = (imgName, animationName, position) => {
+    let animation = findAnimation(animationName);
+    g.ctx.drawImage(img(imgName), calcFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
+    if(shouldIncrementFrame(animation)) selectNextFrame(animation);
+};
+
+/*
+ Export just drawPlayerAniation so this can be called refrenced by
+    const drawPlayerAnimation = require("./animationController");
+ and called by
+    drawPlayerAnimation();
+ */
+
+module.exports = drawPlayerAnimation;
+},{"./game":3,"./imageController":5}],2:[function(require,module,exports){
 "use strict";
 /*
 Using information by :
@@ -302,7 +393,6 @@ const initiateGameState = () => {
 };
 
 const parseRequestId = (requestId) => {
-    console.log('requestId', requestId);
     let values = requestId.match("(.*)-(-.*)");
     return values;
 };
@@ -650,11 +740,11 @@ const mainLoop = (timestamp) => {
         if($(".add").length === 0){
             let playerIds = players.map(x => x.id);
             // console.log('playerIds', playerIds);
-            view.setPlayers(playerIds);
+            // view.setPlayers(playerIds);
         } else {
             let playerIds = players.map(x => x.id);
             // console.log(players);
-            view.setPlayers(playerIds);
+            // view.setPlayers(playerIds);
         }
         // else if($("#player-lobby .add").length !== newPlayers.length){
             // console.log('newPlayers', newPlayers);
@@ -898,7 +988,7 @@ window.onkeyup = function(event) {
         }
     }
 };
-},{"./game":2,"./gameMaker":3,"./login":4,"./model":7,"./view":8,"angular":160,"jquery":167,"lodash":168}],2:[function(require,module,exports){
+},{"./game":3,"./gameMaker":4,"./login":6,"./model":9,"./view":10,"angular":162,"jquery":169,"lodash":170}],3:[function(require,module,exports){
 "use strict";
 
 // Holds information that needs to be accessible by multiple modules
@@ -955,7 +1045,7 @@ module.exports.findTileBelowPlayer = (player, tiles) => {
 
     return sortedTiles[0];
 };
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 const mapMaker = require("./mapMaker");
@@ -1031,7 +1121,62 @@ module.exports.newGame = () => {
 
     });
 };
-},{"./game":2,"./mapMaker":6,"./model":7}],4:[function(require,module,exports){
+},{"./game":3,"./mapMaker":8,"./model":9}],5:[function(require,module,exports){
+'use strict';
+
+/*
+
+Images are loaded and stored in this file so they don't clutter up the rest of the file.
+
+*/
+
+// Array holding all images and names.
+let images = [];
+
+// Adds an image to images array
+const addImage = (name, src) => {
+    let newImage = new Image();
+    newImage.src = src;
+    images.push({
+        name,
+        'image': newImage
+    });
+};
+
+/* 
+Returns an image from images array based on a name given.
+Is called by passing into the required variable a name.  
+Example: const img = require("./imageController"); img('dwarfImage');
+*/
+const findImage = (name) => {
+    let image = images.find(img => img.name === name).image;
+    if(typeof image === "undefined") console.log(`Cannot find ${name} image.`);
+    return image;
+};
+
+addImage('dwarfSprite', './img/dwarfAnimation.png');
+addImage('dwarf', './img/dwarf.png');
+addImage('squirrel', './img/squirrel.png');
+addImage('dirt', "./img/dirt.png");
+addImage('stone', "./img/stone.jpeg");
+
+addImage('stoneFrac1', "./img/stoneFrac1.jpg");
+addImage('stoneFrac2', "./img/stoneFrac3.jpg");
+addImage('stoneFrac3', "./img/stoneFrac5.jpg");
+addImage('stoneFrac4', "./img/stoneFrac7.jpg");
+addImage('stoneFrac5', "./img/stoneFrac9.jpg");
+addImage('stoneFrac6', "./img/stoneFrac11.jpg");
+
+// https://opengameart.org/content/32x32-pixel-gems
+// Copyright/Attribution Notice: 
+// Credit:Jianhui999 https://www.patreon.com/GamePixelArt Credit: http://opengameart.org/users/jianhui999
+addImage('gem', "./img/gems.png");
+addImage("acorn", "./img/acorn.png");
+
+
+module.exports = findImage;
+
+},{}],6:[function(require,module,exports){
 "use strict";
 const firebase = require("firebase");
 let provider = new firebase.auth.GoogleAuthProvider();
@@ -1059,13 +1204,13 @@ module.exports.googleSignin = () => {
 //       console.log('Signout Failed');
 //    });
 // };
-},{"firebase":164}],5:[function(require,module,exports){
+},{"firebase":166}],7:[function(require,module,exports){
 "use strict";
 let controller = require("./controller");
 controller.startGame();
 
 
-},{"./controller":1}],6:[function(require,module,exports){
+},{"./controller":2}],8:[function(require,module,exports){
   "use strict";
 
   const g = require("./game");
@@ -1110,7 +1255,7 @@ controller.startGame();
   };
 
  
-},{"./game":2}],7:[function(require,module,exports){
+},{"./game":3}],9:[function(require,module,exports){
 "use strict";
 
 let firebase = require('firebase');
@@ -1369,7 +1514,7 @@ module.exports.saveNewMap = (tiles) => {
 //         JSONRequest.send();
 //     });
 // };
-},{"firebase":164,"jquery":167}],8:[function(require,module,exports){
+},{"firebase":166,"jquery":169}],10:[function(require,module,exports){
 "use strict";
 
 // module.exports.showTiles = (tiles) => {
@@ -1382,6 +1527,8 @@ let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
+const img = require("./imageController");
+const drawPlayerAnimation = require("./animationController");
 
 // Number of squares that can be seen around player
 let sightDistance = 3;
@@ -1398,70 +1545,28 @@ enemyGemColor = "yellow",
 edgeColor = "gray";
 
 
-/* 
-Variable for testing animation
-*/
-
-let curFrame = 0;
-let animFrame = [1,2];// 0, 1, 2, 3 total animFrame
-
-    
-// Dwarft animation is 20 by 20
-let animationDimension = {
-    x: 21,
-    y: 21
+let DwarfAnimation = {
+    frame: [1, 2],
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    h: 21
 };
 
-let animationInterval = 250,
-    lastAnimationTimestamp = 0;
 
-    console.log(Date.now());
+// // Angular
 
-let dwarfAnimation = new Image();
-dwarfAnimation.src = "./img/dwarfAnimation.png";
+// let players = ['two'];
 
-/* 
-End Animation Testing Variables
-*/
+// module.exports.setPlayers = (x) => {
+//     players = x;
+// };
 
 
-let dwarfImage = new Image(); 
-dwarfImage.src = './img/dwarf.png'; 
-
-let squirrelImage = new Image(); 
-squirrelImage.src = './img/squirrel.png'; 
-
-let dirtImage = new Image();
-dirtImage.src = "./img/dirt.png";
-
-
-let stoneImage = new Image();
-stoneImage.src = "./img/stone.jpeg";
-
+// Cleared on each update.  Contains the tiles that should be drawn that frame.
+// TODO: Move inside function.
 let tilesToDraw = [];
-
-// Gems
-
-// https://opengameart.org/content/32x32-pixel-gems
-// Copyright/Attribution Notice: 
-// Credit:Jianhui999 https://www.patreon.com/GamePixelArt Credit: http://opengameart.org/users/jianhui999
-
-let gemImage = new Image();
-gemImage.src = "./img/gems.png";
-
-let acornImage = new Image();
-acornImage.src = "./img/acorn.png";
-
-console.log(Date.now());
-// Angular
-
-let players = ['two'];
-
-module.exports.setPlayers = (x) => {
-    players = x;
-};
-
-
 
 // Set by draw()
 let thisPlayer;
@@ -1544,9 +1649,28 @@ const drawTiles = (tiles, players) => {
 
             
             if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
-                if(tiles[i].hard.points > 0){
+                let hardness = tiles[i].hard.points;
+                if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    if(hardness > 0.95){
+                        g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.9){
+                        g.ctx.drawImage(img('stoneFrac1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.8){
+                        g.ctx.drawImage(img('stoneFrac2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.6){
+                        g.ctx.drawImage(img('stoneFrac3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.4){
+                        g.ctx.drawImage(img('stoneFrac4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.2){
+                        g.ctx.drawImage(img('stoneFrac5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.0){
+                        g.ctx.drawImage(img('stoneFrac6'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    }
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
@@ -1556,13 +1680,13 @@ const drawTiles = (tiles, players) => {
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
                         g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     }
                    
@@ -1572,7 +1696,7 @@ const drawTiles = (tiles, players) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
@@ -1640,27 +1764,10 @@ const drawPlayers = (players, playerId, tiles) => {
         g.ctx.stroke();
 
         if(players[i].team === 1){
-            g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            g.ctx.drawImage(img('squirrel'),players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-
-            // Get the current animtion frame and multiply it by the dimension of each individual animation to find the position in the image to select as the animation. 
-            let curAnimationPos = (animFrame[curFrame%animFrame.length])*animationDimension.x;
-            g.ctx.drawImage(dwarfAnimation, curAnimationPos , 0, animationDimension.x, animationDimension.y, players[i].pos.x, players[i].pos.y, 20, 21);
-
-
-            /*
-            Get current time, and check if enough time has passed,  
-            In which case, increment the current frame, and set the new last animation tiemmstamp to curren time.
-            */
-
-            let currentTime = Date.now();
-            if(currentTime - lastAnimationTimestamp > animationInterval){
-                curFrame++;
-                lastAnimationTimestamp = currentTime;
-            }
-
-           // g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
         }
             
         g.ctx.stroke();
@@ -1680,17 +1787,17 @@ const drawGems = (gems, players) => {
 
         if(gems[i].team === 1){
             if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         } else {
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();
@@ -1770,7 +1877,7 @@ const showScreen = (screen) => {
         $(screen).removeClass("hide");
     }
 };
-},{"./game":2,"jquery":167,"lodash":168}],9:[function(require,module,exports){
+},{"./animationController":1,"./game":3,"./imageController":5,"jquery":169,"lodash":170}],11:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -1795,7 +1902,7 @@ exports.default = exports.firebase;
 
 
 
-},{"./src/firebaseApp":10}],10:[function(require,module,exports){
+},{"./src/firebaseApp":12}],12:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2160,7 +2267,7 @@ var appErrors = new util_1.ErrorFactory('app', 'Firebase', errors);
 
 
 
-},{"@firebase/util":142}],11:[function(require,module,exports){
+},{"@firebase/util":144}],13:[function(require,module,exports){
 (function (global){
 (function() {
   var firebase = require('@firebase/app').default;
@@ -2453,7 +2560,7 @@ c){a=new ul(a);c({INTERNAL:{getUid:r(a.getUid,a),getToken:r(a.Vb,a),addAuthToken
 }).call(typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {});
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"@firebase/app":9}],12:[function(require,module,exports){
+},{"@firebase/app":11}],14:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2512,7 +2619,7 @@ exports.OnDisconnect = onDisconnect_1.OnDisconnect;
 
 
 
-},{"./src/api/DataSnapshot":13,"./src/api/Database":14,"./src/api/Query":15,"./src/api/Reference":16,"./src/api/internal":18,"./src/api/onDisconnect":19,"./src/api/test_access":20,"./src/core/RepoManager":27,"./src/core/util/util":71,"@firebase/app":9,"@firebase/util":142}],13:[function(require,module,exports){
+},{"./src/api/DataSnapshot":15,"./src/api/Database":16,"./src/api/Query":17,"./src/api/Reference":18,"./src/api/internal":20,"./src/api/onDisconnect":21,"./src/api/test_access":22,"./src/core/RepoManager":29,"./src/core/util/util":73,"@firebase/app":11,"@firebase/util":144}],15:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2687,7 +2794,7 @@ exports.DataSnapshot = DataSnapshot;
 
 
 
-},{"../core/snap/indexes/PriorityIndex":49,"../core/util/Path":65,"../core/util/validation":72,"@firebase/util":142}],14:[function(require,module,exports){
+},{"../core/snap/indexes/PriorityIndex":51,"../core/util/Path":67,"../core/util/validation":74,"@firebase/util":144}],16:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -2822,7 +2929,7 @@ exports.DatabaseInternals = DatabaseInternals;
 
 
 
-},{"../core/Repo":25,"../core/RepoManager":27,"../core/util/Path":65,"../core/util/libs/parser":70,"../core/util/util":71,"../core/util/validation":72,"./Reference":16,"@firebase/util":142}],15:[function(require,module,exports){
+},{"../core/Repo":27,"../core/RepoManager":29,"../core/util/Path":67,"../core/util/libs/parser":72,"../core/util/util":73,"../core/util/validation":74,"./Reference":18,"@firebase/util":144}],17:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3330,7 +3437,7 @@ exports.Query = Query;
 
 
 
-},{"../core/snap/indexes/KeyIndex":47,"../core/snap/indexes/PathIndex":48,"../core/snap/indexes/PriorityIndex":49,"../core/snap/indexes/ValueIndex":50,"../core/util/Path":65,"../core/util/util":71,"../core/util/validation":72,"../core/view/EventRegistration":80,"@firebase/util":142}],16:[function(require,module,exports){
+},{"../core/snap/indexes/KeyIndex":49,"../core/snap/indexes/PathIndex":50,"../core/snap/indexes/PriorityIndex":51,"../core/snap/indexes/ValueIndex":52,"../core/util/Path":67,"../core/util/util":73,"../core/util/validation":74,"../core/view/EventRegistration":82,"@firebase/util":144}],18:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3640,7 +3747,7 @@ SyncPoint_1.SyncPoint.__referenceConstructor = Reference;
 
 
 
-},{"../core/Repo":25,"../core/SyncPoint":32,"../core/util/NextPushId":63,"../core/util/Path":65,"../core/util/util":71,"../core/util/validation":72,"../core/view/QueryParams":81,"./Query":15,"./TransactionResult":17,"./onDisconnect":19,"@firebase/util":142}],17:[function(require,module,exports){
+},{"../core/Repo":27,"../core/SyncPoint":34,"../core/util/NextPushId":65,"../core/util/Path":67,"../core/util/util":73,"../core/util/validation":74,"../core/view/QueryParams":83,"./Query":17,"./TransactionResult":19,"./onDisconnect":21,"@firebase/util":144}],19:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3683,7 +3790,7 @@ exports.TransactionResult = TransactionResult;
 
 
 
-},{"@firebase/util":142}],18:[function(require,module,exports){
+},{"@firebase/util":144}],20:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3739,7 +3846,7 @@ exports.interceptServerData = function (ref, callback) {
 
 
 
-},{"../realtime/BrowserPollConnection":88,"../realtime/WebSocketConnection":92}],19:[function(require,module,exports){
+},{"../realtime/BrowserPollConnection":90,"../realtime/WebSocketConnection":94}],21:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3855,7 +3962,7 @@ exports.OnDisconnect = OnDisconnect;
 
 
 
-},{"../core/util/util":71,"../core/util/validation":72,"@firebase/util":142}],20:[function(require,module,exports){
+},{"../core/util/util":73,"../core/util/validation":74,"@firebase/util":144}],22:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -3939,7 +4046,7 @@ exports.forceRestClient = function (forceRestClient) {
 
 
 
-},{"../core/PersistentConnection":23,"../core/RepoInfo":26,"../core/RepoManager":27,"../realtime/Connection":89}],21:[function(require,module,exports){
+},{"../core/PersistentConnection":25,"../core/RepoInfo":28,"../core/RepoManager":29,"../realtime/Connection":91}],23:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -4026,7 +4133,7 @@ exports.AuthTokenProvider = AuthTokenProvider;
 
 
 
-},{"./util/util":71}],22:[function(require,module,exports){
+},{"./util/util":73}],24:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -4245,7 +4352,7 @@ exports.CompoundWrite = CompoundWrite;
 
 
 
-},{"./snap/Node":43,"./snap/indexes/PriorityIndex":49,"./util/ImmutableTree":62,"./util/Path":65,"@firebase/util":142}],23:[function(require,module,exports){
+},{"./snap/Node":45,"./snap/indexes/PriorityIndex":51,"./util/ImmutableTree":64,"./util/Path":67,"@firebase/util":144}],25:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5056,7 +5163,7 @@ exports.PersistentConnection = PersistentConnection;
 
 
 
-},{"../realtime/Connection":89,"./ServerActions":29,"./util/OnlineMonitor":64,"./util/Path":65,"./util/VisibilityMonitor":69,"./util/util":71,"@firebase/app":9,"@firebase/util":142}],24:[function(require,module,exports){
+},{"../realtime/Connection":91,"./ServerActions":31,"./util/OnlineMonitor":66,"./util/Path":67,"./util/VisibilityMonitor":71,"./util/util":73,"@firebase/app":11,"@firebase/util":144}],26:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5248,7 +5355,7 @@ exports.ReadonlyRestClient = ReadonlyRestClient;
 
 
 
-},{"./ServerActions":29,"./util/util":71,"@firebase/util":142}],25:[function(require,module,exports){
+},{"./ServerActions":31,"./util/util":73,"@firebase/util":144}],27:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5778,7 +5885,7 @@ exports.Repo = Repo;
 
 
 
-},{"../api/Database":14,"./AuthTokenProvider":21,"./PersistentConnection":23,"./ReadonlyRestClient":24,"./SnapshotHolder":30,"./SparseSnapshotTree":31,"./SyncTree":33,"./snap/nodeFromJSON":51,"./stats/StatsListener":54,"./stats/StatsManager":55,"./stats/StatsReporter":56,"./util/Path":65,"./util/ServerValues":66,"./util/util":71,"./view/EventQueue":79,"@firebase/util":142}],26:[function(require,module,exports){
+},{"../api/Database":16,"./AuthTokenProvider":23,"./PersistentConnection":25,"./ReadonlyRestClient":26,"./SnapshotHolder":32,"./SparseSnapshotTree":33,"./SyncTree":35,"./snap/nodeFromJSON":53,"./stats/StatsListener":56,"./stats/StatsManager":57,"./stats/StatsReporter":58,"./util/Path":67,"./util/ServerValues":68,"./util/util":73,"./view/EventQueue":81,"@firebase/util":144}],28:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -5891,7 +5998,7 @@ exports.RepoInfo = RepoInfo;
 
 
 
-},{"../realtime/Constants":90,"./storage/storage":59,"@firebase/util":142}],27:[function(require,module,exports){
+},{"../realtime/Constants":92,"./storage/storage":61,"@firebase/util":144}],29:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6026,7 +6133,7 @@ exports.RepoManager = RepoManager;
 
 
 
-},{"./Repo":25,"./Repo_transaction":28,"./util/libs/parser":70,"./util/util":71,"./util/validation":72,"@firebase/util":142}],28:[function(require,module,exports){
+},{"./Repo":27,"./Repo_transaction":30,"./util/libs/parser":72,"./util/util":73,"./util/validation":74,"@firebase/util":144}],30:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6593,7 +6700,7 @@ Repo_1.Repo.prototype.abortTransactionsOnNode_ = function (node) {
 
 
 
-},{"../api/DataSnapshot":13,"../api/Reference":16,"./Repo":25,"./snap/ChildrenNode":40,"./snap/indexes/PriorityIndex":49,"./snap/nodeFromJSON":51,"./util/Path":65,"./util/ServerValues":66,"./util/Tree":68,"./util/util":71,"./util/validation":72,"@firebase/util":142}],29:[function(require,module,exports){
+},{"../api/DataSnapshot":15,"../api/Reference":18,"./Repo":27,"./snap/ChildrenNode":42,"./snap/indexes/PriorityIndex":51,"./snap/nodeFromJSON":53,"./util/Path":67,"./util/ServerValues":68,"./util/Tree":70,"./util/util":73,"./util/validation":74,"@firebase/util":144}],31:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6666,7 +6773,7 @@ exports.ServerActions = ServerActions;
 
 
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6706,7 +6813,7 @@ exports.SnapshotHolder = SnapshotHolder;
 
 
 
-},{"./snap/ChildrenNode":40}],31:[function(require,module,exports){
+},{"./snap/ChildrenNode":42}],33:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -6884,7 +6991,7 @@ exports.SparseSnapshotTree = SparseSnapshotTree;
 
 
 
-},{"./snap/indexes/PriorityIndex":49,"./util/CountedSet":60,"./util/Path":65}],32:[function(require,module,exports){
+},{"./snap/indexes/PriorityIndex":51,"./util/CountedSet":62,"./util/Path":67}],34:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -7136,7 +7243,7 @@ exports.SyncPoint = SyncPoint;
 
 
 
-},{"./snap/ChildrenNode":40,"./view/CacheNode":73,"./view/View":82,"./view/ViewCache":83,"@firebase/util":142}],33:[function(require,module,exports){
+},{"./snap/ChildrenNode":42,"./view/CacheNode":75,"./view/View":84,"./view/ViewCache":85,"@firebase/util":144}],35:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -7849,7 +7956,7 @@ exports.SyncTree = SyncTree;
 
 
 
-},{"./SyncPoint":32,"./WriteTree":34,"./operation/AckUserWrite":35,"./operation/ListenComplete":36,"./operation/Merge":37,"./operation/Operation":38,"./operation/Overwrite":39,"./snap/ChildrenNode":40,"./util/ImmutableTree":62,"./util/Path":65,"./util/util":71,"@firebase/util":142}],34:[function(require,module,exports){
+},{"./SyncPoint":34,"./WriteTree":36,"./operation/AckUserWrite":37,"./operation/ListenComplete":38,"./operation/Merge":39,"./operation/Operation":40,"./operation/Overwrite":41,"./snap/ChildrenNode":42,"./util/ImmutableTree":64,"./util/Path":67,"./util/util":73,"@firebase/util":144}],36:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8484,7 +8591,7 @@ exports.WriteTreeRef = WriteTreeRef;
 
 
 
-},{"./CompoundWrite":22,"./snap/ChildrenNode":40,"./snap/indexes/PriorityIndex":49,"./util/Path":65,"@firebase/util":142}],35:[function(require,module,exports){
+},{"./CompoundWrite":24,"./snap/ChildrenNode":42,"./snap/indexes/PriorityIndex":51,"./util/Path":67,"@firebase/util":144}],37:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8548,7 +8655,7 @@ exports.AckUserWrite = AckUserWrite;
 
 
 
-},{"../util/Path":65,"./Operation":38,"@firebase/util":142}],36:[function(require,module,exports){
+},{"../util/Path":67,"./Operation":40,"@firebase/util":144}],38:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8595,7 +8702,7 @@ exports.ListenComplete = ListenComplete;
 
 
 
-},{"../util/Path":65,"./Operation":38}],37:[function(require,module,exports){
+},{"../util/Path":67,"./Operation":40}],39:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8677,7 +8784,7 @@ exports.Merge = Merge;
 
 
 
-},{"../util/Path":65,"./Operation":38,"./Overwrite":39,"@firebase/util":142}],38:[function(require,module,exports){
+},{"../util/Path":67,"./Operation":40,"./Overwrite":41,"@firebase/util":144}],40:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8751,7 +8858,7 @@ exports.OperationSource = OperationSource;
 
 
 
-},{"@firebase/util":142}],39:[function(require,module,exports){
+},{"@firebase/util":144}],41:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -8800,7 +8907,7 @@ exports.Overwrite = Overwrite;
 
 
 
-},{"../util/Path":65,"./Operation":38}],40:[function(require,module,exports){
+},{"../util/Path":67,"./Operation":40}],42:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9306,7 +9413,7 @@ PriorityIndex_1.setMaxNode(exports.MAX_NODE);
 
 
 
-},{"../util/SortedMap":67,"../util/util":71,"./IndexMap":41,"./LeafNode":42,"./Node":43,"./comparators":45,"./indexes/KeyIndex":47,"./indexes/PriorityIndex":49,"./snap":52,"@firebase/util":142}],41:[function(require,module,exports){
+},{"../util/SortedMap":69,"../util/util":73,"./IndexMap":43,"./LeafNode":44,"./Node":45,"./comparators":47,"./indexes/KeyIndex":49,"./indexes/PriorityIndex":51,"./snap":54,"@firebase/util":144}],43:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9489,7 +9596,7 @@ exports.IndexMap = IndexMap;
 
 
 
-},{"./Node":43,"./childSet":44,"./indexes/KeyIndex":47,"./indexes/PriorityIndex":49,"@firebase/util":142}],42:[function(require,module,exports){
+},{"./Node":45,"./childSet":46,"./indexes/KeyIndex":49,"./indexes/PriorityIndex":51,"@firebase/util":144}],44:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9758,7 +9865,7 @@ exports.LeafNode = LeafNode;
 
 
 
-},{"../util/util":71,"./snap":52,"@firebase/util":142}],43:[function(require,module,exports){
+},{"../util/util":73,"./snap":54,"@firebase/util":144}],45:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9803,7 +9910,7 @@ exports.NamedNode = NamedNode;
 
 
 
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9935,7 +10042,7 @@ exports.buildChildSet = function (childList, cmp, keyFn, mapSortFn) {
 
 
 
-},{"../util/SortedMap":67}],45:[function(require,module,exports){
+},{"../util/SortedMap":69}],47:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -9965,7 +10072,7 @@ exports.NAME_COMPARATOR = NAME_COMPARATOR;
 
 
 
-},{"../util/util":71}],46:[function(require,module,exports){
+},{"../util/util":73}],48:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10025,7 +10132,7 @@ exports.Index = Index;
 
 
 
-},{"../../util/util":71,"../Node":43}],47:[function(require,module,exports){
+},{"../../util/util":73,"../Node":45}],49:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10130,7 +10237,7 @@ exports.KEY_INDEX = new KeyIndex();
 
 
 
-},{"../../util/util":71,"../Node":43,"./Index":46,"@firebase/util":142}],48:[function(require,module,exports){
+},{"../../util/util":73,"../Node":45,"./Index":48,"@firebase/util":144}],50:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10232,7 +10339,7 @@ exports.PathIndex = PathIndex;
 
 
 
-},{"../../util/util":71,"../ChildrenNode":40,"../Node":43,"../nodeFromJSON":51,"./Index":46,"@firebase/util":142}],49:[function(require,module,exports){
+},{"../../util/util":73,"../ChildrenNode":42,"../Node":45,"../nodeFromJSON":53,"./Index":48,"@firebase/util":144}],51:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10344,7 +10451,7 @@ exports.PRIORITY_INDEX = new PriorityIndex();
 
 
 
-},{"../../util/util":71,"../LeafNode":42,"../Node":43,"./Index":46}],50:[function(require,module,exports){
+},{"../../util/util":73,"../LeafNode":44,"../Node":45,"./Index":48}],52:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10444,7 +10551,7 @@ exports.VALUE_INDEX = new ValueIndex();
 
 
 
-},{"../../util/util":71,"../Node":43,"../nodeFromJSON":51,"./Index":46}],51:[function(require,module,exports){
+},{"../../util/util":73,"../Node":45,"../nodeFromJSON":53,"./Index":48}],53:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10547,7 +10654,7 @@ PriorityIndex_1.setNodeFromJSON(nodeFromJSON);
 
 
 
-},{"./ChildrenNode":40,"./IndexMap":41,"./LeafNode":42,"./Node":43,"./childSet":44,"./comparators":45,"./indexes/PriorityIndex":49,"@firebase/util":142}],52:[function(require,module,exports){
+},{"./ChildrenNode":42,"./IndexMap":43,"./LeafNode":44,"./Node":45,"./childSet":46,"./comparators":47,"./indexes/PriorityIndex":51,"@firebase/util":144}],54:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10604,7 +10711,7 @@ exports.validatePriorityNode = function (priorityNode) {
 
 
 
-},{"../util/util":71,"@firebase/util":142}],53:[function(require,module,exports){
+},{"../util/util":73,"@firebase/util":144}],55:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10648,7 +10755,7 @@ exports.StatsCollection = StatsCollection;
 
 
 
-},{"@firebase/util":142}],54:[function(require,module,exports){
+},{"@firebase/util":144}],56:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10695,7 +10802,7 @@ exports.StatsListener = StatsListener;
 
 
 
-},{"@firebase/util":142}],55:[function(require,module,exports){
+},{"@firebase/util":144}],57:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10739,7 +10846,7 @@ exports.StatsManager = StatsManager;
 
 
 
-},{"./StatsCollection":53}],56:[function(require,module,exports){
+},{"./StatsCollection":55}],58:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10809,7 +10916,7 @@ exports.StatsReporter = StatsReporter;
 
 
 
-},{"../util/util":71,"./StatsListener":54,"@firebase/util":142}],57:[function(require,module,exports){
+},{"../util/util":73,"./StatsListener":56,"@firebase/util":144}],59:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10894,7 +11001,7 @@ exports.DOMStorageWrapper = DOMStorageWrapper;
 
 
 
-},{"@firebase/util":142}],58:[function(require,module,exports){
+},{"@firebase/util":144}],60:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -10947,7 +11054,7 @@ exports.MemoryStorage = MemoryStorage;
 
 
 
-},{"@firebase/util":142}],59:[function(require,module,exports){
+},{"@firebase/util":144}],61:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11001,7 +11108,7 @@ exports.SessionStorage = createStoragefor('sessionStorage');
 
 
 
-},{"./DOMStorageWrapper":57,"./MemoryStorage":58}],60:[function(require,module,exports){
+},{"./DOMStorageWrapper":59,"./MemoryStorage":60}],62:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11099,7 +11206,7 @@ exports.CountedSet = CountedSet;
 
 
 
-},{"@firebase/util":142}],61:[function(require,module,exports){
+},{"@firebase/util":144}],63:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11180,7 +11287,7 @@ exports.EventEmitter = EventEmitter;
 
 
 
-},{"@firebase/util":142}],62:[function(require,module,exports){
+},{"@firebase/util":144}],64:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11539,7 +11646,7 @@ exports.ImmutableTree = ImmutableTree;
 
 
 
-},{"./Path":65,"./SortedMap":67,"./util":71,"@firebase/util":142}],63:[function(require,module,exports){
+},{"./Path":67,"./SortedMap":69,"./util":73,"@firebase/util":144}],65:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11619,7 +11726,7 @@ exports.nextPushId = (function () {
 
 
 
-},{"@firebase/util":142}],64:[function(require,module,exports){
+},{"@firebase/util":144}],66:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -11709,7 +11816,7 @@ exports.OnlineMonitor = OnlineMonitor;
 
 
 
-},{"./EventEmitter":61,"@firebase/util":142}],65:[function(require,module,exports){
+},{"./EventEmitter":63,"@firebase/util":144}],67:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12037,7 +12144,7 @@ exports.ValidationPath = ValidationPath;
 
 
 
-},{"./util":71,"@firebase/util":142}],66:[function(require,module,exports){
+},{"./util":73,"@firebase/util":144}],68:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12142,7 +12249,7 @@ exports.resolveDeferredValueSnapshot = function (node, serverValues) {
 
 
 
-},{"../SparseSnapshotTree":31,"../snap/LeafNode":42,"../snap/indexes/PriorityIndex":49,"../snap/nodeFromJSON":51,"./Path":65,"@firebase/util":142}],67:[function(require,module,exports){
+},{"../SparseSnapshotTree":33,"../snap/LeafNode":44,"../snap/indexes/PriorityIndex":51,"../snap/nodeFromJSON":53,"./Path":67,"@firebase/util":144}],69:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -12802,7 +12909,7 @@ exports.SortedMap = SortedMap;
 
 
 
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13031,7 +13138,7 @@ exports.Tree = Tree;
 
 
 
-},{"./Path":65,"@firebase/util":142}],69:[function(require,module,exports){
+},{"./Path":67,"@firebase/util":144}],71:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13123,7 +13230,7 @@ exports.VisibilityMonitor = VisibilityMonitor;
 
 
 
-},{"./EventEmitter":61,"@firebase/util":142}],70:[function(require,module,exports){
+},{"./EventEmitter":63,"@firebase/util":144}],72:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13242,7 +13349,7 @@ exports.parseURL = function (dataURL) {
 
 
 
-},{"../../RepoInfo":26,"../Path":65,"../util":71}],71:[function(require,module,exports){
+},{"../../RepoInfo":28,"../Path":67,"../util":73}],73:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -13875,7 +13982,7 @@ exports.setTimeoutNonBlocking = function (fn, time) {
 
 
 
-},{"../storage/storage":59,"@firebase/util":142}],72:[function(require,module,exports){
+},{"../storage/storage":61,"@firebase/util":144}],74:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14258,7 +14365,7 @@ exports.validateObjectContainsKey = function (fnName, argumentNumber, obj, key, 
 
 
 
-},{"./Path":65,"./util":71,"@firebase/util":142}],73:[function(require,module,exports){
+},{"./Path":67,"./util":73,"@firebase/util":144}],75:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14337,7 +14444,7 @@ exports.CacheNode = CacheNode;
 
 
 
-},{}],74:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14429,7 +14536,7 @@ exports.Change = Change;
 
 
 
-},{}],75:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14512,7 +14619,7 @@ exports.ChildChangeAccumulator = ChildChangeAccumulator;
 
 
 
-},{"./Change":74,"@firebase/util":142}],76:[function(require,module,exports){
+},{"./Change":76,"@firebase/util":144}],78:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14617,7 +14724,7 @@ exports.WriteTreeCompleteChildSource = WriteTreeCompleteChildSource;
 
 
 
-},{"./CacheNode":73}],77:[function(require,module,exports){
+},{"./CacheNode":75}],79:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14731,7 +14838,7 @@ exports.CancelEvent = CancelEvent;
 
 
 
-},{"@firebase/util":142}],78:[function(require,module,exports){
+},{"@firebase/util":144}],80:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -14863,7 +14970,7 @@ exports.EventGenerator = EventGenerator;
 
 
 
-},{"../snap/Node":43,"./Change":74,"@firebase/util":142}],79:[function(require,module,exports){
+},{"../snap/Node":45,"./Change":76,"@firebase/util":144}],81:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15037,7 +15144,7 @@ exports.EventList = EventList;
 
 
 
-},{"../util/util":71}],80:[function(require,module,exports){
+},{"../util/util":73}],82:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15254,7 +15361,7 @@ exports.ChildEventRegistration = ChildEventRegistration;
 
 
 
-},{"../../api/DataSnapshot":13,"./Event":77,"@firebase/util":142}],81:[function(require,module,exports){
+},{"../../api/DataSnapshot":15,"./Event":79,"@firebase/util":144}],83:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15662,7 +15769,7 @@ exports.QueryParams = QueryParams;
 
 
 
-},{"../snap/indexes/KeyIndex":47,"../snap/indexes/PathIndex":48,"../snap/indexes/PriorityIndex":49,"../snap/indexes/ValueIndex":50,"../util/util":71,"./filter/IndexedFilter":85,"./filter/LimitedFilter":86,"./filter/RangedFilter":87,"@firebase/util":142}],82:[function(require,module,exports){
+},{"../snap/indexes/KeyIndex":49,"../snap/indexes/PathIndex":50,"../snap/indexes/PriorityIndex":51,"../snap/indexes/ValueIndex":52,"../util/util":73,"./filter/IndexedFilter":87,"./filter/LimitedFilter":88,"./filter/RangedFilter":89,"@firebase/util":144}],84:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15872,7 +15979,7 @@ exports.View = View;
 
 
 
-},{"../operation/Operation":38,"../snap/ChildrenNode":40,"../snap/indexes/PriorityIndex":49,"./CacheNode":73,"./Change":74,"./EventGenerator":78,"./ViewCache":83,"./ViewProcessor":84,"./filter/IndexedFilter":85,"@firebase/util":142}],83:[function(require,module,exports){
+},{"../operation/Operation":40,"../snap/ChildrenNode":42,"../snap/indexes/PriorityIndex":51,"./CacheNode":75,"./Change":76,"./EventGenerator":80,"./ViewCache":85,"./ViewProcessor":86,"./filter/IndexedFilter":87,"@firebase/util":144}],85:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -15970,7 +16077,7 @@ exports.ViewCache = ViewCache;
 
 
 
-},{"../snap/ChildrenNode":40,"./CacheNode":73}],84:[function(require,module,exports){
+},{"../snap/ChildrenNode":42,"./CacheNode":75}],86:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16567,7 +16674,7 @@ exports.ViewProcessor = ViewProcessor;
 
 
 
-},{"../operation/Operation":38,"../snap/ChildrenNode":40,"../snap/indexes/KeyIndex":47,"../util/ImmutableTree":62,"../util/Path":65,"./Change":74,"./ChildChangeAccumulator":75,"./CompleteChildSource":76,"@firebase/util":142}],85:[function(require,module,exports){
+},{"../operation/Operation":40,"../snap/ChildrenNode":42,"../snap/indexes/KeyIndex":49,"../util/ImmutableTree":64,"../util/Path":67,"./Change":76,"./ChildChangeAccumulator":77,"./CompleteChildSource":78,"@firebase/util":144}],87:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16702,7 +16809,7 @@ exports.IndexedFilter = IndexedFilter;
 
 
 
-},{"../../snap/ChildrenNode":40,"../../snap/indexes/PriorityIndex":49,"../Change":74,"@firebase/util":142}],86:[function(require,module,exports){
+},{"../../snap/ChildrenNode":42,"../../snap/indexes/PriorityIndex":51,"../Change":76,"@firebase/util":144}],88:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -16963,7 +17070,7 @@ exports.LimitedFilter = LimitedFilter;
 
 
 
-},{"../../snap/ChildrenNode":40,"../../snap/Node":43,"../Change":74,"./RangedFilter":87,"@firebase/util":142}],87:[function(require,module,exports){
+},{"../../snap/ChildrenNode":42,"../../snap/Node":45,"../Change":76,"./RangedFilter":89,"@firebase/util":144}],89:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -17108,7 +17215,7 @@ exports.RangedFilter = RangedFilter;
 
 
 
-},{"../../../core/snap/Node":43,"../../snap/ChildrenNode":40,"../../snap/indexes/PriorityIndex":49,"./IndexedFilter":85}],88:[function(require,module,exports){
+},{"../../../core/snap/Node":45,"../../snap/ChildrenNode":42,"../../snap/indexes/PriorityIndex":51,"./IndexedFilter":87}],90:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -17739,7 +17846,7 @@ exports.FirebaseIFrameScriptHolder = FirebaseIFrameScriptHolder;
 
 
 
-},{"../core/stats/StatsManager":55,"../core/util/CountedSet":60,"../core/util/util":71,"./Constants":90,"./polling/PacketReceiver":93,"@firebase/util":142}],89:[function(require,module,exports){
+},{"../core/stats/StatsManager":57,"../core/util/CountedSet":62,"../core/util/util":73,"./Constants":92,"./polling/PacketReceiver":95,"@firebase/util":144}],91:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -18234,7 +18341,7 @@ exports.Connection = Connection;
 
 
 
-},{"../core/storage/storage":59,"../core/util/util":71,"./Constants":90,"./TransportManager":91}],90:[function(require,module,exports){
+},{"../core/storage/storage":61,"../core/util/util":73,"./Constants":92,"./TransportManager":93}],92:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -18264,7 +18371,7 @@ exports.LONG_POLLING = 'long_polling';
 
 
 
-},{}],91:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -18365,7 +18472,7 @@ exports.TransportManager = TransportManager;
 
 
 
-},{"../core/util/util":71,"./BrowserPollConnection":88,"./WebSocketConnection":92}],92:[function(require,module,exports){
+},{"../core/util/util":73,"./BrowserPollConnection":90,"./WebSocketConnection":94}],94:[function(require,module,exports){
 (function (process){
 "use strict";
 /**
@@ -18720,7 +18827,7 @@ exports.WebSocketConnection = WebSocketConnection;
 
 
 }).call(this,require('_process'))
-},{"../core/stats/StatsManager":55,"../core/storage/storage":59,"../core/util/util":71,"./Constants":90,"@firebase/app":9,"@firebase/util":142,"_process":169}],93:[function(require,module,exports){
+},{"../core/stats/StatsManager":57,"../core/storage/storage":61,"../core/util/util":73,"./Constants":92,"@firebase/app":11,"@firebase/util":144,"_process":171}],95:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -18808,7 +18915,7 @@ exports.PacketReceiver = PacketReceiver;
 
 
 
-},{"../../core/util/util":71}],94:[function(require,module,exports){
+},{"../../core/util/util":73}],96:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -18849,7 +18956,7 @@ registerMessaging(app_1.firebase);
 
 
 
-},{"./src/controllers/sw-controller":96,"./src/controllers/window-controller":97,"@firebase/app":9}],95:[function(require,module,exports){
+},{"./src/controllers/sw-controller":98,"./src/controllers/window-controller":99,"@firebase/app":11}],97:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19021,7 +19128,7 @@ exports.default = ControllerInterface;
 
 
 
-},{"../models/errors":100,"../models/notification-permission":102,"../models/token-manager":103,"@firebase/util":142}],96:[function(require,module,exports){
+},{"../models/errors":102,"../models/notification-permission":104,"../models/token-manager":105,"@firebase/util":144}],98:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19336,7 +19443,7 @@ exports.default = SWController;
 
 
 
-},{"../models/errors":100,"../models/fcm-details":101,"../models/worker-page-message":104,"./controller-interface":95}],97:[function(require,module,exports){
+},{"../models/errors":102,"../models/fcm-details":103,"../models/worker-page-message":106,"./controller-interface":97}],99:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19656,7 +19763,7 @@ exports.default = WindowController;
 
 
 
-},{"../models/default-sw":99,"../models/errors":100,"../models/notification-permission":102,"../models/worker-page-message":104,"./controller-interface":95,"@firebase/util":142}],98:[function(require,module,exports){
+},{"../models/default-sw":101,"../models/errors":102,"../models/notification-permission":104,"../models/worker-page-message":106,"./controller-interface":97,"@firebase/util":144}],100:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -19688,7 +19795,7 @@ exports.default = function (arrayBuffer) {
 
 
 
-},{}],99:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19713,7 +19820,7 @@ exports.default = {
 
 
 
-},{}],100:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19826,7 +19933,7 @@ var _a;
 
 
 
-},{}],101:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19923,7 +20030,7 @@ exports.default = {
 
 
 
-},{}],102:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -19949,7 +20056,7 @@ exports.default = {
 
 
 
-},{}],103:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20318,7 +20425,7 @@ exports.default = TokenManager;
 
 
 
-},{"../helpers/array-buffer-to-base64":98,"./errors":100,"./fcm-details":101,"@firebase/util":142}],104:[function(require,module,exports){
+},{"../helpers/array-buffer-to-base64":100,"./errors":102,"./fcm-details":103,"@firebase/util":144}],106:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20364,7 +20471,7 @@ exports.default = {
 
 
 
-},{}],105:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20388,7 +20495,7 @@ require("./src/shims/findIndex");
 
 
 
-},{"./src/polyfills/promise":106,"./src/shims/find":107,"./src/shims/findIndex":108}],106:[function(require,module,exports){
+},{"./src/polyfills/promise":108,"./src/shims/find":109,"./src/shims/findIndex":110}],108:[function(require,module,exports){
 (function (global){
 /**
  * Copyright 2017 Google Inc.
@@ -20426,7 +20533,7 @@ if (typeof Promise === 'undefined') {
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"promise-polyfill":170}],107:[function(require,module,exports){
+},{"promise-polyfill":172}],109:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20486,7 +20593,7 @@ if (!Array.prototype.find) {
 
 
 
-},{}],108:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -20546,7 +20653,7 @@ if (!Array.prototype.findIndex) {
 
 
 
-},{}],109:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20596,7 +20703,7 @@ registerStorage(app_1.default);
 
 
 
-},{"./src/implementation/string":131,"./src/implementation/taskenums":132,"./src/implementation/xhriopool":137,"./src/reference":138,"./src/service":139,"@firebase/app":9}],110:[function(require,module,exports){
+},{"./src/implementation/string":133,"./src/implementation/taskenums":134,"./src/implementation/xhriopool":139,"./src/reference":140,"./src/service":141,"@firebase/app":11}],112:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -20743,7 +20850,7 @@ exports.nullFunctionSpec = nullFunctionSpec;
 
 
 
-},{"./error":117,"./metadata":122,"./type":133}],111:[function(require,module,exports){
+},{"./error":119,"./metadata":124,"./type":135}],113:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20792,7 +20899,7 @@ exports.remove = remove;
 
 
 
-},{}],112:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -20834,7 +20941,7 @@ exports.async = async;
 
 
 
-},{"./promise_external":126}],113:[function(require,module,exports){
+},{"./promise_external":128}],115:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var constants = require("./constants");
@@ -20959,7 +21066,7 @@ exports.AuthWrapper = AuthWrapper;
 
 
 
-},{"./constants":116,"./error":117,"./failrequest":118,"./location":121,"./promise_external":126,"./requestmap":129,"./type":133}],114:[function(require,module,exports){
+},{"./constants":118,"./error":119,"./failrequest":120,"./location":123,"./promise_external":128,"./requestmap":131,"./type":135}],116:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21082,7 +21189,7 @@ exports.stop = stop;
 
 
 
-},{}],115:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21215,7 +21322,7 @@ exports.FbsBlob = FbsBlob;
 
 
 
-},{"./fs":119,"./string":131,"./type":133}],116:[function(require,module,exports){
+},{"./fs":121,"./string":133,"./type":135}],118:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21277,7 +21384,7 @@ exports.minSafeInteger = -9007199254740991;
 
 
 
-},{}],117:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -21520,7 +21627,7 @@ exports.internalError = internalError;
 
 
 
-},{"./constants":116}],118:[function(require,module,exports){
+},{"./constants":118}],120:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var promiseimpl = require("./promise_external");
@@ -21547,7 +21654,7 @@ exports.FailRequest = FailRequest;
 
 
 
-},{"./promise_external":126}],119:[function(require,module,exports){
+},{"./promise_external":128}],121:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var type = require("./type");
@@ -21616,7 +21723,7 @@ exports.sliceBlob = sliceBlob;
 
 
 
-},{"./type":133}],120:[function(require,module,exports){
+},{"./type":135}],122:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -21658,7 +21765,7 @@ exports.jsonObjectOrNull = jsonObjectOrNull;
 
 
 
-},{"./type":133}],121:[function(require,module,exports){
+},{"./type":135}],123:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21773,7 +21880,7 @@ exports.Location = Location;
 
 
 
-},{"./error":117}],122:[function(require,module,exports){
+},{"./error":119}],124:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -21960,7 +22067,7 @@ exports.metadataValidator = metadataValidator;
 
 
 
-},{"./json":120,"./location":121,"./path":125,"./type":133,"./url":134}],123:[function(require,module,exports){
+},{"./json":122,"./location":123,"./path":127,"./type":135,"./url":136}],125:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22007,7 +22114,7 @@ exports.clone = clone;
 
 
 
-},{}],124:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -22052,7 +22159,7 @@ exports.Observer = Observer;
 
 
 
-},{"./type":133}],125:[function(require,module,exports){
+},{"./type":135}],127:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22122,7 +22229,7 @@ exports.lastComponent = lastComponent;
 
 
 
-},{}],126:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22167,7 +22274,7 @@ exports.reject = reject;
 
 
 
-},{}],127:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22394,7 +22501,7 @@ exports.makeRequest = makeRequest;
 
 
 
-},{"./array":111,"./backoff":114,"./error":117,"./object":123,"./promise_external":126,"./type":133,"./url":134,"./xhrio":135,"@firebase/app":9}],128:[function(require,module,exports){
+},{"./array":113,"./backoff":116,"./error":119,"./object":125,"./promise_external":128,"./type":135,"./url":136,"./xhrio":137,"@firebase/app":11}],130:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var RequestInfo = /** @class */ (function () {
@@ -22429,7 +22536,7 @@ exports.RequestInfo = RequestInfo;
 
 
 
-},{}],129:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -22489,7 +22596,7 @@ exports.RequestMap = RequestMap;
 
 
 
-},{"./constants":116,"./object":123}],130:[function(require,module,exports){
+},{"./constants":118,"./object":125}],132:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -22838,7 +22945,7 @@ exports.continueResumableUpload = continueResumableUpload;
 
 
 
-},{"./array":111,"./blob":115,"./error":117,"./metadata":122,"./object":123,"./requestinfo":128,"./type":133,"./url":134}],131:[function(require,module,exports){
+},{"./array":113,"./blob":117,"./error":119,"./metadata":124,"./object":125,"./requestinfo":130,"./type":135,"./url":136}],133:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -23046,7 +23153,7 @@ function endsWith(s, end) {
 
 
 
-},{"./error":117}],132:[function(require,module,exports){
+},{"./error":119}],134:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23112,7 +23219,7 @@ exports.taskStateFromInternalTaskState = taskStateFromInternalTaskState;
 
 
 
-},{}],133:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23176,7 +23283,7 @@ exports.isNativeBlobDefined = isNativeBlobDefined;
 
 
 
-},{}],134:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23226,7 +23333,7 @@ exports.makeQueryString = makeQueryString;
 
 
 
-},{"./constants":116,"./object":123}],135:[function(require,module,exports){
+},{"./constants":118,"./object":125}],137:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23256,7 +23363,7 @@ var ErrorCode;
 
 
 
-},{}],136:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -23394,7 +23501,7 @@ exports.NetworkXhrIo = NetworkXhrIo;
 
 
 
-},{"./error":117,"./object":123,"./promise_external":126,"./type":133,"./xhrio":135}],137:[function(require,module,exports){
+},{"./error":119,"./object":125,"./promise_external":128,"./type":135,"./xhrio":137}],139:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23428,7 +23535,7 @@ exports.XhrIoPool = XhrIoPool;
 
 
 
-},{"./xhrio_network":136}],138:[function(require,module,exports){
+},{"./xhrio_network":138}],140:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23671,7 +23778,7 @@ exports.Reference = Reference;
 
 
 
-},{"./implementation/args":110,"./implementation/blob":115,"./implementation/error":117,"./implementation/location":121,"./implementation/metadata":122,"./implementation/object":123,"./implementation/path":125,"./implementation/requests":130,"./implementation/string":131,"./implementation/type":133,"./task":140}],139:[function(require,module,exports){
+},{"./implementation/args":112,"./implementation/blob":117,"./implementation/error":119,"./implementation/location":123,"./implementation/metadata":124,"./implementation/object":125,"./implementation/path":127,"./implementation/requests":132,"./implementation/string":133,"./implementation/type":135,"./task":142}],141:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -23821,7 +23928,7 @@ exports.ServiceInternals = ServiceInternals;
 
 
 
-},{"./implementation/args":110,"./implementation/authwrapper":113,"./implementation/location":121,"./implementation/promise_external":126,"./implementation/request":127,"./reference":138}],140:[function(require,module,exports){
+},{"./implementation/args":112,"./implementation/authwrapper":115,"./implementation/location":123,"./implementation/promise_external":128,"./implementation/request":129,"./reference":140}],142:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24387,7 +24494,7 @@ exports.UploadTask = UploadTask;
 
 
 
-},{"./implementation/args":110,"./implementation/array":111,"./implementation/async":112,"./implementation/error":117,"./implementation/observer":124,"./implementation/promise_external":126,"./implementation/requests":130,"./implementation/taskenums":132,"./implementation/type":133,"./tasksnapshot":141}],141:[function(require,module,exports){
+},{"./implementation/args":112,"./implementation/array":113,"./implementation/async":114,"./implementation/error":119,"./implementation/observer":126,"./implementation/promise_external":128,"./implementation/requests":132,"./implementation/taskenums":134,"./implementation/type":135,"./tasksnapshot":143}],143:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var UploadTaskSnapshot = /** @class */ (function () {
@@ -24423,7 +24530,7 @@ exports.UploadTaskSnapshot = UploadTaskSnapshot;
 
 
 
-},{}],142:[function(require,module,exports){
+},{}],144:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24462,7 +24569,7 @@ __export(require("./src/utf8"));
 
 
 
-},{"./src/assert":143,"./src/constants":144,"./src/crypt":145,"./src/deepCopy":146,"./src/deferred":147,"./src/environment":148,"./src/errors":149,"./src/json":151,"./src/jwt":152,"./src/obj":153,"./src/query":154,"./src/sha1":155,"./src/subscribe":156,"./src/utf8":157,"./src/validation":158}],143:[function(require,module,exports){
+},{"./src/assert":145,"./src/constants":146,"./src/crypt":147,"./src/deepCopy":148,"./src/deferred":149,"./src/environment":150,"./src/errors":151,"./src/json":153,"./src/jwt":154,"./src/obj":155,"./src/query":156,"./src/sha1":157,"./src/subscribe":158,"./src/utf8":159,"./src/validation":160}],145:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24505,7 +24612,7 @@ exports.assertionError = function (message) {
 
 
 
-},{"./constants":144}],144:[function(require,module,exports){
+},{"./constants":146}],146:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24543,7 +24650,7 @@ exports.CONSTANTS = {
 
 
 
-},{}],145:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24856,7 +24963,7 @@ exports.base64Decode = function (str) {
 
 
 
-},{}],146:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24933,7 +25040,7 @@ exports.patchProperty = patchProperty;
 
 
 
-},{}],147:[function(require,module,exports){
+},{}],149:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -24996,7 +25103,7 @@ exports.Deferred = Deferred;
 
 
 
-},{}],148:[function(require,module,exports){
+},{}],150:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25060,7 +25167,7 @@ exports.isNodeSdk = function () {
 
 
 
-},{"./constants":144}],149:[function(require,module,exports){
+},{"./constants":146}],151:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var ERROR_NAME = 'FirebaseError';
@@ -25145,7 +25252,7 @@ exports.ErrorFactory = ErrorFactory;
 
 
 
-},{}],150:[function(require,module,exports){
+},{}],152:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25202,7 +25309,7 @@ exports.Hash = Hash;
 
 
 
-},{}],151:[function(require,module,exports){
+},{}],153:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25242,7 +25349,7 @@ exports.stringify = stringify;
 
 
 
-},{}],152:[function(require,module,exports){
+},{}],154:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25372,7 +25479,7 @@ exports.isAdmin = function (token) {
 
 
 
-},{"./crypt":145,"./json":151}],153:[function(require,module,exports){
+},{"./crypt":147,"./json":153}],155:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25509,7 +25616,7 @@ exports.every = function (obj, fn) {
 
 
 
-},{}],154:[function(require,module,exports){
+},{}],156:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25570,7 +25677,7 @@ exports.querystringDecode = function (querystring) {
 
 
 
-},{"./obj":153}],155:[function(require,module,exports){
+},{"./obj":155}],157:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -25851,7 +25958,7 @@ exports.Sha1 = Sha1;
 
 
 
-},{"./hash":150}],156:[function(require,module,exports){
+},{"./hash":152}],158:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
@@ -26073,7 +26180,7 @@ function noop() {
 
 
 
-},{}],157:[function(require,module,exports){
+},{}],159:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -26167,7 +26274,7 @@ exports.stringLength = function (str) {
 
 
 
-},{"./assert":143}],158:[function(require,module,exports){
+},{"./assert":145}],160:[function(require,module,exports){
 "use strict";
 /**
  * Copyright 2017 Google Inc.
@@ -26279,7 +26386,7 @@ exports.validateContextObject = validateContextObject;
 
 
 
-},{}],159:[function(require,module,exports){
+},{}],161:[function(require,module,exports){
 /**
  * @license AngularJS v1.6.8
  * (c) 2010-2017 Google, Inc. http://angularjs.org
@@ -60535,11 +60642,11 @@ $provide.value("$locale", {
 })(window);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],160:[function(require,module,exports){
+},{}],162:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":159}],161:[function(require,module,exports){
+},{"./angular":161}],163:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60559,7 +60666,7 @@ module.exports = angular;
 require('@firebase/polyfill');
 module.exports = require('@firebase/app').default;
 
-},{"@firebase/app":9,"@firebase/polyfill":105}],162:[function(require,module,exports){
+},{"@firebase/app":11,"@firebase/polyfill":107}],164:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60578,7 +60685,7 @@ module.exports = require('@firebase/app').default;
 
 require('@firebase/auth');
 
-},{"@firebase/auth":11}],163:[function(require,module,exports){
+},{"@firebase/auth":13}],165:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60597,7 +60704,7 @@ require('@firebase/auth');
 
 module.exports = require('@firebase/database');
 
-},{"@firebase/database":12}],164:[function(require,module,exports){
+},{"@firebase/database":14}],166:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60622,7 +60729,7 @@ require('./storage');
 
 module.exports = firebase;
 
-},{"./app":161,"./auth":162,"./database":163,"./messaging":165,"./storage":166}],165:[function(require,module,exports){
+},{"./app":163,"./auth":164,"./database":165,"./messaging":167,"./storage":168}],167:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60641,7 +60748,7 @@ module.exports = firebase;
 
 require('@firebase/messaging');
 
-},{"@firebase/messaging":94}],166:[function(require,module,exports){
+},{"@firebase/messaging":96}],168:[function(require,module,exports){
 /**
  * Copyright 2017 Google Inc.
  *
@@ -60660,7 +60767,7 @@ require('@firebase/messaging');
 
 require('@firebase/storage');
 
-},{"@firebase/storage":109}],167:[function(require,module,exports){
+},{"@firebase/storage":111}],169:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.2.1
  * https://jquery.com/
@@ -70915,7 +71022,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],168:[function(require,module,exports){
+},{}],170:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -88003,7 +88110,7 @@ return jQuery;
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],169:[function(require,module,exports){
+},{}],171:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -88189,7 +88296,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],170:[function(require,module,exports){
+},{}],172:[function(require,module,exports){
 (function (root) {
 
   // Store setTimeout reference so promise-polyfill will be unaffected by
@@ -88424,4 +88531,4 @@ process.umask = function() { return 0; };
 
 })(this);
 
-},{}]},{},[5]);
+},{}]},{},[7]);

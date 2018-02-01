@@ -132,9 +132,28 @@ const drawTiles = (tiles, players) => {
 
             
             if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
-                if(tiles[i].hard.points > 0){
+                let hardness = tiles[i].hard.points;
+                if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    if(hardness > 0.95){
+                        g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.9){
+                        g.ctx.drawImage(img('stoneFrac1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.8){
+                        g.ctx.drawImage(img('stoneFrac2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.6){
+                        g.ctx.drawImage(img('stoneFrac3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.4){
+                        g.ctx.drawImage(img('stoneFrac4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.2){
+                        g.ctx.drawImage(img('stoneFrac5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.0){
+                        g.ctx.drawImage(img('stoneFrac6'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    }
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
@@ -231,7 +250,7 @@ const drawPlayers = (players, playerId, tiles) => {
             g.ctx.drawImage(img('squirrel'),players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            drawPlayerAnimation('dwarfAnimation', DwarfAnimation, players[i].pos);
+            drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
         }
             
         g.ctx.stroke();

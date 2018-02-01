@@ -5,7 +5,7 @@ const img = require("./imageController");
 /*
 Animation Example:
 {
-    frame: [1, 2],
+    frames: [1, 2],
     curFrame: 0,
     lastFrame: 0,
     interval: 250,
@@ -21,49 +21,55 @@ let currentTime = 0;
 let animations = [];
 
 const addAnimation = (name, animation) => {
-    let {frame, curFrame, lastFrame, interval, w, h} = animation;
+    let {frames, curFrame, lastFrame, interval, w, h} = animation;
     let animationObject = {
         name,
-        frame,
+        frames,
         curFrame,
         lastFrame, 
         interval,
         w,
         h
     };
-    animations.push(animationObject);
+    animations.push(animationObject);   
 };
 
-const findAnimation = (name) => {
-    return animations.find(anim => anim.name === name);
+const findAnimation = name => {
+    let animation = animations.find(anim => anim.name === name);
+    if(typeof animation === "undefined") console.log(`Cannot find ${name} animation.`);
+    return animation;
 };
 
-addAnimation('dwarfAnimation', {
-    frame: [1, 2],
-    curFrame: 0,
-    lastFrame: 0,
-    interval: 250,
-    w: 21,
-    h: 21
-});
+addAnimation('dwarfAnimation', 
+    {
+        frames: [1, 2],
+        curFrame: 0,
+        lastFrame: 0,
+        interval: 250,
+        w: 21,
+        h: 21
+    }
+);
 
 // Calculates location in the spritesheet of the current frame.
-const calcFrame = (animation) => {
-    let frameIndex = animation.frame[animation.curFrame%animation.frame.length];
-    return (frameIndex * animation.w);
+const calcFrame = ({frames, curFrame, w}) => {
+    let frameIndex = frames[curFrame%frames.length];
+    return (frameIndex * w);
 };
 
 // Returns true if enough time has passed between current and last frame.
-const shouldIncrementFrame = (animation) => {
+const shouldIncrementFrame = ({lastFrame, interval}) => {
     currentTime = Date.now();
-    return (currentTime - animation.lastFrame) > animation.interval; 
+    return (currentTime - lastFrame) > interval; 
 };
 
 // TODO: Link current time in shouldIncrement Frame and selectNextFrame.
 // Selects next frame
 const selectNextFrame = (animation) => {
-    animation.curFrame++;
+    // console.log('curFrame, lastFrame', curFrame, lastFrame);
+    animation.curFrame ++;
     animation.lastFrame = currentTime;
+    // console.log('curFrame, lastFrame', curFrame, lastFrame);
 };
 
 // Draws player animation on the canvas then calls updateAnimation to get a new frame.
