@@ -114,7 +114,8 @@ module.exports.savePlayerPos = (player) => {
     });
 };
 
-module.exports.savePlayerStats = (playerStats, gameId) => {
+module.exports.savePlayerStats = playerStats => {
+    console.log('playerStats', playerStats);
     $.ajax({
         url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
         type: 'PUT',
@@ -139,7 +140,7 @@ module.exports.addGame = (startTime, name) => {
     });
 };
 
-module.exports.finishGame = (endTime, gameId) => {
+module.exports.finishGame = endTime => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/${gameId}/.json`,
@@ -254,7 +255,6 @@ module.exports.deleteMap = id => {
 };
 
 module.exports.deleteLobby = id => {
-    console.log('`${baseUrl}/games/${id}.json`', `${baseUrl}/games/${id}.json`);
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/${id}.json`,

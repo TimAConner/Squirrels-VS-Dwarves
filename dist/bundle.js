@@ -146,6 +146,7 @@ let speedMultiplier = 0.1;
 
 let localPlayerStats =  {  
     id: 0,
+    uid: "",
     damageDelt: 0,
     mined: 0,
     team: 0,
@@ -187,12 +188,20 @@ countDataSent = 0; // Count of data sent to  firebase.
 let app = angular.module("myApp", []);
 
 app.controller("myCtrl", ['$scope', function($scope) {
+
+    
+    let convertMiliseconds = (millis) => {
+        let hours = Math.floor(millis / 3600000);
+        let minutes = Math.floor(millis / 60000)%60;
+        let seconds = ((millis % 60000) / 1000).toFixed(0);
+        return `${hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
+       // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
+    };
+
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
         $scope.$apply(function(){
             if(e.detail !== null){
-                console.log(e.detail);
                 let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
-                console.log(ownedPlayers);
                 let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
                 $scope.ownedPlayers = ownedPlayers;
                 $scope.otherPlayers = otherPlayers;
@@ -212,13 +221,36 @@ app.controller("myCtrl", ['$scope', function($scope) {
                 // Add firebase key to lobbys
                 let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
                     e.detail[lobbyKey].key = lobbyKey;
+
+                    //Add game time to lobby information
+                    if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
+                        e.detail[lobbyKey].gameTime = convertMiliseconds(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
+                    }
+
                     return e.detail[lobbyKey];
                 });
+                
 
                 $scope.lobbyList = lobbyDetails;
             }
         });
     });
+
+    $scope.selectGame = id => {
+        console.log('id', id);
+        model.setGameId(id);
+        model.detachGameListeners(); // Detach previous game listeners
+        model.listenToGame();// Listen to new game data
+    };
+
+    $scope.deleteGame = id => {
+        console.log('id', id);
+        model.deleteLobby(id);
+        model.deleteMap(id);
+    };
+
+    
+    $scope.isFinished = gameEnd => typeof gameEnd !== "undefined" ? true : false;
 }]);
 
 const canMove = (direction, obj, delta) => {
@@ -683,7 +715,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     countDataSent ++;
 
     model.savePlayerPos(options.player).then(data => {
-        console.log('data', data);
+        // console.log('data', data);
         countDataReturned ++;
         calcLag(parseRequestId(data.pos.requestId)[1]);
     });
@@ -812,12 +844,7 @@ const activateButtons = () => {
     // });
 
     // Get and set gameId on model
-    $("#player-lobby").on("click", ".lobby-select-button", function(){
-        let lobbyId = $(this).data("lobbyid");
-        model.setGameId(lobbyId);
-        model.detachGameListeners(); // Detach previous game listeners
-        model.listenToGame();// Listen to new game data
-    });
+
    
     $("canvas").on("click", function(e){
     
@@ -858,9 +885,11 @@ const activateButtons = () => {
         let player = players.find(x => x.id === g.playerId);
 
         if(player !== undefined){
+            localPlayerStats.uid = g.uid;
             localPlayerStats.id = g.playerId;
             localPlayerStats.spawnTime = Date.now();
             localPlayerStats.team = player.team;       
+            console.log('localPlayerStats', localPlayerStats);
         }
 
         startPlay();
@@ -894,7 +923,7 @@ const activateServerListener = () => {
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
         // console.log("listened");
-        console.log('e.detail', e.detail);
+        // console.log('e.detail', e.detail);
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
@@ -951,9 +980,8 @@ const activateServerListener = () => {
         
         if(onlineGameState === 2 && statsSent === false){
             statsSent = true;
-            console.log('localPlayerStats', localPlayerStats);
-            model.savePlayerStats(localPlayerStats, "-L3KC9l-1W5f-2YZxW-t");
-            model.finishGame(Date.now(), "-L3KC9l-1W5f-2YZxW-t");
+            model.savePlayerStats(localPlayerStats);
+            model.finishGame(Date.now());
         }
         
     });
@@ -1372,7 +1400,8 @@ module.exports.savePlayerPos = (player) => {
     });
 };
 
-module.exports.savePlayerStats = (playerStats, gameId) => {
+module.exports.savePlayerStats = playerStats => {
+    console.log('playerStats', playerStats);
     $.ajax({
         url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
         type: 'PUT',
@@ -1397,7 +1426,7 @@ module.exports.addGame = (startTime, name) => {
     });
 };
 
-module.exports.finishGame = (endTime, gameId) => {
+module.exports.finishGame = endTime => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/${gameId}/.json`,
@@ -1496,6 +1525,26 @@ module.exports.saveNewMap = (tiles) => {
             type: 'PUT',
             dataType: 'json',
             data: JSON.stringify(tiles)
+        })
+        .done(data => resolve(data));
+    });
+};
+
+module.exports.deleteMap = id => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/gameData/${id}.json`,
+            type: 'DELETE'
+        })
+        .done(data => resolve(data));
+    });
+};
+
+module.exports.deleteLobby = id => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/${id}.json`,
+            type: 'DELETE'
         })
         .done(data => resolve(data));
     });

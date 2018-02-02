@@ -52,10 +52,26 @@
                     </ul>
                     <h3>Lobbies</h3>
                     <ul ng-repeat="lobby in lobbyList" >
-                        <li>
+                        <li ng-show="!isFinished(lobby.gameEnd)">
                             <p>{{lobby.name}}</p>
                             <button ng-click="selectGame(lobby.key)">Select</button>
                             <button ng-click="deleteGame(lobby.key)">Delete</button>
+                        </li>
+                    </ul>
+                    <h3>Complete Games</h3>
+                    <ul ng-repeat="lobby in lobbyList" >
+                        <li ng-show="isFinished(lobby.gameEnd)">
+                            <p>{{lobby.name}}</p>
+                            <p>Game Length: {{lobby.gameTime}}</p>
+                            <p>Players:</p>
+                            <ol ng-repeat="player in lobby.players" >
+                                <li>
+                                    <p>Name: {{player.uid}}</p>
+                                    <p>Team: {{player.team ? "Dwarf" : "Squirrel"}}</p>
+                                    <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
+                                    <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
+                                </li>
+                            </ol>
                         </li>
                     </ul>
                 </div>
