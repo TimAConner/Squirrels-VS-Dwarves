@@ -40,8 +40,8 @@
                     <h3>Your Players</h3>
                     <ul ng-repeat="x in ownedPlayers" >
                         <li>
-                            <button class="select" playerId={{x.id}}>Select Player {{x.id}}</button>
-                            <button  class="remove" playerId={{x.id}}>Delete Player {{x.id}}</button>
+                            <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
+                            <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
                         </li>
                     </ul>
                     <h3>Other Players</h3>

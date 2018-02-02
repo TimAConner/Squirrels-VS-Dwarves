@@ -249,6 +249,25 @@ app.controller("myCtrl", ['$scope', function($scope) {
         model.deleteMap(id);
     };
 
+
+    // Select the player to be played
+    // and puts its values into the localPlayerStats to be later sent when game is complete.
+    $scope.selectPlayer = id => {
+        g.playerId = id;      
+        let player = players.find(x => x.id === g.playerId);
+        if(player !== undefined){
+            localPlayerStats.uid = g.uid;
+            localPlayerStats.id = g.playerId;
+            localPlayerStats.spawnTime = Date.now();
+            localPlayerStats.team = player.team;       
+        }
+
+        startPlay();
+    };
+
+    $scope.removePlayer = id => {
+        model.deletePlayer({id});
+    };
     
     $scope.isFinished = gameEnd => typeof gameEnd !== "undefined" ? true : false;
 }]);
@@ -878,24 +897,6 @@ const activateButtons = () => {
             resetMapDraw();
         });
         
-    });
-
-    $("#player-lobby").on("click", ".select", function(){
-        g.playerId = $(this).attr("playerId");      
-        let player = players.find(x => x.id === g.playerId);
-
-        if(player !== undefined){
-            localPlayerStats.uid = g.uid;
-            localPlayerStats.id = g.playerId;
-            localPlayerStats.spawnTime = Date.now();
-            localPlayerStats.team = player.team;       
-            console.log('localPlayerStats', localPlayerStats);
-        }
-
-        startPlay();
-    });
-    $("#player-lobby").on("click", ".remove", function(){
-        model.deletePlayer({id: $(this).attr("playerId")});
     });
     
 };
