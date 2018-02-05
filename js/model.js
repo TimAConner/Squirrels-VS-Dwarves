@@ -244,6 +244,8 @@ module.exports.saveNewMap = (tiles) => {
     });
 };
 
+module.exports.deleteCurrentMap = () => module.exports.deleteMap(gameId);
+
 module.exports.deleteMap = id => {
     return new Promise(function (resolve, reject){
         $.ajax({

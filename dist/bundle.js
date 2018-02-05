@@ -675,6 +675,7 @@ const update = (delta) => { // new delta parameter
 
                             if(selectedTile.teamBase === player.team){
                                 setWinner(player.team);
+                                model.deleteCurrentMap();
                             }
                             countDataSent ++;
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(data => {
@@ -1541,6 +1542,8 @@ module.exports.saveNewMap = (tiles) => {
         .done(data => resolve(data));
     });
 };
+
+module.exports.deleteCurrentMap = () => module.exports.deleteMap(gameId);
 
 module.exports.deleteMap = id => {
     return new Promise(function (resolve, reject){
