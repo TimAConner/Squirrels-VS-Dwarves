@@ -18,6 +18,9 @@ module.exports.playerId = 0;
 module.exports.uid = "";
 module.exports.fullName = "";
 
+module.exports.battleTypes = ["Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
+module.exports.battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
+
 
 
 // Returns tile position based on their x and y and tilesize

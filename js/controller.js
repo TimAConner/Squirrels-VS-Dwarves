@@ -735,6 +735,13 @@ const startPlay = () => {
     localGameState = 1;
 };
 
+// Returns a random battle  name using the inputs on game.js
+const generateBattleName = () => {
+    let randomType = g.battleTypes[Math.floor(Math.random()*g.battleTypes.length)];
+    let randomName = g.battleNames[Math.floor(Math.random()*g.battleNames.length)];
+    return `${randomName} ${randomType}`;
+};
+
 const activateButtons = () => {
 
     $("#signIn").on("click", function(){
@@ -794,7 +801,7 @@ const activateButtons = () => {
      and set initial draws to true.
     */
     $("#main-menu-new").on("click", () => {
-        model.addGame(Date.now(), "A Battle").then(gameId => {
+        model.addGame(Date.now(), generateBattleName()).then(gameId => {
             model.setGameId(gameId);
 
             // When game has finished being saved on server, start listening.

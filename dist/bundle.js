@@ -827,6 +827,14 @@ const startPlay = () => {
     localGameState = 1;
 };
 
+// Returns a random battle  name using the inputs on game.js
+const generateBattleName = () => {
+    let randomType = g.battleTypes[Math.floor(Math.random()*g.battleTypes.length)];
+    let randomName = g.battleNames[Math.floor(Math.random()*g.battleNames.length)];
+
+    return `${randomName} ${randomType}`;
+};
+
 const activateButtons = () => {
 
     $("#signIn").on("click", function(){
@@ -886,7 +894,7 @@ const activateButtons = () => {
      and set initial draws to true.
     */
     $("#main-menu-new").on("click", () => {
-        model.addGame(Date.now(), "A Battle").then(gameId => {
+        model.addGame(Date.now(), generateBattleName()).then(gameId => {
             model.setGameId(gameId);
 
             // When game has finished being saved on server, start listening.
@@ -1037,6 +1045,9 @@ module.exports.mineStrength = 0.01;
 module.exports.playerId = 0;
 module.exports.uid = "";
 module.exports.fullName = "";
+
+module.exports.battleTypes = ["Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
+module.exports.battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
 
 
 
