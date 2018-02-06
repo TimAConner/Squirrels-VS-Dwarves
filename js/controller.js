@@ -135,24 +135,33 @@ app.controller("myCtrl", ['$scope', function($scope) {
                         e.detail[lobbyKey].gameTime = convertMiliseconds(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
                     }
 
+                    // For each player, add a life time.
+                    if(typeof e.detail[lobbyKey].players !== "undefined") {
+                        Object.values(e.detail[lobbyKey].players).forEach(player => {
+                            console.log('player.spawnTime', player.spawnTime);
+                            console.log('e.detail[lobbyKey].gameStart', e.detail[lobbyKey].gameStart);
+                            console.log("lifeTime", player.spawnTime, e.detail[lobbyKey].gameStart);
+                            player.lifeTime = convertMiliseconds(player.spawnTime - e.detail[lobbyKey].gameStart);
+                        });
+                    }
+
                     return e.detail[lobbyKey];
                 });
                 
 
-                $scope.lobbyList = lobbyDetails;
+                // Reverse order of lobbies to have newer first.
+                $scope.lobbyList = _.reverse(lobbyDetails);
             }
         });
     });
 
     $scope.selectGame = id => {
-        console.log('id', id);
         model.setGameId(id);
         model.detachGameListeners(); // Detach previous game listeners
         model.listenToGame();// Listen to new game data
     };
 
     $scope.deleteGame = id => {
-        console.log('id', id);
         model.deleteLobby(id);
         model.deleteMap(id);
     };
@@ -486,8 +495,8 @@ const update = (delta) => { // new delta parameter
     if(typeof g.playerId !== "undefined"){
 
         let player = players.find(x => x.id == g.playerId);
-
-        if(player.health <= 0 && localPlayerStats.deathTime !== 0){
+        // TODO: Fix issue that when you die the game stops keeping up.
+        if(player.health <= 0 && localPlayerStats.deathTime === 0){
             localPlayerStats.deathTime = Date.now();
         }
         
