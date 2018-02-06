@@ -21,11 +21,7 @@
             'value': 1
         },
         {
-            'count': 0.1,
-            'value': 0.25
-        },
-        {
-            'count': 0.1,
+            'count': 0.2,
             'value': 0.5
         }
     ];
@@ -34,7 +30,6 @@
 
 
   let generateTile = totalTiles => {
-
       // Generate a random index in the frequency table
     let randFreqIndex = freqTable[Math.floor(Math.random() * freqTable.length)];
 

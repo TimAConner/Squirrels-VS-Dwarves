@@ -33,10 +33,15 @@ const findImage = (name) => {
 addImage('dwarfSprite', './img/dwarfAnimation.png');
 addImage('dwarf', './img/dwarf.png');
 addImage('squirrel', './img/squirrel.png');
-addImage('dirt', "./img/dirt.png");
+addImage('dirt', "./img/small.png");
 addImage('stone', "./img/stone.jpeg");
-
-addImage('stoneFrac1', "./img/stoneFrac1.jpg");
+ 
+addImage('stoneBroke1', "./img/stoneBroke1.jpg");
+addImage('stoneBroke2', "./img/stoneBroke2.jpg");
+addImage('stoneBroke3', "./img/stoneBroke3.jpg");
+addImage('stoneBroke4', "./img/stoneBroke4.jpg");
+addImage('stoneBroke5', "./img/stoneBroke5.jpg");
+addImage('stoneFrac1', "./img/stoneBroke6.jpg");
 addImage('stoneFrac2', "./img/stoneFrac3.jpg");
 addImage('stoneFrac3', "./img/stoneFrac5.jpg");
 addImage('stoneFrac4', "./img/stoneFrac7.jpg");
