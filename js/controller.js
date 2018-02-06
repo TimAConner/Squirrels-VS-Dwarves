@@ -138,10 +138,13 @@ app.controller("myCtrl", ['$scope', function($scope) {
                     // For each player, add a life time.
                     if(typeof e.detail[lobbyKey].players !== "undefined") {
                         Object.values(e.detail[lobbyKey].players).forEach(player => {
+                            console.log('NAME', e.detail[lobbyKey]);
                             console.log('player.spawnTime', player.spawnTime);
                             console.log('e.detail[lobbyKey].gameStart', e.detail[lobbyKey].gameStart);
                             console.log("lifeTime", player.spawnTime, e.detail[lobbyKey].gameStart);
-                            player.lifeTime = convertMiliseconds(player.spawnTime - e.detail[lobbyKey].gameStart);
+                           
+                            // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
+                            player.lifeTime = player.deathTime === 0 ? convertMiliseconds(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliseconds(player.deathTime - player.spawnTime);
                         });
                     }
 
