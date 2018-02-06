@@ -82,6 +82,8 @@ let initialPlayerDraw = true;
 let initialGemDraw = true;
 let initialGameState = true;
 
+let proccessDataThisFrame = false;
+
 
 
 let timestep = 1000 / 60,
@@ -98,12 +100,17 @@ let app = angular.module("myApp", []);
 app.controller("myCtrl", ['$scope', function($scope) {
 
     
-    let convertMiliseconds = (millis) => {
+    let convertMiliToHMS = millis => {
         let hours = Math.floor(millis / 3600000);
         let minutes = Math.floor(millis / 60000)%60;
         let seconds = ((millis % 60000) / 1000).toFixed(0);
         return `${hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
        // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
+    };
+
+    let convertMiliToDate = millis => {
+        let date = new Date(millis);
+        return `${date.getMonth()+1}/${date.getDate()+1}/${date.getFullYear()}`;
     };
 
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
@@ -132,19 +139,17 @@ app.controller("myCtrl", ['$scope', function($scope) {
 
                     //Add game time to lobby information
                     if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
-                        e.detail[lobbyKey].gameTime = convertMiliseconds(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
+                        e.detail[lobbyKey].gameTime = convertMiliToHMS(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
                     }
+
+                    // Add game date
+                    e.detail[lobbyKey].date = convertMiliToDate(e.detail[lobbyKey].gameStart);
 
                     // For each player, add a life time.
                     if(typeof e.detail[lobbyKey].players !== "undefined") {
                         Object.values(e.detail[lobbyKey].players).forEach(player => {
-                            console.log('NAME', e.detail[lobbyKey]);
-                            console.log('player.spawnTime', player.spawnTime);
-                            console.log('e.detail[lobbyKey].gameStart', e.detail[lobbyKey].gameStart);
-                            console.log("lifeTime", player.spawnTime, e.detail[lobbyKey].gameStart);
-                           
                             // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
-                            player.lifeTime = player.deathTime === 0 ? convertMiliseconds(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliseconds(player.deathTime - player.spawnTime);
+                            player.lifeTime = player.deathTime === 0 ? convertMiliToHMS(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliToHMS(player.deathTime - player.spawnTime);
                         });
                     }
 
@@ -386,6 +391,8 @@ const initiateGameState = () => {
     
 };
 
+// TODO: Fix proccess new data only when new data is sents
+
 const parseRequestId = (requestId) => {
     let values = requestId.match("(.*)-(-.*)");
     return values;
@@ -508,7 +515,7 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
         // TODO: Fix issue that when you die the game stops keeping up.
-        if(player.health <= 0 && localPlayerStats.deathTime === 0){
+        if(player.health.points <= 0 && localPlayerStats.deathTime === 0){
             localPlayerStats.deathTime = Date.now();
         }
         
@@ -715,9 +722,12 @@ const mainLoop = (timestamp) => {
             //     }
             //     lag = 0;
             // } else {
-                proccessNewData(players, newPlayers, ["health", "pos"]);
-                proccessNewData(tiles, newTiles, ["hard"]);
-                proccessNewData(gems, newGems);
+                if(proccessDataThisFrame){
+                    proccessNewData(players, newPlayers, ["health", "pos"]);
+                    proccessNewData(tiles, newTiles, ["hard"]);
+                    proccessNewData(gems, newGems);
+                    proccessDataThisFrame = false;
+                }
             // }
             // if(countDataSent - countDataReturned < 50){
                 update(timestep);
@@ -860,11 +870,13 @@ const activateServerListener = () => {
             console.log("new data");
             newGems = filteredGems;
         }        
+        proccessDataThisFrame = true;
     });
 
     g.c.addEventListener("serverUpdateGames", (e) => {
         games = e.detail;
         initialLobbyLoad = false;
+        proccessDataThisFrame = true;
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
@@ -890,6 +902,7 @@ const activateServerListener = () => {
         
 
         initialPlayerDraw = false;
+        proccessDataThisFrame = true;
 
         // Update list of players
         
@@ -914,6 +927,8 @@ const activateServerListener = () => {
             newTiles = filteredTiles;
         }
 
+        proccessDataThisFrame = true;
+
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
@@ -931,7 +946,7 @@ const activateServerListener = () => {
             model.savePlayerStats(localPlayerStats);
             model.finishGame(Date.now());
         }
-        
+        proccessDataThisFrame = true;
     });
 
 };
