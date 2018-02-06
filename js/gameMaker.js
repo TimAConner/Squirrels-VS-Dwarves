@@ -26,6 +26,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     };
 
     model.addNewPlayer(player);  
+    console.log('g.playerId', g.playerId);
     g.playerId = newPlayerId;
 };
 

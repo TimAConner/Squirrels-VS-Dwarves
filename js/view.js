@@ -7,6 +7,7 @@
 
 let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 
+
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");

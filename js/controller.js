@@ -169,16 +169,25 @@ app.controller("myCtrl", ['$scope', function($scope) {
 
     // Select the player to be played
     // and puts its values into the localPlayerStats to be later sent when game is complete.
+
+    // TODO: Make sure that localPlayerStats are being sent to the database properly.
     $scope.selectPlayer = id => {
         g.playerId = id;      
+        
+        console.log('players', [...players]);
         let player = players.find(x => x.id === g.playerId);
+        console.log('players', players);
+
+        console.log('player', player);
+        
+        console.log('id', id);
         if(player !== undefined){
             localPlayerStats.uid = g.uid;
             localPlayerStats.id = g.playerId;
             localPlayerStats.spawnTime = Date.now();
             localPlayerStats.team = player.team;       
         }
-
+        console.log('localPlayerStats', localPlayerStats);
         startPlay();
     };
 
@@ -763,7 +772,7 @@ const startPlay = () => {
 const generateBattleName = () => {
     let randomType = g.battleTypes[Math.floor(Math.random()*g.battleTypes.length)];
     let randomName = g.battleNames[Math.floor(Math.random()*g.battleNames.length)];
-    return `${randomName} ${randomType}`;
+    return `${randomType} ${randomName}`;
 };
 
 const activateButtons = () => {
@@ -868,7 +877,7 @@ const activateServerListener = () => {
         }); 
 
           
-            if(initialPlayerDraw === true){
+            if(initialPlayerDraw === true || localGameState === 0){
                 players = filteredPlayers;
             } else {
                 console.log("new data");
@@ -912,6 +921,8 @@ const activateServerListener = () => {
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam;
         
+        // If the game has been won by a player online, 
+        // then send states and finish the game locally.
         if(onlineGameState === 2 && statsSent === false){
             statsSent = true;
             model.savePlayerStats(localPlayerStats);
