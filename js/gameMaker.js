@@ -44,6 +44,7 @@ module.exports.newGame = () => {
                     "y": teamBaseZero.pos.y*g.tileSize
                 },
                 "carrier": -1,
+                "requestId": "0--0",
                 "team": 0,
                 "type": "gem",
                 "id": 0
@@ -54,6 +55,7 @@ module.exports.newGame = () => {
                     "y": teamBaseOne.pos.y*g.tileSize
                 },
                 "carrier": -1,
+                "requestId": "0--0",
                 "team": 1,
                 "type": "gem",
                 "id": 1

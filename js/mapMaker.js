@@ -1,6 +1,53 @@
   "use strict";
 
   const g = require("./game");
+  const _ = require("lodash");
+
+  let freqTable = [
+        {
+            'count': 0.2,
+            'value': 2
+        },
+        {
+            'count': 0.1,
+            'value': 0.75
+        },
+        {
+            'count': 0.1,
+            'value': 0
+        },
+        {
+            'count': 0.4,
+            'value': 1
+        },
+        {
+            'count': 0.1,
+            'value': 0.25
+        },
+        {
+            'count': 0.1,
+            'value': 0.5
+        }
+    ];
+
+    let curFreqCount = {};
+
+
+  let generateTile = totalTiles => {
+
+      // Generate a random index in the frequency table
+    let randFreqIndex = freqTable[Math.floor(Math.random() * freqTable.length)];
+
+    // Add values used to list of numbers used
+    curFreqCount[randFreqIndex.value] = (curFreqCount[randFreqIndex.value]+=1) || 1;
+
+    // Remove the value from the frequency table if it's frequent enogh in curFreqCount
+    if((curFreqCount[randFreqIndex.value] / totalTiles) >= randFreqIndex.count){
+       _.remove(freqTable, randFreqIndex);
+    }
+    
+    return randFreqIndex.value;
+  };
 
   module.exports.generateTiles = (w, h) => {
     let tiles = [];
@@ -16,13 +63,12 @@
                         "y": y
                     },
                     "hard": {
-                        "points": 1,
+                        "points": generateTile(w*h),
                         "requestId": "0--0"
                     }
                     
                 };
 
-                obj.hard.points = 0;
 
                 // Set map bounds tiles
                 if(x === 0 || x === w-1 || y === 0 || y === h-1){ 
