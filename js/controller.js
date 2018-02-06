@@ -99,7 +99,7 @@ let app = angular.module("myApp", []);
 
 app.controller("myCtrl", ['$scope', function($scope) {
 
-    
+
     let convertMiliToHMS = millis => {
         let hours = Math.floor(millis / 3600000);
         let minutes = Math.floor(millis / 60000)%60;
@@ -114,52 +114,55 @@ app.controller("myCtrl", ['$scope', function($scope) {
     };
 
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
-        $scope.$apply(function(){
-            if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
-                let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
-                $scope.ownedPlayers = ownedPlayers;
-                $scope.otherPlayers = otherPlayers;
-            } else {
-                $scope.otherPlayers = [];
-                $scope.ownedPlayers = [];
-            }
-            
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(e.detail !== null){
+                    let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
+                    let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
+                    $scope.ownedPlayers = ownedPlayers;
+                    $scope.otherPlayers = otherPlayers;
+                } else {
+                    $scope.otherPlayers = [];
+                    $scope.ownedPlayers = [];
+                }
+                
+            });
         });
     });
     $("#game-canvas").on("serverUpdateGames", (e) => {
-
         // Force Angular to digest new lobbies to update the html
-        $scope.$apply(function(){
-            if(e.detail !== null){
-                
-                // Add firebase key to lobbys
-                let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
-                    e.detail[lobbyKey].key = lobbyKey;
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(e.detail !== null){
+                    
+                    // Add firebase key to lobbys
+                    let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
+                        e.detail[lobbyKey].key = lobbyKey;
 
-                    //Add game time to lobby information
-                    if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
-                        e.detail[lobbyKey].gameTime = convertMiliToHMS(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
-                    }
+                        //Add game time to lobby information
+                        if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
+                            e.detail[lobbyKey].gameTime = convertMiliToHMS(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
+                        }
 
-                    // Add game date
-                    e.detail[lobbyKey].date = convertMiliToDate(e.detail[lobbyKey].gameStart);
+                        // Add game date
+                        e.detail[lobbyKey].date = convertMiliToDate(e.detail[lobbyKey].gameStart);
 
-                    // For each player, add a life time.
-                    if(typeof e.detail[lobbyKey].players !== "undefined") {
-                        Object.values(e.detail[lobbyKey].players).forEach(player => {
-                            // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
-                            player.lifeTime = player.deathTime === 0 ? convertMiliToHMS(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliToHMS(player.deathTime - player.spawnTime);
-                        });
-                    }
+                        // For each player, add a life time.
+                        if(typeof e.detail[lobbyKey].players !== "undefined") {
+                            Object.values(e.detail[lobbyKey].players).forEach(player => {
+                                // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
+                                player.lifeTime = player.deathTime === 0 ? convertMiliToHMS(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliToHMS(player.deathTime - player.spawnTime);
+                            });
+                        }
 
-                    return e.detail[lobbyKey];
-                });
-                
+                        return e.detail[lobbyKey];
+                    });
+                    
 
-                // Reverse order of lobbies to have newer first.
-                $scope.lobbyList = _.reverse(lobbyDetails);
-            }
+                    // Reverse order of lobbies to have newer first.
+                    $scope.lobbyList = _.reverse(lobbyDetails);
+                }
+            });
         });
     });
 
@@ -203,7 +206,8 @@ app.controller("myCtrl", ['$scope', function($scope) {
         model.deletePlayer({id});
     };
     
-
+    $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
+    
     $scope.addDwarf = () => {
         gameMaker.addPlayer(0, tiles, players.length);
     };
@@ -275,8 +279,6 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-
-
 const findTileInDirection = (player) => {
 
     // let tile = tiles.find(x => {
@@ -323,7 +325,6 @@ const isKeyOn = (prop) => {
     }
 };
 
-
 // Takes two pos and deals with distance.
 const calcDistance = (posA,  posB) => {
     
@@ -335,8 +336,6 @@ const calcDistance = (posA,  posB) => {
 
     return Math.abs(distance); 
 };
-
-
 
 const findCloseGem = (player) => {
     let gem = gems.find((gem) => {
@@ -476,24 +475,28 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
     // console.log('a currentData', currentData);
 };
 
-// const updateGemPosition = () => {   
-//     gems = gems.map(gem => {
-//         if(gem.carrier !== -1){
-//             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
-//             gem.pos.x = carrier.pos.x+(gem.size.w/4);
-//             gem.pos.y = carrier.pos.y+(gem.size.h/4);
-//         }
-//         return gem;
-//     });gems[gems.indexOf(carriedGem)]
-// };
+const calcCurRequestId = () => `${Date.now()}-${g.playerId}`;
 
+const dropGem = gem => {
+    gem.carrier = -1;
+    addRequestId(gem, calcCurRequestId());
+    model.saveGem(gem);
+};
 
 const updateGemPosition = () => {
     for(let i = 0; i < gems.length; i++){
         if(gems[i].carrier !== -1){
             let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-            gems[i].pos.x = carrier.pos.x;
-            gems[i].pos.y = carrier.pos.y;
+            console.log('carrier.health.points', carrier.health.points);
+            if(g.isPlayerAlive(carrier)){
+                gems[i].pos.x = carrier.pos.x;
+                gems[i].pos.y = carrier.pos.y;
+            } else {
+                console.log('drop gem');
+                gems[i].pos.x = carrier.pos.x;
+                gems[i].pos.y = carrier.pos.y;
+                dropGem(gems[i]);
+            }
         }
     }
 };
@@ -515,13 +518,13 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
         // TODO: Fix issue that when you die the game stops keeping up.
-        if(player.health.points <= 0 && localPlayerStats.deathTime === 0){
+        if(!g.isPlayerAlive(player) && localPlayerStats.deathTime === 0){
             localPlayerStats.deathTime = Date.now();
         }
         
-        if(typeof player !== "undefined" && player.health.points > 0){
+        if(typeof player !== "undefined" && g.isPlayerAlive(player)){
 
-            let requestId = `${Date.now()}-${g.playerId}`;
+            let requestId = calcCurRequestId();
 
             let playerUpdateObject = {
                 player: players[players.indexOf(player)],
@@ -551,7 +554,7 @@ const update = (delta) => { // new delta parameter
                     
                     // If there is a player in the direction within 1, then attack.
                     
-                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && g.isPlayerAlive(targetPlayer)){
                         targetPlayer.health.points -= g.attackStrength;
 
                         localPlayerStats.damageDelt += g.attackStrength;
@@ -690,7 +693,6 @@ const updatePlayerState = (direction,  changeIn, options) => {
         calcLag(parseRequestId(data.pos.requestId)[1]);
     });
 };
-
 
 
 
