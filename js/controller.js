@@ -780,13 +780,7 @@ const activateButtons = () => {
         localGameState = 0;
     });
 
-    document.getElementById("add-player").addEventListener("click", () => {
-        gameMaker.addPlayer(0, tiles, players.length);
-    });
 
-    document.getElementById("add-player-2").addEventListener("click", () => {
-        gameMaker.addPlayer(1, tiles, players.length);
-    });
 
     // document.getElementById("main-menu-play").addEventListener("click", () => {
     //     startPlay();
