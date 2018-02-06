@@ -51,6 +51,17 @@ addAnimation('dwarfAnimation',
     }
 );
 
+addAnimation('dwarfAnimationLeft', 
+    {
+        frames: [1, 2],
+        curFrame: 0,
+        lastFrame: 0,
+        interval: 250,
+        w: 21,
+        h: 21
+    }
+);
+
 // Calculates location in the spritesheet of the current frame.
 const calcFrame = ({frames, curFrame, w}) => {
     let frameIndex = frames[curFrame%frames.length];

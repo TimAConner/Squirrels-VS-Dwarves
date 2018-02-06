@@ -244,6 +244,8 @@ module.exports.saveNewMap = (tiles) => {
     });
 };
 
+// TODO: Figure out how to remove map data all togethor.
+// Map is being deleted, but the game state is being sent after the map is deleted.
 module.exports.deleteCurrentMap = () => module.exports.deleteMap(gameId);
 
 module.exports.deleteMap = id => {

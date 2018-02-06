@@ -676,6 +676,13 @@ const addRequestId = (object, requestId) => {
 };
 
 const updatePlayerState = (direction,  changeIn, options) => {
+
+    if(direction === "left"){
+        options.player.pos.animDir = "left";
+    } else if(direction === "right"){
+        options.player.pos.animDir = "right";
+    }
+
     if(direction === "up" || direction === "left"){
         options.speedMultiplier = -options.speedMultiplier;
     }

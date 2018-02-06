@@ -92,8 +92,9 @@ const drawTiles = (tiles, players) => {
     
     let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
 
+    // Draw tiles around team mates
     for(let i = 0; i < players.length; i++){
-        if(players[i].team === thisPlayer.team && players[i].health.points > 0){
+        if(players[i].team === thisPlayer.team && g.isPlayerAlive(players[i])){
             tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
         }
     }
@@ -136,8 +137,24 @@ const drawTiles = (tiles, players) => {
                 let hardness = tiles[i].hard.points;
                 if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
-                    if(hardness > 0.95){
+                    if(hardness > 1.95){
                         g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.7){
+                        g.ctx.drawImage(img('stoneBroke1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.5){
+                        g.ctx.drawImage(img('stoneBroke2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.3){
+                        g.ctx.drawImage(img('stoneBroke3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, 
+                        g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.1){
+                        g.ctx.drawImage(img('stoneBroke4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1){
+                        g.ctx.drawImage(img('stoneBroke5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.9){
                         g.ctx.drawImage(img('stoneFrac1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.8){
@@ -231,7 +248,7 @@ const drawPlayers = (players, playerId, tiles) => {
       
         let playerTile = g.findTileBelowPlayer(players[i], tiles);
 
-        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && g.isPlayerAlive(players[i])){// jshint ignore:line
             // console.log("in here", players[i]);
             
 
@@ -251,7 +268,13 @@ const drawPlayers = (players, playerId, tiles) => {
             g.ctx.drawImage(img('squirrel'),players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
+            if(typeof players[i].pos.animDir !== "undefined") {
+                if(players[i].pos.animDir === "right"){
+                    drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
+                } else {
+                    drawPlayerAnimation('dwarfSpriteLeft', 'dwarfAnimationLeft', players[i].pos);
+                }
+            }
         }
             
         g.ctx.stroke();
@@ -330,9 +353,9 @@ module.exports.viewMainMenu = () => {
     module.exports.drawSignIn();
 };
 
-module.exports.viewWinnerScreen =  (winnerId) => {
+module.exports.viewWinnerScreen =  winnerId => {
     showScreen("#victory-screen");
-    $("#winner").text(winnerId);
+    $("#winner").text(winnerId == 0 ? "Dwarfs" : "Squirrels");
 };  
 
 module.exports.viewGame = () => {

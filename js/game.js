@@ -22,6 +22,10 @@ module.exports.battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmis
 module.exports.battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
 
 
+module.exports.isPlayerAlive = ({health: {points: health}}) => {
+    return health > 0 ? true : false;
+};
+
 
 // Returns tile position based on their x and y and tilesize
 module.exports.calcTilePos = (tile) => {

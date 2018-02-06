@@ -16,7 +16,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "y": spawnPoint.pos.y*g.tileSize,
             "z": 0,
             "requestId": "0--0",
-            "dir": "up"
+            "dir": "up",
+            "animDir": "right"
         },
         "health": {
             "points": 100,
