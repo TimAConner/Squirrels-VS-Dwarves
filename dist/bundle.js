@@ -227,24 +227,33 @@ app.controller("myCtrl", ['$scope', function($scope) {
                         e.detail[lobbyKey].gameTime = convertMiliseconds(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
                     }
 
+                    // For each player, add a life time.
+                    if(typeof e.detail[lobbyKey].players !== "undefined") {
+                        Object.values(e.detail[lobbyKey].players).forEach(player => {
+                            console.log('player.spawnTime', player.spawnTime);
+                            console.log('e.detail[lobbyKey].gameStart', e.detail[lobbyKey].gameStart);
+                            console.log("lifeTime", player.spawnTime, e.detail[lobbyKey].gameStart);
+                            player.lifeTime = convertMiliseconds(player.spawnTime - e.detail[lobbyKey].gameStart);
+                        });
+                    }
+
                     return e.detail[lobbyKey];
                 });
                 
 
-                $scope.lobbyList = lobbyDetails;
+                // Reverse order of lobbies to have newer first.
+                $scope.lobbyList = _.reverse(lobbyDetails);
             }
         });
     });
 
     $scope.selectGame = id => {
-        console.log('id', id);
         model.setGameId(id);
         model.detachGameListeners(); // Detach previous game listeners
         model.listenToGame();// Listen to new game data
     };
 
     $scope.deleteGame = id => {
-        console.log('id', id);
         model.deleteLobby(id);
         model.deleteMap(id);
     };
@@ -252,16 +261,25 @@ app.controller("myCtrl", ['$scope', function($scope) {
 
     // Select the player to be played
     // and puts its values into the localPlayerStats to be later sent when game is complete.
+
+    // TODO: Make sure that localPlayerStats are being sent to the database properly.
     $scope.selectPlayer = id => {
         g.playerId = id;      
+        
+        console.log('players', [...players]);
         let player = players.find(x => x.id === g.playerId);
+        console.log('players', players);
+
+        console.log('player', player);
+        
+        console.log('id', id);
         if(player !== undefined){
             localPlayerStats.uid = g.uid;
             localPlayerStats.id = g.playerId;
             localPlayerStats.spawnTime = Date.now();
             localPlayerStats.team = player.team;       
         }
-
+        console.log('localPlayerStats', localPlayerStats);
         startPlay();
     };
 
@@ -269,7 +287,21 @@ app.controller("myCtrl", ['$scope', function($scope) {
         model.deletePlayer({id});
     };
     
+
+    $scope.addDwarf = () => {
+        gameMaker.addPlayer(0, tiles, players.length);
+    };
+
+    $scope.addSquirrel = () => {
+        gameMaker.addPlayer(1, tiles, players.length);
+    };
+
     $scope.isFinished = gameEnd => typeof gameEnd !== "undefined" ? true : false;
+
+    $scope.isObjectEmpty = obj => {
+        return typeof obj === "undefined" || Object.keys(obj).length === 0;
+    };
+
 }]);
 
 const canMove = (direction, obj, delta) => {
@@ -564,8 +596,8 @@ const update = (delta) => { // new delta parameter
     if(typeof g.playerId !== "undefined"){
 
         let player = players.find(x => x.id == g.playerId);
-
-        if(player.health <= 0 && localPlayerStats.deathTime !== 0){
+        // TODO: Fix issue that when you die the game stops keeping up.
+        if(player.health <= 0 && localPlayerStats.deathTime === 0){
             localPlayerStats.deathTime = Date.now();
         }
         
@@ -832,8 +864,7 @@ const startPlay = () => {
 const generateBattleName = () => {
     let randomType = g.battleTypes[Math.floor(Math.random()*g.battleTypes.length)];
     let randomName = g.battleNames[Math.floor(Math.random()*g.battleNames.length)];
-
-    return `${randomName} ${randomType}`;
+    return `${randomType} ${randomName}`;
 };
 
 const activateButtons = () => {
@@ -859,13 +890,7 @@ const activateButtons = () => {
         localGameState = 0;
     });
 
-    document.getElementById("add-player").addEventListener("click", () => {
-        gameMaker.addPlayer(0, tiles, players.length);
-    });
 
-    document.getElementById("add-player-2").addEventListener("click", () => {
-        gameMaker.addPlayer(1, tiles, players.length);
-    });
 
     // document.getElementById("main-menu-play").addEventListener("click", () => {
     //     startPlay();
@@ -944,7 +969,7 @@ const activateServerListener = () => {
         }); 
 
           
-            if(initialPlayerDraw === true){
+            if(initialPlayerDraw === true || localGameState === 0){
                 players = filteredPlayers;
             } else {
                 console.log("new data");
@@ -988,6 +1013,8 @@ const activateServerListener = () => {
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam;
         
+        // If the game has been won by a player online, 
+        // then send states and finish the game locally.
         if(onlineGameState === 2 && statsSent === false){
             statsSent = true;
             model.savePlayerStats(localPlayerStats);
@@ -1047,7 +1074,7 @@ module.exports.playerId = 0;
 module.exports.uid = "";
 module.exports.fullName = "";
 
-module.exports.battleTypes = ["Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
+module.exports.battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
 module.exports.battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
 
 
@@ -1115,6 +1142,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     };
 
     model.addNewPlayer(player);  
+    console.log('g.playerId', g.playerId);
     g.playerId = newPlayerId;
 };
 
@@ -1587,6 +1615,7 @@ module.exports.deleteLobby = id => {
 
 
 let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
+
 
 const g = require("./game");
 const $ = require("jquery");

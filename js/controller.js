@@ -177,7 +177,21 @@ app.controller("myCtrl", ['$scope', function($scope) {
         model.deletePlayer({id});
     };
     
+
+    $scope.addDwarf = () => {
+        gameMaker.addPlayer(0, tiles, players.length);
+    };
+
+    $scope.addSquirrel = () => {
+        gameMaker.addPlayer(1, tiles, players.length);
+    };
+
     $scope.isFinished = gameEnd => typeof gameEnd !== "undefined" ? true : false;
+
+    $scope.isObjectEmpty = obj => {
+        return typeof obj === "undefined" || Object.keys(obj).length === 0;
+    };
+
 }]);
 
 const canMove = (direction, obj, delta) => {

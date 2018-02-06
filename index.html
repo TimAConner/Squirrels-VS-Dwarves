@@ -30,50 +30,64 @@
         </div>
         <div id="main-menu-screen" class="hide">
             <p id="signInText"></p>
-            <button id="add-player">Add New Dwarf</button>
-            <button id="add-player-2">Add New Squirrel</button>
-            <!-- <button id="main-menu-play">Continue</button> -->
-            <button id="main-menu-new">New Game</button>
-
+            
             <div id="player-lobby">
                 <div ng-app="myApp" ng-controller="myCtrl">
-                    <h3>Your Players</h3>
-                    <ul ng-repeat="x in ownedPlayers" >
-                        <li>
-                            <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
-                            <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
-                        </li>
-                    </ul>
-                    <h3>Other Players</h3>
-                    <ul ng-repeat="y in otherPlayers" >
-                        <li>
-                            <p>{{y.id}}</p>
-                        </li>
-                    </ul>
-                    <h3>Lobbies</h3>
-                    <ul ng-repeat="lobby in lobbyList" >
-                        <li ng-show="!isFinished(lobby.gameEnd)">
-                            <p>{{lobby.name}}</p>
-                            <button ng-click="selectGame(lobby.key)">Select</button>
-                            <button ng-click="deleteGame(lobby.key)">Delete</button>
-                        </li>
-                    </ul>
-                    <h3>Complete Games</h3>
-                    <ul ng-repeat="lobby in lobbyList" >
-                        <li ng-show="isFinished(lobby.gameEnd)">
-                            <p>{{lobby.name}}</p>
-                            <p>Game Length: {{lobby.gameTime}}</p>
-                            <p>Players:</p>
-                            <ol ng-repeat="player in lobby.players" >
-                                <li>
-                                    <p>Name: {{player.uid}}</p>
-                                    <p>Team: {{player.team ? "Dwarf" : "Squirrel"}}</p>
-                                    <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
-                                    <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
-                                </li>
-                            </ol>
-                        </li>
-                    </ul>
+                    <div>
+                        <button ng-click="addDwarf()">Add New Dwarf</button>
+                        <button ng-click="addSquirrel()">Add New Squirrel</button>
+                        <!-- <button id="main-menu-play">Continue</button> -->
+                        <button id="main-menu-new">New Game</button>
+                    </div>
+
+                    <div>
+                        <h3>Your Players</h3>
+                        <ul ng-repeat="x in ownedPlayers" >
+                            <li>
+                                <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
+                                <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Other Players</h3>
+                        <ul ng-repeat="y in otherPlayers" >
+                            <li>
+                                <p>{{y.id}}</p>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Lobbies</h3>
+                        <ul ng-repeat="lobby in lobbyList" >
+                            <li ng-show="!isFinished(lobby.gameEnd)">
+                                <p>{{lobby.name}}</p>
+                                <button ng-click="selectGame(lobby.key)">Select</button>
+                                <button ng-click="deleteGame(lobby.key)">Delete</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Complete Games</h3>
+                        <ul ng-repeat="lobby in lobbyList" >
+                            <li ng-show="isFinished(lobby.gameEnd)">
+                                <p>{{lobby.name}}</p>
+                                <p>Game Length: {{lobby.gameTime}}</p>
+                                <p>Players:</p>
+                                <ol ng-repeat="player in lobby.players" >
+                                    <li>
+                                        <p>Name: {{player.uid}}</p>
+                                        <p ng-show="player.deathTime !== 0">Died</p>
+                                        <p ng-show="player.deathTime === 0">Alive</p>
+                                        <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
+                                        <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
+                                        <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
+                                        <p>Life Time: {{player.lifeTime}}</p>
+                                    </li>
+                                </ol>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 
