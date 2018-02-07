@@ -163,7 +163,7 @@ let tiles = [];
 let gems = [];
 let games = [];
 
-let previousPlayerActions = [];
+let proccessedActions = [];
 let completedActions = [];
 
 let newPlayers = [];
@@ -560,10 +560,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
 
                         // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
 
-                    if(!previousPlayerActions.includes(newData[i].requestId)){
+                    if(!proccessedActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
-                            previousPlayerActions.push(newData[i].requestId);
+                            proccessedActions.push(newData[i].requestId);
                         }
                     }
                 }
@@ -577,12 +577,17 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
-                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
+                        if(!proccessedActions.includes(newData[i][valuesToCheck[j]].requestId)){
+                            console.log('newRequestId >= curRequestId', newRequestId, curRequestId, newRequestId >= curRequestId);
                             if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
-                                previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
+                                
+                                proccessedActions.push(newData[i][valuesToCheck[j]].requestId);
 
                                 currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
                                 
+                                //TODO: Fix issue where older peice of data is replacing newer data.
+                                // Is move being replaced by mine?  Didin't pick up a move.
+                                // Is move replacing mine?  Only a move of same timestamp, not a mine.
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
                         }   
@@ -591,7 +596,7 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
             }
         }
     }
-    
+    // console.log('proccessedActions', proccessedActions);
     newData.length = 0;
 };
 
@@ -689,18 +694,21 @@ const update = (delta) => { // new delta parameter
                         });
 
                     } else { // Else mine a block
-                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points > 0){ // -1 is mined, -2 is unbreakable
-                            tiles[tiles.indexOf(selectedTile)].hard.points -= g.mineStrength;
+                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points >= 0){ // -1 is mined, -2 is unbreakable
+                            selectedTile.hard.points -= g.mineStrength;
                             localPlayerStats.mined += g.mineStrength;
-                            addRequestId(tiles[tiles.indexOf(selectedTile)].hard, requestId);
+                            addRequestId(selectedTile.hard, `${requestId}mine`);
                             // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
 
                             countDataSent++;
-
-                            model.saveTileHard(tiles[tiles.indexOf(selectedTile)]).then(data => {
+                            model.saveTileHard(selectedTile).then(data => {
                                 countDataReturned ++;
                                 calcLag(parseRequestId(data.hard.requestId)[1]);
                             });
+                        } else {
+                            let {selectedTile: obj} = selectedTile; 
+                            console.log('out herer');
+                            console.log('selectedTile', obj);
                         }
                     }
                     
@@ -798,7 +806,7 @@ const update = (delta) => { // new delta parameter
 };
 
 const addRequestId = (object, requestId) => {
-    previousPlayerActions.push(requestId);
+    proccessedActions.push(requestId);
     object.requestId = requestId;
 };
 
@@ -823,7 +831,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
     options.player.pos[changeIn] += options.speedMultiplier * options.delta;
     options.player.pos.dir = direction;
 
-    addRequestId(options.player.pos, options.requestId);
+    addRequestId(options.player.pos, `${options.requestId}move`);
 
     countDataSent ++;
 
@@ -962,6 +970,11 @@ const activateButtons = () => {
     // Get and set gameId on model
 
    
+    /* 
+        If canvas is clicked on, find the tile being clicked, a
+        and return its object from the tile array
+        along with whether or not it is in the proccessedActions array.
+     */
     $("canvas").on("click", function(e){
     
         let rect = g.c.getBoundingClientRect();
@@ -973,6 +986,7 @@ const activateButtons = () => {
         });
     
         console.log(tile);
+        console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.hard.requestId) !== -1));
     });
 
 
