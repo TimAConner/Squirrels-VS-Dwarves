@@ -290,8 +290,12 @@ app.controller("myCtrl", ['$scope', function($scope) {
     });
 
     $scope.selectGame = id => {
-        model.setGameId(id);
+        initialTileDraw = true;
+        initialPlayerDraw = true;
+        initialGemDraw = true;
+        initialGameState = true;
         model.detachGameListeners(); // Detach previous game listeners
+        model.setGameId(id);
         model.listenToGame();// Listen to new game data
     };
 
@@ -307,21 +311,13 @@ app.controller("myCtrl", ['$scope', function($scope) {
     // TODO: Make sure that localPlayerStats are being sent to the database properly.
     $scope.selectPlayer = id => {
         g.playerId = id;      
-        
-        console.log('players', [...players]);
         let player = players.find(x => x.id === g.playerId);
-        console.log('players', players);
-
-        console.log('player', player);
-        
-        console.log('id', id);
-        if(player !== undefined){
+        if(typeof player !== "undefined"){
             localPlayerStats.uid = g.uid;
             localPlayerStats.id = g.playerId;
             localPlayerStats.spawnTime = Date.now();
             localPlayerStats.team = player.team;       
         }
-        console.log('localPlayerStats', localPlayerStats);
         startPlay();
     };
 
@@ -705,10 +701,6 @@ const update = (delta) => { // new delta parameter
                                 countDataReturned ++;
                                 calcLag(parseRequestId(data.hard.requestId)[1]);
                             });
-                        } else {
-                            let {selectedTile: obj} = selectedTile; 
-                            console.log('out herer');
-                            console.log('selectedTile', obj);
                         }
                     }
                     
