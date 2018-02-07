@@ -7,10 +7,12 @@
 
 let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 
+
 const g = require("./game");
 const $ = require("jquery");
 const _ = require("lodash");
-const angular = require("angular");
+const img = require("./imageController");
+const drawPlayerAnimation = require("./animationController");
 
 // Number of squares that can be seen around player
 let sightDistance = 3;
@@ -27,59 +29,28 @@ enemyGemColor = "yellow",
 edgeColor = "gray";
 
 
-let dwarfImage = new Image(); 
-dwarfImage.src = './img/dwarf.png'; 
-
-let squirrelImage = new Image(); 
-squirrelImage.src = './img/squirrel.png'; 
-
-let dirtImage = new Image();
-dirtImage.src = "./img/dirt.png";
-
-let stoneImage = new Image();
-stoneImage.src = "./img/stone.jpeg";
-
-let tilesToDraw = [];
-
-// Gems
-
-// https://opengameart.org/content/32x32-pixel-gems
-// Copyright/Attribution Notice: 
-// Credit:Jianhui999 https://www.patreon.com/GamePixelArt Credit: http://opengameart.org/users/jianhui999
-
-let gemImage = new Image();
-gemImage.src = "./img/gems.png";
-
-let acornImage = new Image();
-acornImage.src = "./img/acorn.png";
-
-// Angular
-
-let players = ['two'];
-
-module.exports.setPlayers = (x) => {
-    players = x;
+let DwarfAnimation = {
+    frame: [1, 2],
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    h: 21
 };
 
-let app = angular.module("myApp", []);
 
-app.controller("myCtrl", ['$scope', function($scope) {
-    $("#game-canvas").on("serverUpdatePlayer", (e) => {
-        $scope.$apply(function(){
-            if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid == g.uid).map(x => e.detail.players[x]);
+// // Angular
 
-                let otherPlayers = Object.keys(e.detail.players).filter(x => e.detail.players[x].uid != g.uid).map(x => e.detail.players[x]);
-                $scope.ownedPlayers = ownedPlayers;
-                $scope.otherPlayers = otherPlayers;
-            } else {
-                $scope.otherPlayers = [];
-                $scope.ownedPlayers = [];
-            }
-            
-        });
-    });
-}]);
+// let players = ['two'];
+
+// module.exports.setPlayers = (x) => {
+//     players = x;
+// };
+
+
+// Cleared on each update.  Contains the tiles that should be drawn that frame.
+// TODO: Move inside function.
+let tilesToDraw = [];
 
 // Set by draw()
 let thisPlayer;
@@ -121,13 +92,14 @@ const drawTiles = (tiles, players) => {
     
     let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
 
+    // Draw tiles around team mates
     for(let i = 0; i < players.length; i++){
-        if(players[i].team === thisPlayer.team && players[i].health.points > 0){
+        if(players[i].team === thisPlayer.team && g.isPlayerAlive(players[i])){
             tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
         }
     }
 
-    if(playerTile !== undefined){
+    if(typeof playerTile !== "undefined"){
         tilesToDraw.push(playerTile);
     }
 
@@ -150,21 +122,56 @@ const drawTiles = (tiles, players) => {
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
-        if(typeof thisPlayer !== undefined){
+        if(typeof thisPlayer !== "undefined"){
             playerTile = findPlayerTile(thisPlayer);
         }
         
-        if(typeof playerTile !== undefined){
+        if(typeof playerTile !== "undefined"){
 
             // let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             // b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
             // distance = Math.sqrt(a*a + b*b);
 
             
-            if(doesTileExists(tiles[i], tilesToDraw) !== undefined){
-                if(tiles[i].hard.points > 0){
+            if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
+                let hardness = tiles[i].hard.points;
+                if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
-                    g.ctx.drawImage( stoneImage ,g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    if(hardness > 1.95){
+                        g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.7){
+                        g.ctx.drawImage(img('stoneBroke1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.5){
+                        g.ctx.drawImage(img('stoneBroke2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.3){
+                        g.ctx.drawImage(img('stoneBroke3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, 
+                        g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.1){
+                        g.ctx.drawImage(img('stoneBroke4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1){
+                        g.ctx.drawImage(img('stoneBroke5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.9){
+                        g.ctx.drawImage(img('stoneFrac1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.8){
+                        g.ctx.drawImage(img('stoneFrac2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    } else  if (hardness > 0.6){
+                        g.ctx.drawImage(img('stoneFrac3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.4){
+                        g.ctx.drawImage(img('stoneFrac4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.2){
+                        g.ctx.drawImage(img('stoneFrac5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    } else  if (hardness > 0.0){
+                        g.ctx.drawImage(img('stoneFrac6'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        
+                    }
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
@@ -174,13 +181,13 @@ const drawTiles = (tiles, players) => {
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
                         g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                         
                     }
                    
@@ -190,7 +197,7 @@ const drawTiles = (tiles, players) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage( dirtImage ,g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     
@@ -226,7 +233,8 @@ const canSeePlayer = (p1, p2, sightDistance) => {
 
     let a = (player1.pos.x+0.5) - (player2.pos.x+0.5),
     b = (player1.pos.y+0.5) - (player2.pos.y+0.5),
-    distance = Math.sqrt(a*a + b*b);
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
 
     return Math.abs(distance) <= sightDistance;
 };
@@ -240,7 +248,7 @@ const drawPlayers = (players, playerId, tiles) => {
       
         let playerTile = g.findTileBelowPlayer(players[i], tiles);
 
-        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && g.isPlayerAlive(players[i])){// jshint ignore:line
             // console.log("in here", players[i]);
             
 
@@ -257,11 +265,16 @@ const drawPlayers = (players, playerId, tiles) => {
         g.ctx.stroke();
 
         if(players[i].team === 1){
-            g.ctx.drawImage(squirrelImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            g.ctx.drawImage(img('squirrel'), players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            
-            g.ctx.drawImage(dwarfImage,players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            if(typeof players[i].pos.animDir !== "undefined") {
+                if(players[i].pos.animDir === "right"){
+                    drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
+                } else {
+                    drawPlayerAnimation('dwarfSpriteLeft', 'dwarfAnimationLeft', players[i].pos);
+                }
+            }
         }
             
         g.ctx.stroke();
@@ -281,17 +294,17 @@ const drawGems = (gems, players) => {
 
         if(gems[i].team === 1){
             if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(gemImage, 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         } else {
             if(gems[i].carrier === -1){
-                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(acornImage, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();
@@ -340,9 +353,9 @@ module.exports.viewMainMenu = () => {
     module.exports.drawSignIn();
 };
 
-module.exports.viewWinnerScreen =  (winnerId) => {
+module.exports.viewWinnerScreen =  winnerId => {
     showScreen("#victory-screen");
-    $("#winner").text(winnerId);
+    $("#winner").text(winnerId == 0 ? "Dwarfs" : "Squirrels");
 };  
 
 module.exports.viewGame = () => {
@@ -351,6 +364,10 @@ module.exports.viewGame = () => {
 
 module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
+};
+
+module.exports.printDataCount = (returned, sent) => {
+    $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
 };
 
 const showScreen = (screen) => {

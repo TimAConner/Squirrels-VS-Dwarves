@@ -15,41 +15,83 @@
         </div> -->
         <div id="game-screen" class="hide">
             <p id="lag">0</p>
+            <p id="dataCount">0</p>
             <p id="player-health"></p>
             <canvas id="game-canvas">
 
             </canvas>
         </div>
         <div id="victory-screen" class="hide">
-            <h1>Team <span id="winner"></span> wins!</h1>
+            <h1>The <span id="winner"></span> claim victory! <br/> Yet the feud is not over.</h1>
             <button id="back-to-main-menu">Main Menu</button>
         </div>
         <div id="sign-in-screen" class="hide">
-                <button id="signIn">Sign in With Google</button>
+                <button id="signIn">Sign In / Register</button>
         </div>
         <div id="main-menu-screen" class="hide">
             <p id="signInText"></p>
-            <button id="add-player">Add New Dwarf</button>
-            <button id="add-player-2">Add New Squirrel</button>
-            <!-- <button id="main-menu-play">Continue</button> -->
-            <button id="main-menu-new">New Game</button>
-
+            
             <div id="player-lobby">
                 <div ng-app="myApp" ng-controller="myCtrl">
-                    <h3>Your Players</h3>
-                    <ul ng-repeat="x in ownedPlayers" >
-                        <li>
-                            <button class="select" playerId={{x.id}}>Select Player {{x.id}}</button>
-                            <button  class="remove" playerId={{x.id}}>Delete Player {{x.id}}</button>
-                        </li>
-                    </ul>
-                    <h3>Other Players</h3>
-                    <ul ng-repeat="y in otherPlayers" >
-                        <li>
-                            <p>{{y.id}}</p>
-                        </li>
-                    </ul>
+                    <button id="main-menu-new">New Game</button>
+                    
+                    <div ng-show="isLobbySelected()">
+                        <button ng-click="addDwarf()">Add New Dwarf</button>
+                        <button ng-click="addSquirrel()">Add New Squirrel</button>
+                        <!-- <button id="main-menu-play">Continue</button> -->
+                    </div>
+
+                    <div ng-show="isLobbySelected()">
+                        <h3>Your Players</h3>
+                        <ul ng-repeat="x in ownedPlayers" >
+                            <li>
+                                <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
+                                <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div ng-show="isLobbySelected()">
+                        <h3>Other Players</h3>
+                        <ul ng-repeat="y in otherPlayers" >
+                            <li>
+                                <p>{{y.id}}</p>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Lobbies</h3>
+                        <ul ng-repeat="lobby in lobbyList" >
+                            <li ng-show="!isFinished(lobby.gameEnd)">
+                                <p>{{lobby.name}}</p>
+                                <button ng-click="selectGame(lobby.key)">Select</button>
+                                <button ng-click="deleteGame(lobby.key)">Delete</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Complete Games</h3>
+                        <ul ng-repeat="lobby in lobbyList" >
+                            <li ng-show="isFinished(lobby.gameEnd)">
+                                <p>{{lobby.name}} {{lobby.date}}</p>
+                                <p>Game Length: {{lobby.gameTime}}</p>
+                                <p>Players:</p>
+                                <ol ng-repeat="player in lobby.players" >
+                                    <li>
+                                        <p>Name: {{player.uid}}</p>
+                                        <p ng-show="player.deathTime !== 0">Dead</p>
+                                        <p ng-show="player.deathTime === 0">Alive</p>
+                                        <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
+                                        <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
+                                        <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
+                                        <p>Life Time: {{player.lifeTime}}</p>
+                                    </li>
+                                </ol>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
+
+                
             </div>
 
             

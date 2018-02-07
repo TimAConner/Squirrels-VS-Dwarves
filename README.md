@@ -4,13 +4,15 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 
 ## Version 3.0 Goals
 - [x] Health Bars
-- [ ] Can't move through allys
+- [ ] Can't move through allies
 - [x] Create player and join through Google
 - [ ] Block being destroyed animation
 - [ ] Player Animation?
-- [ ] Lobbys for multiple Games?
+- [ ] Lobbies for multiple Games?
 - [ ] Refactor to use auth.currentUser()
 - [ ] Implement logout
+- [ ] ? Health regen or..?
+- [ ] Only allow to play if sent data is near returned data.
 
 ## Version 2.0 Goals
 - [x] Restrict movement to map
@@ -30,6 +32,6 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [x] Mine through blocks
 - [x] Only see your team and team base
 - [x] See squares around you
-- [x] Can't pic up your own gem
+- [x] Can't pick up your own gem
 - [x] Move around with arrow keys
 - [x] Spacebar to mine through object

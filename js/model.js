@@ -4,8 +4,21 @@ let firebase = require('firebase');
 
 let c = document.getElementById('game-canvas');
 
-const $ = ("jquery");
+const $ = require("jquery");
 
+let baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
+
+let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
+
+let gameId = "";
+
+module.exports.setGameId = (id) => {
+    gameId = id;
+    url = `${baseUrl}/gameData/${gameId}`;
+};
+module.exports.getGameId = () => gameId;
+
+// Loads apiKey.  Resolves when complete.
 const loadAPI = () => {
     return new Promise(function (resolve, reject){
         let apiRequest = new XMLHttpRequest();
@@ -20,79 +33,137 @@ const loadAPI = () => {
     });
 };
 
-module.exports.fetchData = () => {
-    let config = {
-        apiKey: "",
-        authDomain: "squirrelsvsdwarves.firebaseapp.com",
-        databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
-        projectId: "squirrelsvsdwarves",
-        storageBucket: "squirrelsvsdwarves.appspot.com",
-        messagingSenderId: ""
-    };
+// Initiliaze firebase. Resolves when complete.
+module.exports.initFirebase = () => {
+    return new Promise(function (resolve, reject){
+        let config = {
+            apiKey: "",
+            authDomain: "squirrelsvsdwarves.firebaseapp.com",
+            databaseURL: "https://squirrelsvsdwarves.firebaseio.com",
+            projectId: "squirrelsvsdwarves",
+            storageBucket: "squirrelsvsdwarves.appspot.com",
+            messagingSenderId: ""
+        };
 
-    loadAPI().then(data => {
-        config.apiKey = data.apiKey;
-        config.messagingSenderId = data.messagingSenderId;
-        firebase.initializeApp(config);
-        
-        
-  
-      //   module.exports.getTiles("https://squirrelsvsdwarves.firebaseio.com/tiles.json").then((data) => {
-      //       return convertObjectsToArray(data);
-      //   });
-  
-  
-
-      // Listening is not the issue.  It is how quicklyi an xhr request is sent.
-
-      
-      // Try listening to only one of them.  One listens to tiles one listens to other.
-        firebase.database().ref("gameState").on('value', function(snapshot) {
-            //   console.log("-------Gem Update");
-            let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
+        loadAPI().then(data => {
+            config.apiKey = data.apiKey;
+            config.messagingSenderId = data.messagingSenderId;
+            firebase.initializeApp(config);
+            resolve();
         });
-        firebase.database().ref("tiles").on('value', function(snapshot) {
-          //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref("players").on('value', function(snapshot) {
-            let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-        firebase.database().ref("gems").on('value', function(snapshot) {
-        //   console.log("Update");
-            let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
-            c.dispatchEvent(serverUpdate);
-        });
-
-
     });
+};
 
 
+/*
+Listen to games table for all games.
+Thiis will create an event that bubble up from the game canvas when data changes or on first load.
+Runs once by default.
+*/
+module.exports.listenToLobbys = () => {
+    firebase.database().ref(`games`).on('value', function(snapshot) {
+        let serverUpdate = new CustomEvent("serverUpdateGames", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+};
+
+// Detaches Firebase listeners that are listening to gameData/gameId
+module.exports.detachGameListeners = () => {
+    firebase.database().ref(`gameData/${gameId}`).off();
+};
+
+/* 
+Start the listener on gameState, tiles, players, and gems that are on server nested inside games.
+They will create events that bubble up from the game canvas when data changes or on first load.
+Runs once by default.
+*/
+module.exports.listenToGame = () => {
+    // Try listening to only one of them.  One listens to tiles one listens to other.
+    firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
+        //   console.log("-------Gem Update");
+        let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
+    //   console.log("Update");
+        let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/players`).on('value', function(snapshot) {
+        let serverUpdate = new CustomEvent("serverUpdatePlayer", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
+    firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
+    //   console.log("Update");
+        let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
+        c.dispatchEvent(serverUpdate);
+    });
 };
 
 module.exports.savePlayerPos = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            "pos": player.pos
+        $.ajax({
+            url:`${url}/players/${player.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "pos": player.pos
+            }),
+        })
+        .done(data => resolve(data));
+    });
+};
+
+module.exports.savePlayerStats = playerStats => {
+    console.log('playerStats', playerStats);
+    $.ajax({
+        url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
+        type: 'PUT',
+        dataType: 'json',
+        data: JSON.stringify(playerStats),
+    });
+};
+
+// Adds a blank game with a start date to games and returns its key.
+module.exports.addGame = (startTime, name) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/.json`,
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({
+                "gameStart": startTime,
+                "name": name
+            }),
+        })
+        .done(gameKey => resolve(gameKey.name));
+    });
+};
+
+module.exports.finishGame = endTime => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/${gameId}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "gameEnd": endTime,
+            }),
         });
-        let JSONRequest = new XMLHttpRequest();
-        // console.log("save player");
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
-        JSONRequest.send(jsonString);
     });
 };
 
 module.exports.savePlayerHealth = (player) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            "health": player.health
-        });
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/players/${player.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                "health": player.health
+            }),
+        })
+        .done(data => resolve(data));
     });
 };
 
@@ -100,19 +171,22 @@ module.exports.savePlayerHealth = (player) => {
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `https://squirrelsvsdwarves.firebaseio.com/players/players/${player.id}.json`);
+        JSONRequest.open("DELETE", `${url}/players/${player.id}.json`);
         JSONRequest.send();
     });
 };
 
 module.exports.saveTileHard = (tile) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify({
-            hard: tile.hard
-        });
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles/${+tile.id}/.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/tiles/${+tile.id}/.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify({
+                hard: tile.hard
+            })
+        })
+        .done(data => resolve(data));
     });
 };
 
@@ -120,43 +194,78 @@ module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
         let jsonString = JSON.stringify(tiles);
         let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
+        JSONRequest.open("PUT", `${url}/tiles.json`);
         JSONRequest.send(jsonString);
     });
 };
 
 module.exports.saveGem = (gem) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(gem);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PATCH", `https://squirrelsvsdwarves.firebaseio.com/gems/gems/${+gem.id}.json`);
-        JSONRequest.send(jsonString);
-        resolve();
+        $.ajax({
+            url:`${url}/gems/${+gem.id}.json`,
+            type: 'PATCH',
+            dataType: 'json',
+            data: JSON.stringify(gem)
+        })
+        .done(data => resolve(data));
     });
 };
 
+
+
 module.exports.saveGameState = (state) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(state);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/gameState.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/gameState.json`,
+            type: 'PUT',
+            dataType: 'json',   
+            data: JSON.stringify(state),
+        }).done(data => resolve(data));
     });
 };
 
 module.exports.addNewPlayer = (player) => {
     let jsonString = JSON.stringify(player);
     let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `https://squirrelsvsdwarves.firebaseio.com/players/players/.json`);
+    JSONRequest.open("POST", `${url}/players/.json`);
     JSONRequest.send(jsonString);
 };
 
 
-module.exports.saveNewMap = (data) => {
-    let jsonString = JSON.stringify(data);
-    let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("PUT", `https://squirrelsvsdwarves.firebaseio.com/tiles/tiles.json`);
-    JSONRequest.send(jsonString);
+module.exports.saveNewMap = (tiles) => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/tiles.json`,
+            type: 'PUT',
+            dataType: 'json',
+            data: JSON.stringify(tiles)
+        })
+        .done(data => resolve(data));
+    });
+};
+
+// TODO: Figure out how to remove map data all togethor.
+// Map is being deleted, but the game state is being sent after the map is deleted.
+module.exports.deleteCurrentMap = () => module.exports.deleteMap(gameId);
+
+module.exports.deleteMap = id => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/gameData/${id}.json`,
+            type: 'DELETE'
+        })
+        .done(data => resolve(data));
+    });
+};
+
+module.exports.deleteLobby = id => {
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${baseUrl}/games/${id}.json`,
+            type: 'DELETE'
+        })
+        .done(data => resolve(data));
+    });
 };
 
 // module.exports.getTiles = (url) => {
