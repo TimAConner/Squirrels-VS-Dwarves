@@ -40,7 +40,7 @@ let tiles = [];
 let gems = [];
 let games = [];
 
-let previousPlayerActions = [];
+let proccessedPlayerActions = [];
 let completedActions = [];
 
 let newPlayers = [];
@@ -437,10 +437,10 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
 
                         // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
 
-                    if(!previousPlayerActions.includes(newData[i].requestId)){
+                    if(!proccessedPlayerActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
                             currentData[i] = Object.assign({}, newData[i]);
-                            previousPlayerActions.push(newData[i].requestId);
+                            proccessedPlayerActions.push(newData[i].requestId);
                         }
                     }
                 }
@@ -454,9 +454,9 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
-                        if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
+                        if(!proccessedPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
                             if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
-                                previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
+                                proccessedPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
 
                                 currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
                                 
@@ -468,7 +468,8 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
             }
         }
     }
-    
+    console.log('proccessedPlayerActions', proccessedPlayerActions);
+
     newData.length = 0;
 };
 
@@ -675,7 +676,7 @@ const update = (delta) => { // new delta parameter
 };
 
 const addRequestId = (object, requestId) => {
-    previousPlayerActions.push(requestId);
+    proccessedPlayerActions.push(requestId);
     object.requestId = requestId;
 };
 
