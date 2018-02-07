@@ -20,11 +20,14 @@ let currentTime = 0;
 // Array of total animations
 let animations = [];
 
+// TODO: Refactor addAnimation using object . keys so you don't have to hardcode the destructoring.
 const addAnimation = (name, animation) => {
-    let {frames, curFrame, lastFrame, interval, w, h} = animation;
+    let {frames, curFrame, lastFrame, interval, w, h, defaultFrame, xOffset} = animation;
     let animationObject = {
         name,
         frames,
+        xOffset,
+        defaultFrame,
         curFrame,
         lastFrame, 
         interval,
@@ -43,29 +46,38 @@ const findAnimation = name => {
 addAnimation('dwarfAnimation', 
     {
         frames: [1, 2],
+        defaultFrame : 0,
         curFrame: 0,
         lastFrame: 0,
         interval: 250,
-        w: 21,
+        w: 22,
+        xOffset: 0,
         h: 21
     }
 );
 
 addAnimation('dwarfAnimationLeft', 
     {
-        frames: [1, 2],
+        frames: [0, 1],
+        defaultFrame : 2,
         curFrame: 0,
         lastFrame: 0,
         interval: 250,
         w: 21,
+        xOffset: 0,
         h: 21
     }
 );
 
 // Calculates location in the spritesheet of the current frame.
-const calcFrame = ({frames, curFrame, w}) => {
+const calcFrame = ({frames, curFrame, w, xOffset}) => {
     let frameIndex = frames[curFrame%frames.length];
-    return (frameIndex * w);
+    return ((frameIndex * w) + xOffset);
+};
+
+// Calculates the positoin of the default frame.
+const calcDefaultFrame = ({w, defaultFrame, xOffset}) => {
+    return ((defaultFrame * w) + xOffset);
 };
 
 // Returns true if enough time has passed between current and last frame.
@@ -86,9 +98,17 @@ const selectNextFrame = (animation) => {
 // Draws player animation on the canvas then calls updateAnimation to get a new frame.
 // Animations run along x axis, so the animations must be in a horizontal strip.
 const drawPlayerAnimation = (imgName, animationName, position) => {
-    let animation = findAnimation(animationName);
-    g.ctx.drawImage(img(imgName), calcFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
-    if(shouldIncrementFrame(animation)) selectNextFrame(animation);
+    // console.log('position', position);
+    if(!position.isMoving){
+        let animation = findAnimation(animationName);
+        // console.log('animation', animation);
+        g.ctx.drawImage(img(imgName), calcDefaultFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
+        // console.log('default animation');
+    } else {
+        let animation = findAnimation(animationName);
+        g.ctx.drawImage(img(imgName), calcFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
+        if(shouldIncrementFrame(animation)) selectNextFrame(animation);
+    }
 };
 
 /*

@@ -21,11 +21,14 @@ let currentTime = 0;
 // Array of total animations
 let animations = [];
 
+// TODO: Refactor addAnimation using object . keys so you don't have to hardcode the destructoring.
 const addAnimation = (name, animation) => {
-    let {frames, curFrame, lastFrame, interval, w, h} = animation;
+    let {frames, curFrame, lastFrame, interval, w, h, defaultFrame, xOffset} = animation;
     let animationObject = {
         name,
         frames,
+        xOffset,
+        defaultFrame,
         curFrame,
         lastFrame, 
         interval,
@@ -44,18 +47,38 @@ const findAnimation = name => {
 addAnimation('dwarfAnimation', 
     {
         frames: [1, 2],
+        defaultFrame : 0,
+        curFrame: 0,
+        lastFrame: 0,
+        interval: 250,
+        w: 22,
+        xOffset: 0,
+        h: 21
+    }
+);
+
+addAnimation('dwarfAnimationLeft', 
+    {
+        frames: [0, 1],
+        defaultFrame : 2,
         curFrame: 0,
         lastFrame: 0,
         interval: 250,
         w: 21,
+        xOffset: 0,
         h: 21
     }
 );
 
 // Calculates location in the spritesheet of the current frame.
-const calcFrame = ({frames, curFrame, w}) => {
+const calcFrame = ({frames, curFrame, w, xOffset}) => {
     let frameIndex = frames[curFrame%frames.length];
-    return (frameIndex * w);
+    return ((frameIndex * w) + xOffset);
+};
+
+// Calculates the positoin of the default frame.
+const calcDefaultFrame = ({w, defaultFrame, xOffset}) => {
+    return ((defaultFrame * w) + xOffset);
 };
 
 // Returns true if enough time has passed between current and last frame.
@@ -76,9 +99,17 @@ const selectNextFrame = (animation) => {
 // Draws player animation on the canvas then calls updateAnimation to get a new frame.
 // Animations run along x axis, so the animations must be in a horizontal strip.
 const drawPlayerAnimation = (imgName, animationName, position) => {
-    let animation = findAnimation(animationName);
-    g.ctx.drawImage(img(imgName), calcFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
-    if(shouldIncrementFrame(animation)) selectNextFrame(animation);
+    // console.log('position', position);
+    if(!position.isMoving){
+        let animation = findAnimation(animationName);
+        // console.log('animation', animation);
+        g.ctx.drawImage(img(imgName), calcDefaultFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
+        // console.log('default animation');
+    } else {
+        let animation = findAnimation(animationName);
+        g.ctx.drawImage(img(imgName), calcFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
+        if(shouldIncrementFrame(animation)) selectNextFrame(animation);
+    }
 };
 
 /*
@@ -174,6 +205,8 @@ let initialPlayerDraw = true;
 let initialGemDraw = true;
 let initialGameState = true;
 
+let proccessDataThisFrame = false;
+
 
 
 let timestep = 1000 / 60,
@@ -189,8 +222,8 @@ let app = angular.module("myApp", []);
 
 app.controller("myCtrl", ['$scope', function($scope) {
 
-    
-    let convertMiliseconds = (millis) => {
+
+    let convertMiliToHMS = millis => {
         let hours = Math.floor(millis / 3600000);
         let minutes = Math.floor(millis / 60000)%60;
         let seconds = ((millis % 60000) / 1000).toFixed(0);
@@ -198,52 +231,61 @@ app.controller("myCtrl", ['$scope', function($scope) {
        // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
     };
 
+    let convertMiliToDate = millis => {
+        let date = new Date(millis);
+        return `${date.getMonth()+1}/${date.getDate()+1}/${date.getFullYear()}`;
+    };
+
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
-        $scope.$apply(function(){
-            if(e.detail !== null){
-                let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
-                let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
-                $scope.ownedPlayers = ownedPlayers;
-                $scope.otherPlayers = otherPlayers;
-            } else {
-                $scope.otherPlayers = [];
-                $scope.ownedPlayers = [];
-            }
-            
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(e.detail !== null){
+                    let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
+                    let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
+                    $scope.ownedPlayers = ownedPlayers;
+                    $scope.otherPlayers = otherPlayers;
+                } else {
+                    $scope.otherPlayers = [];
+                    $scope.ownedPlayers = [];
+                }
+                
+            });
         });
     });
     $("#game-canvas").on("serverUpdateGames", (e) => {
-
         // Force Angular to digest new lobbies to update the html
-        $scope.$apply(function(){
-            if(e.detail !== null){
-                
-                // Add firebase key to lobbys
-                let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
-                    e.detail[lobbyKey].key = lobbyKey;
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(e.detail !== null){
+                    
+                    // Add firebase key to lobbys
+                    let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
+                        e.detail[lobbyKey].key = lobbyKey;
 
-                    //Add game time to lobby information
-                    if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
-                        e.detail[lobbyKey].gameTime = convertMiliseconds(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
-                    }
+                        //Add game time to lobby information
+                        if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
+                            e.detail[lobbyKey].gameTime = convertMiliToHMS(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
+                        }
 
-                    // For each player, add a life time.
-                    if(typeof e.detail[lobbyKey].players !== "undefined") {
-                        Object.values(e.detail[lobbyKey].players).forEach(player => {
-                            console.log('player.spawnTime', player.spawnTime);
-                            console.log('e.detail[lobbyKey].gameStart', e.detail[lobbyKey].gameStart);
-                            console.log("lifeTime", player.spawnTime, e.detail[lobbyKey].gameStart);
-                            player.lifeTime = convertMiliseconds(player.spawnTime - e.detail[lobbyKey].gameStart);
-                        });
-                    }
+                        // Add game date
+                        e.detail[lobbyKey].date = convertMiliToDate(e.detail[lobbyKey].gameStart);
 
-                    return e.detail[lobbyKey];
-                });
-                
+                        // For each player, add a life time.
+                        if(typeof e.detail[lobbyKey].players !== "undefined") {
+                            Object.values(e.detail[lobbyKey].players).forEach(player => {
+                                // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
+                                player.lifeTime = player.deathTime === 0 ? convertMiliToHMS(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliToHMS(player.deathTime - player.spawnTime);
+                            });
+                        }
 
-                // Reverse order of lobbies to have newer first.
-                $scope.lobbyList = _.reverse(lobbyDetails);
-            }
+                        return e.detail[lobbyKey];
+                    });
+                    
+
+                    // Reverse order of lobbies to have newer first.
+                    $scope.lobbyList = _.reverse(lobbyDetails);
+                }
+            });
         });
     });
 
@@ -287,7 +329,8 @@ app.controller("myCtrl", ['$scope', function($scope) {
         model.deletePlayer({id});
     };
     
-
+    $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
+    
     $scope.addDwarf = () => {
         gameMaker.addPlayer(0, tiles, players.length);
     };
@@ -359,8 +402,6 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-
-
 const findTileInDirection = (player) => {
 
     // let tile = tiles.find(x => {
@@ -407,7 +448,6 @@ const isKeyOn = (prop) => {
     }
 };
 
-
 // Takes two pos and deals with distance.
 const calcDistance = (posA,  posB) => {
     
@@ -419,8 +459,6 @@ const calcDistance = (posA,  posB) => {
 
     return Math.abs(distance); 
 };
-
-
 
 const findCloseGem = (player) => {
     let gem = gems.find((gem) => {
@@ -474,6 +512,8 @@ const initiateGameState = () => {
     model.saveGameState(winningObject);
     
 };
+
+// TODO: Fix proccess new data only when new data is sents
 
 const parseRequestId = (requestId) => {
     let values = requestId.match("(.*)-(-.*)");
@@ -531,17 +571,18 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 for(let j = 0; j < valuesToCheck.length; j++){
 
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
+
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
-                
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
                             if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
                                 previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
-                                
+
                                 currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
+                                
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
                         }   
@@ -552,30 +593,30 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
     }
     
     newData.length = 0;
-    
-
-    // console.log('a newData', newData);
-    // console.log('a currentData', currentData);
 };
 
-// const updateGemPosition = () => {   
-//     gems = gems.map(gem => {
-//         if(gem.carrier !== -1){
-//             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
-//             gem.pos.x = carrier.pos.x+(gem.size.w/4);
-//             gem.pos.y = carrier.pos.y+(gem.size.h/4);
-//         }
-//         return gem;
-//     });gems[gems.indexOf(carriedGem)]
-// };
+const calcCurRequestId = () => `${Date.now()}-${g.playerId}`;
 
+const dropGem = gem => {
+    gem.carrier = -1;
+    addRequestId(gem, calcCurRequestId());
+    model.saveGem(gem);
+};
 
 const updateGemPosition = () => {
     for(let i = 0; i < gems.length; i++){
         if(gems[i].carrier !== -1){
             let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-            gems[i].pos.x = carrier.pos.x;
-            gems[i].pos.y = carrier.pos.y;
+            console.log('carrier.health.points', carrier.health.points);
+            if(g.isPlayerAlive(carrier)){
+                gems[i].pos.x = carrier.pos.x;
+                gems[i].pos.y = carrier.pos.y;
+            } else {
+                console.log('drop gem');
+                gems[i].pos.x = carrier.pos.x;
+                gems[i].pos.y = carrier.pos.y;
+                dropGem(gems[i]);
+            }
         }
     }
 };
@@ -597,13 +638,13 @@ const update = (delta) => { // new delta parameter
 
         let player = players.find(x => x.id == g.playerId);
         // TODO: Fix issue that when you die the game stops keeping up.
-        if(player.health <= 0 && localPlayerStats.deathTime === 0){
+        if(!g.isPlayerAlive(player) && localPlayerStats.deathTime === 0){
             localPlayerStats.deathTime = Date.now();
         }
         
-        if(typeof player !== "undefined" && player.health.points > 0){
+        if(typeof player !== "undefined" && g.isPlayerAlive(player)){
 
-            let requestId = `${Date.now()}-${g.playerId}`;
+            let requestId = calcCurRequestId();
 
             let playerUpdateObject = {
                 player: players[players.indexOf(player)],
@@ -633,7 +674,7 @@ const update = (delta) => { // new delta parameter
                     
                     // If there is a player in the direction within 1, then attack.
                     
-                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && targetPlayer.health.points > 0){
+                    if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && g.isPlayerAlive(targetPlayer)){
                         targetPlayer.health.points -= g.attackStrength;
 
                         localPlayerStats.damageDelt += g.attackStrength;
@@ -719,6 +760,7 @@ const update = (delta) => { // new delta parameter
                 }      
             } 
             
+            // Check if can move, if can't, still update position.
             if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowUp") && player.pos.dir !== "up"){
@@ -744,6 +786,12 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("ArrowRight") && player.pos.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
+            } else {// If nothing is being pressed, tell the server that the player is not moving and use the animation direction as the direction to set the player.
+                if(typeof playerUpdateObject.player.pos.isMoving === "undefined" || playerUpdateObject.player.pos.isMoving){
+                    playerUpdateObject.player.pos.isMoving = false;
+                    playerUpdateObject.speedMultiplier = 0;
+                    updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
+                }
             }
         }
     }
@@ -755,6 +803,19 @@ const addRequestId = (object, requestId) => {
 };
 
 const updatePlayerState = (direction,  changeIn, options) => {
+
+    if(options.speedMultiplier !== 0){
+        options.player.pos.isMoving = true;
+    } else {
+        options.player.pos.isMoving = false;
+    }
+
+    if(direction === "left"){
+        options.player.pos.animDir = "left";
+    } else if(direction === "right"){
+        options.player.pos.animDir = "right";
+    }
+
     if(direction === "up" || direction === "left"){
         options.speedMultiplier = -options.speedMultiplier;
     }
@@ -772,7 +833,6 @@ const updatePlayerState = (direction,  changeIn, options) => {
         calcLag(parseRequestId(data.pos.requestId)[1]);
     });
 };
-
 
 
 
@@ -804,9 +864,12 @@ const mainLoop = (timestamp) => {
             //     }
             //     lag = 0;
             // } else {
-                proccessNewData(players, newPlayers, ["health", "pos"]);
-                proccessNewData(tiles, newTiles, ["hard"]);
-                proccessNewData(gems, newGems);
+                if(proccessDataThisFrame){
+                    proccessNewData(players, newPlayers, ["health", "pos"]);
+                    proccessNewData(tiles, newTiles, ["hard"]);
+                    proccessNewData(gems, newGems);
+                    proccessDataThisFrame = false;
+                }
             // }
             // if(countDataSent - countDataReturned < 50){
                 update(timestep);
@@ -949,11 +1012,13 @@ const activateServerListener = () => {
             console.log("new data");
             newGems = filteredGems;
         }        
+        proccessDataThisFrame = true;
     });
 
     g.c.addEventListener("serverUpdateGames", (e) => {
         games = e.detail;
         initialLobbyLoad = false;
+        proccessDataThisFrame = true;
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
@@ -979,6 +1044,7 @@ const activateServerListener = () => {
         
 
         initialPlayerDraw = false;
+        proccessDataThisFrame = true;
 
         // Update list of players
         
@@ -1003,6 +1069,8 @@ const activateServerListener = () => {
             newTiles = filteredTiles;
         }
 
+        proccessDataThisFrame = true;
+
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
@@ -1020,7 +1088,7 @@ const activateServerListener = () => {
             model.savePlayerStats(localPlayerStats);
             model.finishGame(Date.now());
         }
-        
+        proccessDataThisFrame = true;
     });
 
 };
@@ -1078,6 +1146,10 @@ module.exports.battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmis
 module.exports.battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
 
 
+module.exports.isPlayerAlive = ({health: {points: health}}) => {
+    return health > 0 ? true : false;
+};
+
 
 // Returns tile position based on their x and y and tilesize
 module.exports.calcTilePos = (tile) => {
@@ -1132,7 +1204,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "y": spawnPoint.pos.y*g.tileSize,
             "z": 0,
             "requestId": "0--0",
-            "dir": "up"
+            "dir": "up",
+            "animDir": "right"
         },
         "health": {
             "points": 100,
@@ -1160,6 +1233,7 @@ module.exports.newGame = () => {
                     "y": teamBaseZero.pos.y*g.tileSize
                 },
                 "carrier": -1,
+                "requestId": "0--0",
                 "team": 0,
                 "type": "gem",
                 "id": 0
@@ -1170,6 +1244,7 @@ module.exports.newGame = () => {
                     "y": teamBaseOne.pos.y*g.tileSize
                 },
                 "carrier": -1,
+                "requestId": "0--0",
                 "team": 1,
                 "type": "gem",
                 "id": 1
@@ -1223,13 +1298,19 @@ const findImage = (name) => {
     return image;
 };
 
-addImage('dwarfSprite', './img/dwarfAnimation.png');
+addImage('dwarfSprite', './img/dwarf22Width.png');
+addImage('dwarfSpriteLeft', './img/dwarf22WidthLeft.png');
 addImage('dwarf', './img/dwarf.png');
 addImage('squirrel', './img/squirrel.png');
-addImage('dirt', "./img/dirt.png");
+addImage('dirt', "./img/small.png");
 addImage('stone', "./img/stone.jpeg");
-
-addImage('stoneFrac1', "./img/stoneFrac1.jpg");
+ 
+addImage('stoneBroke1', "./img/stoneBroke1.jpg");
+addImage('stoneBroke2', "./img/stoneBroke2.jpg");
+addImage('stoneBroke3', "./img/stoneBroke3.jpg");
+addImage('stoneBroke4', "./img/stoneBroke4.jpg");
+addImage('stoneBroke5', "./img/stoneBroke5.jpg");
+addImage('stoneFrac1', "./img/stoneBroke6.jpg");
 addImage('stoneFrac2', "./img/stoneFrac3.jpg");
 addImage('stoneFrac3', "./img/stoneFrac5.jpg");
 addImage('stoneFrac4', "./img/stoneFrac7.jpg");
@@ -1283,12 +1364,56 @@ controller.startGame();
   "use strict";
 
   const g = require("./game");
+  const _ = require("lodash");
+
+  let freqTable = [
+        {
+            'count': 0.2,
+            'value': 2
+        },
+        {
+            'count': 0.1,
+            'value': 0.75
+        },
+        {
+            'count': 0.1,
+            'value': 0
+        },
+        {
+            'count': 0.4,
+            'value': 1
+        },
+        {
+            'count': 0.2,
+            'value': 0.5
+        }
+    ];
+
+    let curFreqCount = {};
+
+
+  let generateTile = totalTiles => {
+      // Generate a random index in the frequency table
+    let randFreqIndex = freqTable[Math.floor(Math.random() * freqTable.length)];
+
+    // Add values used to list of numbers used
+    curFreqCount[randFreqIndex.value] = (curFreqCount[randFreqIndex.value]+=1) || 1;
+
+    // Remove the value from the frequency table if it's frequent enogh in curFreqCount
+    if((curFreqCount[randFreqIndex.value] / totalTiles) >= randFreqIndex.count){
+       _.remove(freqTable, randFreqIndex);
+    }
+    
+    return randFreqIndex.value;
+  };
 
   module.exports.generateTiles = (w, h) => {
     let tiles = [];
         let id = 0;
         for(let x = 0; x < w; x++){
             for(let y = 0; y < h; y++){
+
+                // Set default to unbroken tile
                 let obj = {
                     "id": id,
                     "pos": {
@@ -1296,21 +1421,25 @@ controller.startGame();
                         "y": y
                     },
                     "hard": {
-                        "points": 1,
+                        "points": generateTile(w*h),
                         "requestId": "0--0"
                     }
                     
                 };
 
-                if(x === 0 || x === w-1 || y === 0 || y === h-1){ // Set grid around map.
+
+                // Set map bounds tiles
+                if(x === 0 || x === w-1 || y === 0 || y === h-1){ 
                     obj.hard.points = -2;
                 }
 
+                // Set dwarf base tiles
                 if(x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2){
                     obj.hard.points = 0;
                     obj.teamBase = 0;
                 }
     
+                // Set squirrel base tiles
                 if(x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2){
                     obj.hard.points = 0;
                     obj.teamBase = 1;
@@ -1324,7 +1453,7 @@ controller.startGame();
   };
 
  
-},{"./game":3}],9:[function(require,module,exports){
+},{"./game":3,"lodash":170}],9:[function(require,module,exports){
 "use strict";
 
 let firebase = require('firebase');
@@ -1571,6 +1700,8 @@ module.exports.saveNewMap = (tiles) => {
     });
 };
 
+// TODO: Figure out how to remove map data all togethor.
+// Map is being deleted, but the game state is being sent after the map is deleted.
 module.exports.deleteCurrentMap = () => module.exports.deleteMap(gameId);
 
 module.exports.deleteMap = id => {
@@ -1701,8 +1832,9 @@ const drawTiles = (tiles, players) => {
     
     let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
 
+    // Draw tiles around team mates
     for(let i = 0; i < players.length; i++){
-        if(players[i].team === thisPlayer.team && players[i].health.points > 0){
+        if(players[i].team === thisPlayer.team && g.isPlayerAlive(players[i])){
             tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
         }
     }
@@ -1745,8 +1877,24 @@ const drawTiles = (tiles, players) => {
                 let hardness = tiles[i].hard.points;
                 if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
-                    if(hardness > 0.95){
+                    if(hardness > 1.95){
                         g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.7){
+                        g.ctx.drawImage(img('stoneBroke1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.5){
+                        g.ctx.drawImage(img('stoneBroke2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.3){
+                        g.ctx.drawImage(img('stoneBroke3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, 
+                        g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1.1){
+                        g.ctx.drawImage(img('stoneBroke4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    }
+                    else if(hardness > 1){
+                        g.ctx.drawImage(img('stoneBroke5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.9){
                         g.ctx.drawImage(img('stoneFrac1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.8){
@@ -1840,7 +1988,7 @@ const drawPlayers = (players, playerId, tiles) => {
       
         let playerTile = g.findTileBelowPlayer(players[i], tiles);
 
-        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && players[i].health.points > 0){// jshint ignore:line
+        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && g.isPlayerAlive(players[i])){// jshint ignore:line
             // console.log("in here", players[i]);
             
 
@@ -1857,10 +2005,16 @@ const drawPlayers = (players, playerId, tiles) => {
         g.ctx.stroke();
 
         if(players[i].team === 1){
-            g.ctx.drawImage(img('squirrel'),players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            g.ctx.drawImage(img('squirrel'), players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
+            if(typeof players[i].pos.animDir !== "undefined") {
+                if(players[i].pos.animDir === "right"){
+                    drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
+                } else {
+                    drawPlayerAnimation('dwarfSpriteLeft', 'dwarfAnimationLeft', players[i].pos);
+                }
+            }
         }
             
         g.ctx.stroke();
@@ -1939,9 +2093,9 @@ module.exports.viewMainMenu = () => {
     module.exports.drawSignIn();
 };
 
-module.exports.viewWinnerScreen =  (winnerId) => {
+module.exports.viewWinnerScreen =  winnerId => {
     showScreen("#victory-screen");
-    $("#winner").text(winnerId);
+    $("#winner").text(winnerId == 0 ? "Dwarfs" : "Squirrels");
 };  
 
 module.exports.viewGame = () => {

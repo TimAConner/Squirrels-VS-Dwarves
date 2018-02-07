@@ -265,7 +265,7 @@ const drawPlayers = (players, playerId, tiles) => {
         g.ctx.stroke();
 
         if(players[i].team === 1){
-            g.ctx.drawImage(img('squirrel'),players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
+            g.ctx.drawImage(img('squirrel'), players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
             if(typeof players[i].pos.animDir !== "undefined") {

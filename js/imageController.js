@@ -30,8 +30,8 @@ const findImage = (name) => {
     return image;
 };
 
-addImage('dwarfSprite', './img/dwarfAnimation.png');
-addImage('dwarfSpriteLeft', './img/dwarfAnimationLeft.png');
+addImage('dwarfSprite', './img/dwarf22Width.png');
+addImage('dwarfSpriteLeft', './img/dwarf22WidthLeft.png');
 addImage('dwarf', './img/dwarf.png');
 addImage('squirrel', './img/squirrel.png');
 addImage('dirt', "./img/small.png");

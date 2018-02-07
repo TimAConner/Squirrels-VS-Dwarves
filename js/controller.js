@@ -448,17 +448,18 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                 for(let j = 0; j < valuesToCheck.length; j++){
 
                     if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
+
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
-                
 
                         if(!previousPlayerActions.includes(newData[i][valuesToCheck[j]].requestId)){
                             if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
                                 previousPlayerActions.push(newData[i][valuesToCheck[j]].requestId);
-                                
+
                                 currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
+                                
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
                         }   
@@ -469,10 +470,6 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
     }
     
     newData.length = 0;
-    
-
-    // console.log('a newData', newData);
-    // console.log('a currentData', currentData);
 };
 
 const calcCurRequestId = () => `${Date.now()}-${g.playerId}`;
@@ -640,6 +637,7 @@ const update = (delta) => { // new delta parameter
                 }      
             } 
             
+            // Check if can move, if can't, still update position.
             if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowUp") && player.pos.dir !== "up"){
@@ -665,6 +663,12 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("ArrowRight") && player.pos.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
+            } else {// If nothing is being pressed, tell the server that the player is not moving and use the animation direction as the direction to set the player.
+                if(typeof playerUpdateObject.player.pos.isMoving === "undefined" || playerUpdateObject.player.pos.isMoving){
+                    playerUpdateObject.player.pos.isMoving = false;
+                    playerUpdateObject.speedMultiplier = 0;
+                    updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
+                }
             }
         }
     }
@@ -676,6 +680,12 @@ const addRequestId = (object, requestId) => {
 };
 
 const updatePlayerState = (direction,  changeIn, options) => {
+
+    if(options.speedMultiplier !== 0){
+        options.player.pos.isMoving = true;
+    } else {
+        options.player.pos.isMoving = false;
+    }
 
     if(direction === "left"){
         options.player.pos.animDir = "left";
