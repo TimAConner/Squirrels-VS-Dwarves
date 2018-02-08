@@ -2101,7 +2101,7 @@ module.exports.viewMainMenu = () => {
 
 module.exports.viewWinnerScreen =  winnerId => {
     showScreen("#victory-screen");
-    $("#winner").text(winnerId == 0 ? "Dwarfs" : "Squirrels");
+    $("#winner").text(winnerId == 0 ? "Dwarves" : "Squirrels");
 };  
 
 module.exports.viewGame = () => {
