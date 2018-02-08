@@ -110,7 +110,7 @@ app.controller("myCtrl", ['$scope', function($scope) {
 
     let convertMiliToDate = millis => {
         let date = new Date(millis);
-        return `${date.getMonth()+1}/${date.getDate()+1}/${date.getFullYear()}`;
+        return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear()}`;
     };
 
     $("#game-canvas").on("serverUpdatePlayer", (e) => {
