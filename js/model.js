@@ -77,7 +77,7 @@ Start the listener on gameState, tiles, players, and gems that are on server nes
 They will create events that bubble up from the game canvas when data changes or on first load.
 Runs once by default.
 */
-module.exports.listenToGame = () => {
+module.exports.listenToCurGame = () => {
     // Try listening to only one of them.  One listens to tiles one listens to other.
     firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
         //   console.log("-------Gem Update");
@@ -125,7 +125,7 @@ module.exports.savePlayerStats = playerStats => {
 };
 
 // Adds a blank game with a start date to games and returns its key.
-module.exports.addGame = (startTime, name) => {
+module.exports.addLobby = (startTime, name) => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/.json`,

@@ -33,7 +33,7 @@
             
             <div id="player-lobby">
                 <div ng-app="myApp" ng-controller="myCtrl">
-                    <button id="main-menu-new">New Game</button>
+                    <button ng-click="addGame()">New Game</button>
                     
                     <div ng-show="isLobbySelected()">
                         <button ng-click="addDwarf()">Add New Dwarf</button>
@@ -73,7 +73,7 @@
                         <ul ng-repeat="lobby in lobbyList" >
                             <li ng-show="isFinished(lobby.gameEnd)">
                                 <p>{{lobby.name}} {{lobby.date}}</p>
-                                <p>Game Length: {{lobby.gameTime}}</p>
+                                <p>Game Length: {{lobby.gameLength}}</p>
                                 <p>Players:</p>
                                 <ol ng-repeat="player in lobby.players" >
                                     <li>

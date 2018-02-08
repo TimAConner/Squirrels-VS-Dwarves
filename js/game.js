@@ -13,6 +13,7 @@ module.exports.playerSize = 25;
 module.exports.attackDistance = 1;
 module.exports.attackStrength = 1;
 module.exports.mineStrength = 0.01;
+module.exports.gemPickupDistance = 15;
 
 module.exports.playerId = 0;
 module.exports.uid = "";
@@ -36,27 +37,23 @@ module.exports.calcTilePos = (tile) => {
     return {x, y, b, r};
 };
 
+// Takes two pos and deals with distance.
+module.exports.calcDistance = (posA,  posB) => {
+    let a = (posA.x) - (posB.x),
+    b = (posA.y) - (posB.y);
+
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    let distance = Math.abs(Math.sqrt(a**2 + b**2));// jshint ignore:line
+
+    return distance; 
+};
+
 module.exports.findTileBelowPlayer = (player, tiles) => {
-
-    let playerX = (player.pos.x+module.exports.playerSize/2),
-    playerY = (player.pos.y+module.exports.playerSize/2);    
-
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= module.exports.calcTilePos(a).x,
-        tileAY = module.exports.calcTilePos(a).y;
-        
-        let tileBX= module.exports.calcTilePos(b).x,
-        tileBY = module.exports.calcTilePos(b).y;
-
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
-
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+    // Sorts through and finds tile closest to player
+    let sortedTiles = tiles.slice().sort((a, b) =>{ 
+        let TileADistance = module.exports.calcDistance(player.pos, module.exports.calcTilePos(a));
+        let TileBDistance = module.exports.calcDistance(player.pos, module.exports.calcTilePos(b));
+        return TileADistance - TileBDistance;
     });
 
     return sortedTiles[0];

@@ -55,6 +55,9 @@ let tilesToDraw = [];
 // Set by draw()
 let thisPlayer;
 
+const isDefined = obj => typeof obj !== "undefined";
+
+
 const findPlayerTile = (player) => {
     let tileX = Math.round(player.pos.x / g.tileSize),
     tileY = Math.round(player.pos.y / g.tileSize);
@@ -99,7 +102,7 @@ const drawTiles = (tiles, players) => {
         }
     }
 
-    if(typeof playerTile !== "undefined"){
+    if(isDefined(playerTile)){
         tilesToDraw.push(playerTile);
     }
 
@@ -122,18 +125,18 @@ const drawTiles = (tiles, players) => {
     for(let i = 0; i < tiles.length; i++){
         let playerTile;
 
-        if(typeof thisPlayer !== "undefined"){
+        if(isDefined(thisPlayer)){
             playerTile = findPlayerTile(thisPlayer);
         }
         
-        if(typeof playerTile !== "undefined"){
+        if(isDefined(playerTile)){
 
             // let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
             // b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
             // distance = Math.sqrt(a*a + b*b);
 
             
-            if(typeof doesTileExists(tiles[i], tilesToDraw) !== "undefined"){
+            if(isDefined(doesTileExists(tiles[i], tilesToDraw))){
                 let hardness = tiles[i].hard.points;
                 if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
@@ -268,7 +271,7 @@ const drawPlayers = (players, playerId, tiles) => {
             g.ctx.drawImage(img('squirrel'), players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            if(typeof players[i].pos.animDir !== "undefined") {
+            if(isDefined(players[i].pos.animDir)) {
                 if(players[i].pos.animDir === "right"){
                     drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
                 } else {

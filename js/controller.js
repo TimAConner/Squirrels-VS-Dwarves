@@ -97,8 +97,9 @@ countDataSent = 0; // Count of data sent to  firebase.
 
 let app = angular.module("myApp", []);
 
-app.controller("myCtrl", ['$scope', function($scope) {
+const isDefined = obj => typeof obj !== "undefined";
 
+app.controller("myCtrl", ['$scope', function($scope) {
 
     let convertMiliToHMS = millis => {
         let hours = Math.floor(millis / 3600000);
@@ -113,51 +114,56 @@ app.controller("myCtrl", ['$scope', function($scope) {
         return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear()}`;
     };
 
-    $("#game-canvas").on("serverUpdatePlayer", (e) => {
+    const filterPlayers = (players, compareFunc) =>
+        Object.keys(players).filter(x => compareFunc(players[x].uid, g.uid)).map(x => players[x]);
+
+    $("#game-canvas").on("serverUpdatePlayer", ({detail: players}) => {
+        // Force Angular to digest new players to update the html
         _.defer(function(){ 
             $scope.$apply(function(){
-                if(e.detail !== null){
-                    let ownedPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid == g.uid).map(x => e.detail[x]);
-                    let otherPlayers = Object.keys(e.detail).filter(x => e.detail[x].uid != g.uid).map(x => e.detail[x]);
-                    $scope.ownedPlayers = ownedPlayers;
-                    $scope.otherPlayers = otherPlayers;
+                if(players !== null){
+                    $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
+                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner != thisPlayer);
                 } else {
                     $scope.otherPlayers = [];
                     $scope.ownedPlayers = [];
                 }
-                
             });
         });
     });
-    $("#game-canvas").on("serverUpdateGames", (e) => {
+
+    $("#game-canvas").on("serverUpdateGames", ({detail: lobbies}) => {
         // Force Angular to digest new lobbies to update the html
         _.defer(function(){ 
             $scope.$apply(function(){
-                if(e.detail !== null){
-                    
+                if(lobbies !== null){ 
                     // Add firebase key to lobbys
-                    let lobbyDetails = Object.keys(e.detail).map(lobbyKey => {
-                        e.detail[lobbyKey].key = lobbyKey;
+                    let lobbyDetails = Object.keys(lobbies).map(lobbyKey => {
 
-                        //Add game time to lobby information
-                        if(typeof e.detail[lobbyKey].gameEnd !== "undefined"){
-                            e.detail[lobbyKey].gameTime = convertMiliToHMS(+e.detail[lobbyKey].gameEnd - +e.detail[lobbyKey].gameStart);
+                        let lobby = lobbies[lobbyKey];
+                        lobby.key = lobbyKey;
+
+                        //Add game length to lobby information
+                        if(isDefined(lobby.gameEnd)){
+                            lobby.gameLength = convertMiliToHMS(+lobby.gameEnd - +lobby.gameStart);
                         }
 
                         // Add game date
-                        e.detail[lobbyKey].date = convertMiliToDate(e.detail[lobbyKey].gameStart);
+                        lobby.date = convertMiliToDate(lobby.gameStart);
 
                         // For each player, add a life time.
-                        if(typeof e.detail[lobbyKey].players !== "undefined") {
-                            Object.values(e.detail[lobbyKey].players).forEach(player => {
+                        if(isDefined(lobby.players)) {
+                            Object.values(lobby.players).forEach(player => {
                                 // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
-                                player.lifeTime = player.deathTime === 0 ? convertMiliToHMS(e.detail[lobbyKey].gameEnd - player.spawnTime) : convertMiliToHMS(player.deathTime - player.spawnTime);
+                                player.lifeTime = 
+                                    player.deathTime === 0 
+                                        ? convertMiliToHMS(lobby.gameEnd - player.spawnTime) 
+                                        : convertMiliToHMS(player.deathTime - player.spawnTime);
                             });
                         }
 
-                        return e.detail[lobbyKey];
+                        return lobby;
                     });
-                    
 
                     // Reverse order of lobbies to have newer first.
                     $scope.lobbyList = _.reverse(lobbyDetails);
@@ -167,18 +173,20 @@ app.controller("myCtrl", ['$scope', function($scope) {
     });
 
     $scope.selectGame = id => {
-        initialTileDraw = true;
-        initialPlayerDraw = true;
-        initialGemDraw = true;
-        initialGameState = true;
+        resetGameState();
         model.detachGameListeners(); // Detach previous game listeners
         model.setGameId(id);
-        model.listenToGame();// Listen to new game data
+        model.listenToCurGame();// Listen to new game data
     };
 
     $scope.deleteGame = id => {
         model.deleteLobby(id);
         model.deleteMap(id);
+        // If you are in the lobby that you are deleting, detach game listeners.
+        if(model.getGameId() === id){
+            model.detachGameListeners();
+            model.setGameId("");
+        }
     };
 
 
@@ -189,7 +197,7 @@ app.controller("myCtrl", ['$scope', function($scope) {
     $scope.selectPlayer = id => {
         g.playerId = id;      
         let player = players.find(x => x.id === g.playerId);
-        if(typeof player !== "undefined"){
+        if(isDefined(player)){
             localPlayerStats.uid = g.uid;
             localPlayerStats.id = g.playerId;
             localPlayerStats.spawnTime = Date.now();
@@ -212,10 +220,21 @@ app.controller("myCtrl", ['$scope', function($scope) {
         gameMaker.addPlayer(1, tiles, players.length);
     };
 
-    $scope.isFinished = gameEnd => typeof gameEnd !== "undefined" ? true : false;
+    $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
-    $scope.isObjectEmpty = obj => {
-        return typeof obj === "undefined" || Object.keys(obj).length === 0;
+    $scope.isObjectEmpty = obj => !isDefined(obj) || Object.keys(obj).length === 0;
+
+    // Add a lobby and map to the lobby and listen to that game once it is done.
+    $scope.addGame = () =>  {
+        model.addLobby(Date.now(), generateBattleName())
+        .then(gameId => {
+            resetGameState();
+            model.setGameId(gameId);
+            gameMaker.addGame()
+            .then(() => {
+                model.listenToCurGame();
+            });
+        });
     };
 
 }]);
@@ -275,175 +294,121 @@ const canMove = (direction, obj, delta) => {
     return true;
 };
 
-const findTileInDirection = (player) => {
+const findTileInPlayerDir = ({pos: playerPos, pos: {dir: playerDirection}}) => {
 
-    // let tile = tiles.find(x => {
-    //     let leftSide = (x.pos.x*x.size.w),
-    //     rightSide = (x.pos.x*x.size.w)+x.size.w;
-    
-    //     return player.x.pos > leftSide && player.x.pos < rightSide && 
-
-    // });
-
-    // console.log(tile.pos.x, " ", tile.pos.y);
-
-    let direction = player.pos.dir;
-
-    // Find tile based on middle of player.
-
-    let tileX = Math.floor((player.pos.x+g.playerSize/2) / g.tileSize),
-    tileY = Math.floor((player.pos.y+g.playerSize/2) / g.tileSize);
-
-    // console.log(tileX, tileY);
-    if(direction === "up"){
-        tileY -= 1;
-    } else if(direction === "down"){
-        tileY += 1;
-    } else if(direction === "left"){
-        tileX -= 1;
-    } else if(direction === "right"){
-        tileX += 1;
-    }
-
-    // console.log(tileX, tileY);
-    let tile = tiles.find(t => t.pos.x === tileX && t.pos.y === tileY);
-    // console.log(tile);
-
-
-    return tile;
-};
-
-const isKeyOn = (prop) => { 
-    if(keys[prop] === true){
-        return true;
-    } else {
-        return false;
-    }
-};
-
-// Takes two pos and deals with distance.
-const calcDistance = (posA,  posB) => {
-    
-    let a = (posA.x) - (posB.x),
-    b = (posA.y) - (posB.y);
-
-    // Line must be ignored, because JS Hint doesn't recognize ** operator.
-    let distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
-
-    return Math.abs(distance); 
-};
-
-const findCloseGem = (player) => {
-    let gem = gems.find((gem) => {
-
-        let a = (player.pos.x) - (gem.pos.x),
-        b = (player.pos.y) - (gem.pos.y),
-
-        // Line must be ignored, because JS Hint doesn't recognize ** operator.
-        distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
-        return Math.abs(distance) <= 15; // 10 Pixels
-    });
-
-    return gem;
-};
-
-const getGemOnTile = (tile) => {
-    let gem = gems.find((gem) => {
-        let tileXPosition = g.calcTilePos(tile).x,
-        tileYPosition = g.calcTilePos(tile).y;
-
-        let tileRightPoint = tileXPosition + g.tileSize,
-        tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + g.tileSize,
-        tileTopPoint = tileYPosition;        
-
-        // console.log(gem.team, tileLeftPoint, gem.pos.x, tileRightPoint, tileTopPoint, gem.pos.y, tileBottomPoint);
-        return gem.carrier === -1 && gem.pos.x >= tileLeftPoint && gem.pos.x <= tileRightPoint && gem.pos.y >= tileTopPoint && gem.pos.y <= tileBottomPoint;
-    });
-
-    // console.log('gem', gem);
-    return gem;
-};
-
-const setWinner = (teamId) => {
-    console.log("set winner");
-    let winningObject = {
-        gameState: 2,
-        winningTeam: teamId
+    // Calculate middle of tile that player is standing on to be used as point of reference
+    let playerTile = {
+        x: Math.floor((playerPos.x+g.playerSize/2) / g.tileSize),
+        y: Math.floor((playerPos.y+g.playerSize/2) / g.tileSize)
     };
-    model.saveGameState(winningObject);
+        
+    // Define offset associated with each directin the player may be facing
+    const directionOffsets = {
+        up: () => playerTile.y -= 1,
+        down: () => playerTile.y += 1,
+        left: () => playerTile.x -= 1,
+        right: () => playerTile.x += 1
+    };
+    // Select  the tile in the direction that the player is facaing.
+    directionOffsets[playerDirection]();
+
+    // Return where tile x and y match the calculated tile using player tile and direction offset
+    return tiles.find(({pos: {x, y}}) => x === playerTile.x && y === playerTile.y);
 };
 
+// Returns true if a key is being pressed down
+const isKeyOn = key => keys[key];
+
+
+const findClosestGem = player => gems.find(gem => g.calcDistance(player.pos, gem.pos) <= g.gemPickupDistance);
+
+// Returns true if one part of smaller is on or within the border of the larger
+const isPositionWithinBounds = (smaller, larger) => 
+    smaller.x >= larger.x 
+    && smaller.x <= larger.r 
+    && smaller.y >= larger.y 
+    && smaller.y <= larger.b;
+
+// Returns the gem touching or on a specific tile that is not picked up
+const getGemOnTile = tile => 
+    gems.find(gem => gem.carrier === -1 && isPositionWithinBounds(gem.pos, g.calcTilePos(tile)));
+
+// Sets game state to playing and no winner and tells controller that the game is loading
 const initiateGameState = () => {
     waitingForGame = true;
-    
-    let winningObject = {
+    model.saveGameState({
         gameState: 1,
         winningTeam: 0
-    };
-    
-    model.saveGameState(winningObject);
-    
+    });    
 };
 
-// TODO: Fix proccess new data only when new data is sents
-
-const parseRequestId = (requestId) => {
-    let values = requestId.match("(.*)-(-.*)");
-    return values;
+// Sets gamestate to winning
+const setWinnerGameState = teamId => { 
+    model.saveGameState({
+        gameState: 2,
+        winningTeam: teamId
+    });
 };
 
-const calcLag = (miliseconds) => {
-    if(+miliseconds !== 0){
-        lag = Date.now() - miliseconds;
-    }
+//Returns  an array of matches on the requesst id
+const parseRequestId = requestId => requestId.match("(.*)-(-.*)");
+
+// Calculates lag and sets lag variable that is used by view
+const calcLag = miliseconds => {
+    if(+miliseconds !== 0) lag = Date.now() - +miliseconds;
 };
 
-const proccessNewData = (currentData, newData, valuesToCheck) => {
-    if(newData !== null && typeof newData !== "undefined" && newData.length !== 0){
+// Merges currentData and newData where there are differences not caused by local player.
+const proccessData = (currentData, newData, valuesToCheck) => {
+    if(newData !== null && isDefined(newData) && newData.length !== 0){
 
         // Create an array of new and olds ids
-        let curIdList = currentData.map(data => data.id),
-        newIdList = newData.map(data => data.id);
+        let curIdList = currentData.map(({id}) => id),
+        newIdList = newData.map(({id}) => id);
 
+        // Add or remove values not present
         if(newIdList.length !== 0){
-            let addedValues =  _.difference(newIdList, curIdList),
-            deletedValues =  _.difference(curIdList, newIdList);
+            // Find differences between new and old data
+            let valuesToAdd =  _.difference(newIdList, curIdList),
+            valuesToDelete =  _.difference(curIdList, newIdList);
             
             // Remove values not present
-            for(let i = 0; i < deletedValues.length; i ++){
-                currentData.splice(curIdList.indexOf(deletedValues[i]), 1);
+            for(let i = 0; i < valuesToDelete.length; i ++){
+                _.remove(currentData, val => val === valuesToDelete[i]);
             }
 
             // Add values present
-            for(let i = 0; i < addedValues.length; i++){
-                currentData.push(newData.find(data => data.id === addedValues[i])); // jshint ignore:line
+            for(let i = 0; i < valuesToAdd.length; i++){
+                currentData.push(newData.find(({id}) => id === valuesToAdd[i])); // jshint ignore:line
             }
         }
 
         // Change existing values
         for(let i = 0; i < newData.length; i++){
 
-            if(typeof valuesToCheck === "undefined"){ // If no specific value should be proccessed, update the whole object
-                if(typeof newData[i].requestId !== "undefined" && newData[i].requestId !== currentData[i].requestId ){
+            // If no specific value should be proccessed, update the whole object
+            if(!isDefined(valuesToCheck)){ 
+                if(isDefined(newData[i].requestId) && newData[i].requestId !== currentData[i].requestId ){
                     let newRequestId = +parseRequestId(newData[i].requestId)[1];
                     let curRequestId = +parseRequestId(currentData[i].requestId)[1];
-                    // If the new values also have a newer timestamp
-                    if((newRequestId >= curRequestId)) calcLag(newRequestId);
+                    
+                    if(newRequestId >= curRequestId) calcLag(newRequestId);
 
-                        // If this is dealing withi local data, the local will always be newer than what is being pulled down.  The stuff being pulled down will only be newer if sent my someone else.                    // Some how subtract difference if own
-
+                    // If data has not been proccessed
                     if(!proccessedActions.includes(newData[i].requestId)){
                         if((newRequestId >= curRequestId)){ 
+                            // Copy the whole object into the current data
                             currentData[i] = Object.assign({}, newData[i]);
                             proccessedActions.push(newData[i].requestId);
                         }
                     }
                 }
-            } else { // If specific values should be proccesed, update only those values.
-                for(let j = 0; j < valuesToCheck.length; j++){
+            }
 
-                    if(typeof newData[i][valuesToCheck[j]] !== "undefined" && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId ){ 
+            // If specific values should be proccesed, update only those values. 
+            else { 
+                for(let j = 0; j < valuesToCheck.length; j++){
+                    if(isDefined(newData[i][valuesToCheck[j]]) && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId){ 
 
                         let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
                         let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
@@ -451,13 +416,11 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
                         if(!proccessedActions.includes(newData[i][valuesToCheck[j]].requestId)){
-                            console.log('newRequestId >= curRequestId', newRequestId, curRequestId, newRequestId >= curRequestId);
-                            if((newRequestId >= curRequestId)){ // If this game has not proccessed it and the value is not an old one
-                                
+                            // If this game has not proccessed it and the value is not an old one,
+                            // Copy the proccessed peice of data into the current data.
+                            if(newRequestId >= curRequestId){ 
                                 proccessedActions.push(newData[i][valuesToCheck[j]].requestId);
-
                                 currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
-                                
                                 //TODO: Fix issue where older peice of data is replacing newer data.
                                 // Is move being replaced by mine?  Didin't pick up a move.
                                 // Is move replacing mine?  Only a move of same timestamp, not a mine.
@@ -469,7 +432,8 @@ const proccessNewData = (currentData, newData, valuesToCheck) => {
             }
         }
     }
-    // console.log('proccessedActions', proccessedActions);
+    
+    // Delete new data because it has already been proccessed into the current data
     newData.length = 0;
 };
 
@@ -481,62 +445,53 @@ const dropGem = gem => {
     model.saveGem(gem);
 };
 
+// Updates the positoin of the gems if they are on a player
 const updateGemPosition = () => {
     for(let i = 0; i < gems.length; i++){
+        // If the gem is being carried
         if(gems[i].carrier !== -1){
+            // Update the positoin based on the player's position
+            // If the player is dead, drop the gem.
             let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-            console.log('carrier.health.points', carrier.health.points);
-            if(g.isPlayerAlive(carrier)){
-                gems[i].pos.x = carrier.pos.x;
-                gems[i].pos.y = carrier.pos.y;
-            } else {
-                console.log('drop gem');
-                gems[i].pos.x = carrier.pos.x;
-                gems[i].pos.y = carrier.pos.y;
-                dropGem(gems[i]);
-            }
+            if(g.isPlayerAlive(carrier)) gems[i].pos = Object.assign({}, carrier.pos);                
+            else dropGem(gems[i]);
         }
     }
 };
 
 
-const update = (delta) => { // new delta parameter
+const update = delta => {
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
     
-
-    // console.log("gems", gems);
-    
     updateGemPosition();
+
     /*
         Controls
     */
 
+    if(isDefined(g.playerId)){
 
-    if(typeof g.playerId !== "undefined"){
-
-        let player = players.find(x => x.id == g.playerId);
-        // TODO: Fix issue that when you die the game stops keeping up.
-        if(!g.isPlayerAlive(player) && localPlayerStats.deathTime === 0){
-            localPlayerStats.deathTime = Date.now();
-        }
+        let player = players.find(player => player.id == g.playerId);
         
-        if(typeof player !== "undefined" && g.isPlayerAlive(player)){
+        // If the player is dead and deathtime is not set yet
+        if(!g.isPlayerAlive(player) && localPlayerStats.deathTime === 0) 
+            localPlayerStats.deathTime = Date.now();
+        
+        if(isDefined(player) && g.isPlayerAlive(player)){
 
             let requestId = calcCurRequestId();
 
             let playerUpdateObject = {
-                player: players[players.indexOf(player)],
+                player,
                 requestId,
                 delta,
                 speedMultiplier,
             };
 
             if(isKeyOn(" ")){
-                // If there is an object in front of you
-                let selectedTile = findTileInDirection(player);
-                if(typeof selectedTile !== "undefined"){
-                    // Check if player is near
+                let selectedTile = findTileInPlayerDir(player);
 
+                if(isDefined(selectedTile)){
                     let targetPlayer = null;
 
                     for(let i = 0; i < players.length; i++){
@@ -544,36 +499,39 @@ const update = (delta) => { // new delta parameter
 
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
 
-                        if(calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize <= g.attackDistance && players[i].id !== player.id){
+                        // TODO: Refactor to select the nearest object
+
+                        let objectDistance = g.calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize;
+                        if(objectDistance <= g.attackDistance && players[i].id !== player.id){
                             targetPlayer = players[i];
                             break;
                         }
                     }
                     
                     // If there is a player in the direction within 1, then attack.
-                    
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && g.isPlayerAlive(targetPlayer)){
                         targetPlayer.health.points -= g.attackStrength;
-
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
                         countDataSent++;
 
-                        // console.log(targetPlayer.health);
                         model.savePlayerHealth(targetPlayer).then(data => {
                             countDataReturned ++;
                             calcLag(parseRequestId(data.health.requestId)[1]);
                         });
 
-                    } else { // Else mine a block
-                        if(selectedTile.hard.points !== -1 && selectedTile.hard.points !== -2 && selectedTile.hard.points >= 0){ // -1 is mined, -2 is unbreakable
+                    } 
+                    // If there is not a player, then mine a block.
+                    else {
+                        //  If the tile has not been mined
+                        if(selectedTile.hard.points >= 0){ 
                             selectedTile.hard.points -= g.mineStrength;
                             localPlayerStats.mined += g.mineStrength;
-                            addRequestId(selectedTile.hard, `${requestId}mine`);
-                            // Local request id has been changed from what is being downloaded event though the downloaded one is the same except for the request id, because the new requestId has not got there yet.
 
+                            addRequestId(selectedTile.hard, `${requestId}mine`);
                             countDataSent++;
+
                             model.saveTileHard(selectedTile).then(data => {
                                 countDataReturned ++;
                                 calcLag(parseRequestId(data.hard.requestId)[1]);
@@ -585,11 +543,10 @@ const update = (delta) => { // new delta parameter
                 
             } else if(isKeyOn("s")){
                 let selectedTile = g.findTileBelowPlayer(player, tiles);
-
-                if(typeof selectedTile  !== "undefined"){
-                    let gemOnTile = findCloseGem(player);
+                if(isDefined(selectedTile)){
+                    let gemOnTile = findClosestGem(player);
                     // console.log('gemOnTile', gemOnTile);
-                    if(typeof gemOnTile !== "undefined" && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
+                    if(isDefined(gemOnTile) && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
 
@@ -606,17 +563,16 @@ const update = (delta) => { // new delta parameter
                 let selectedTile = g.findTileBelowPlayer(player, tiles);
                 
                 // If there is a tile that it can be dropped on,
-                if(typeof selectedTile !== "undefined"){
+                if(isDefined(selectedTile)){
 
                     let gemOnTile = getGemOnTile(selectedTile);
-                    
-                    // if the gem is not on a tile
-                    if(typeof gemOnTile === "undefined" ){
 
+                    // if the gem is not on a tile
+                    if(!isDefined(gemOnTile)){
                          // If player has gem,
                         let carriedGem = gems.find(x => x.carrier === g.playerId);
 
-                        if(typeof carriedGem !== "undefined"){
+                        if(isDefined(carriedGem)){
 
                             // Drop gems
                             carriedGem.carrier = -1;
@@ -624,7 +580,7 @@ const update = (delta) => { // new delta parameter
                             addRequestId(gems[gems.indexOf(carriedGem)], requestId);
 
                             if(selectedTile.teamBase === player.team){
-                                setWinner(player.team);
+                                setWinnerGameState(player.team);
                                 model.deleteCurrentMap();
                             }
                             countDataSent ++;
@@ -637,7 +593,7 @@ const update = (delta) => { // new delta parameter
                 }      
             } 
             
-            // Check if can move, if can't, still update position.
+            // Check if can move, if can move in direction, move, if can't update direction.
             if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowUp") && player.pos.dir !== "up"){
@@ -663,51 +619,39 @@ const update = (delta) => { // new delta parameter
             } else if(isKeyOn("ArrowRight") && player.pos.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
-            } else {// If nothing is being pressed, tell the server that the player is not moving and use the animation direction as the direction to set the player.
-                if(typeof playerUpdateObject.player.pos.isMoving === "undefined" || playerUpdateObject.player.pos.isMoving){
-                    playerUpdateObject.player.pos.isMoving = false;
-                    playerUpdateObject.speedMultiplier = 0;
-                    updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
-                }
             }
         }
     }
 };
 
+// Adds a request id to the object supplied to it.
 const addRequestId = (object, requestId) => {
     proccessedActions.push(requestId);
     object.requestId = requestId;
 };
 
-const updatePlayerState = (direction,  changeIn, options) => {
+const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
 
-    if(options.speedMultiplier !== 0){
-        options.player.pos.isMoving = true;
-    } else {
-        options.player.pos.isMoving = false;
-    }
+    // If there is movment, set the moving to true.
+    pos.isMoving = speedMultiplier !== 0 ? true : false;
 
-    if(direction === "left"){
-        options.player.pos.animDir = "left";
-    } else if(direction === "right"){
-        options.player.pos.animDir = "right";
-    }
+    // Set animation direction
+    if (direction === "left") pos.animDir = "left";
+    else if (direction === "right") pos.animDir = "right";
 
-    if(direction === "up" || direction === "left"){
-        options.speedMultiplier = -options.speedMultiplier;
-    }
+    // Invert speed multiplier if moving up or left
+    if (direction === "up" || direction === "left") speedMultiplier = -speedMultiplier;
 
-    options.player.pos[changeIn] += options.speedMultiplier * options.delta;
-    options.player.pos.dir = direction;
+    // Move character and set direction
+    pos[changeIn] += speedMultiplier * delta;
+    pos.dir = direction;
 
-    addRequestId(options.player.pos, `${options.requestId}move`);
-
+    addRequestId(pos, `${requestId}move`);
     countDataSent ++;
 
-    model.savePlayerPos(options.player).then(data => {
-        // console.log('data', data);
+    model.savePlayerPos(player).then(({pos: {requestId}}) => {
         countDataReturned ++;
-        calcLag(parseRequestId(data.pos.requestId)[1]);
+        calcLag(parseRequestId(requestId)[1]);
     });
 };
 
@@ -716,7 +660,7 @@ const updatePlayerState = (direction,  changeIn, options) => {
 const mainLoop = (timestamp) => {
     if (g.uid === ""){
         view.showSignIn();
-    }  else if(initialLobbyLoad){//initialGameState || initialPlayerDraw){ // Loading Screen, While plyaers and game state aren't loaded
+    } else if(initialLobbyLoad){// Loading screen
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner
         view.viewWinnerScreen(winner);
@@ -728,64 +672,34 @@ const mainLoop = (timestamp) => {
         lastFrameTimeMs = timestamp;
 
         while (delta >= timestep) {
-
-            // if(lag > 2000){
-            //     if(newPlayers.length !== 0){
-            //         players = newPlayers;
-            //     }
-            //     if(newTiles.length !== 0){
-            //         tiles = newTiles;
-            //     }
-            //     if(newGems.length !== 0){
-            //         gems = newGems;
-            //     }
-            //     lag = 0;
-            // } else {
-                if(proccessDataThisFrame){
-                    proccessNewData(players, newPlayers, ["health", "pos"]);
-                    proccessNewData(tiles, newTiles, ["hard"]);
-                    proccessNewData(gems, newGems);
-                    proccessDataThisFrame = false;
-                }
-            // }
-            // if(countDataSent - countDataReturned < 50){
-                update(timestep);
-            // }
-
+            if(proccessDataThisFrame){
+                proccessData(players, newPlayers, ["health", "pos"]);
+                proccessData(tiles, newTiles, ["hard"]);
+                proccessData(gems, newGems);
+                proccessDataThisFrame = false;
+            }
+            update(timestep);
             delta -= timestep;
         }
         view.printDataCount(countDataReturned, countDataSent);
-
         view.draw(g.playerId, tiles, players, gems, lag);
-
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
-
-        if($(".add").length === 0){
-            let playerIds = players.map(x => x.id);
-            // console.log('playerIds', playerIds);
-            // view.setPlayers(playerIds);
-        } else {
-            let playerIds = players.map(x => x.id);
-            // console.log(players);
-            // view.setPlayers(playerIds);
-        }
-        // else if($("#player-lobby .add").length !== newPlayers.length){
-            // console.log('newPlayers', newPlayers);
-          
-        // }
     }  
 
     if(waitingForGame === true){  // Load screen
         view.showLoadingScreen();
     }
+    
     requestAnimationFrame(mainLoop);
 };
 
 // Resets variables on whether or not the map has been drawn for the first time or not.
-const resetMapDraw = () => {
-    initialGemDraw = true;
+const resetGameState = () => {
     initialTileDraw = true;
+    initialPlayerDraw = true;
+    initialGemDraw = true;
+    initialGameState = true;
 };
 
 module.exports.startGame = () => {
@@ -859,25 +773,7 @@ const activateButtons = () => {
     });
 
 
-    /* When new game button is clicked:
-     add a new game, 
-     populate it with initial data, 
-     starts game listener,
-     and set initial draws to true.
-    */
-    $("#main-menu-new").on("click", () => {
-        model.addGame(Date.now(), generateBattleName()).then(gameId => {
-            model.setGameId(gameId);
 
-            // When game has finished being saved on server, start listening.
-            gameMaker.newGame().then(() => {
-                model.listenToGame();
-            });
-
-            resetMapDraw();
-        });
-        
-    });
     
 };
 

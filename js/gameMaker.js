@@ -31,7 +31,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     g.playerId = newPlayerId;
 };
 
-module.exports.newGame = () => {
+module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
         let createdTiles = mapMaker.generateTiles(20, 20);
         
@@ -71,7 +71,8 @@ module.exports.newGame = () => {
             "winningTeam": 0
         });
 
-        Promise.all([gemPromise1, gemPromise2, mapPromise, gameStatePromise]).then(function(values) {
+        Promise.all([gemPromise1, gemPromise2, mapPromise, gameStatePromise])
+        .then(function(values) {
             resolve();
         });
 
