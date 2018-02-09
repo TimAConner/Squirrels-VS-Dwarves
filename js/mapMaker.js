@@ -34,7 +34,7 @@
     let randFreqIndex = freqTable[Math.floor(Math.random() * freqTable.length)];
 
     // Add values used to list of numbers used
-    curFreqCount[randFreqIndex.value] = (curFreqCount[randFreqIndex.value]+=1) || 1;
+    curFreqCount[randFreqIndex.value] = (curFreqCount[randFreqIndex.value] += 1) || 1;
 
     // Remove the value from the frequency table if it's frequent enogh in curFreqCount
     if((curFreqCount[randFreqIndex.value] / totalTiles) >= randFreqIndex.count){

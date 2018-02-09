@@ -82,7 +82,7 @@ let initialPlayerDraw = true;
 let initialGemDraw = true;
 let initialGameState = true;
 
-let proccessDataThisFrame = false;
+let mergeDataThisFrame = false;
 
 
 
@@ -239,55 +239,36 @@ app.controller("myCtrl", ['$scope', function($scope) {
 
 }]);
 
-const canMove = (direction, obj, delta) => {
-    let objLeftPoint = obj.pos.x,
-    objRightPoint = obj.pos.x+g.playerSize,
-    objBottomPoint = obj.pos.y+g.playerSize,
-    objTopPoint = obj.pos.y;
+// Returns true if one part of smaller is on or within the border of the larger
+const isPositionWithinBounds = (smaller, larger) => 
+smaller.x >= larger.x 
+&& smaller.x <= larger.r 
+&& smaller.y >= larger.y 
+&& smaller.y <= larger.b;
 
+const isWithinYAxis = (player, obj) => 
+(player.y > obj.y && player.y < obj.b) || (player.b > obj.y && player.b < obj.b);
+
+const isWithinXAxis = (player, obj) =>  
+(player.r > obj.x && player.r < obj.r) || (player.x > obj.x && player.x < obj.r);
+
+// const doesHitOnLeft = (playerX, obj) => (((playerX) > obj.x) && ((playerX) < obj.r));
+
+const canMove = (direction, player, delta) => {
+    let playerPos = g.calcObjBounds(player, g.playerSize, true);
     let increment = speedMultiplier*delta;
 
-    for(let i = 0; i < tiles.length; i++){
+    for(let tile of tiles){
+        let tilePos = g.calcObjBounds(tile, g.tileSize);
+        if(tile.hard.points > 0 || tile.hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
+            const isObjectInDirection = {
+              left: () => isWithinYAxis(playerPos, tilePos) && (((playerPos.x-increment) < tilePos.r && (playerPos.x-increment) > tilePos.x)),
+              right: () => isWithinYAxis(playerPos, tilePos) && ((((playerPos.r+increment) > tilePos.x) && (playerPos.r+increment) < tilePos.r)),
+              up: () => isWithinXAxis(playerPos, tilePos) && ((playerPos.y-increment) > tilePos.y && (playerPos.y-increment) < tilePos.b),
+              down: () => isWithinXAxis(playerPos, tilePos) && ((playerPos.b+increment) > tilePos.y) && ((playerPos.b+increment) < tilePos.b)
+            };
 
-        let tileXPosition = g.calcTilePos(tiles[i]).x,
-        tileYPosition = g.calcTilePos(tiles[i]).y;
-
-        let tileRightPoint = tileXPosition + g.tileSize,
-        tileLeftPoint = tileXPosition,
-        tileBottomPoint = tileYPosition + g.tileSize,
-        tileTopPoint = tileYPosition;
-        
-       if(tiles[i].hard.points > 0 || tiles[i].hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
-            if(((objTopPoint > tileTopPoint && objTopPoint < tileBottomPoint) || (objBottomPoint > tileTopPoint && objBottomPoint < tileBottomPoint))){
-                if(direction === "left"){
-                    if((((objLeftPoint-increment) < tileRightPoint && (objLeftPoint-increment) > tileLeftPoint))){
-                        // console.log(tileLeftPoint, (objLeftPoint-increment), tileRightPoint);
-                        // console.log("left");
-                        return false;
-                    }
-                } else if (direction === "right"){
-                    if(((((objRightPoint+increment) > tileLeftPoint) && (objRightPoint+increment) < tileRightPoint))){
-                        // console.log("right");
-                        return false;
-                    }
-                }
-            }
-
-            if( (objRightPoint > tileLeftPoint && objRightPoint < tileRightPoint) ||  (objLeftPoint < tileRightPoint && objLeftPoint > tileLeftPoint)){
-                if(direction === "up"){
-                    if(((objTopPoint-increment) > tileTopPoint && (objTopPoint-increment) < tileBottomPoint)){
-                        // console.log("up");
-                        return false;
-                   }
-                } else if(direction === "down"){
-                    if((objBottomPoint+increment) > tileTopPoint && (objBottomPoint+increment) < tileBottomPoint){
-                        // console.log(tileBottomPoint, objTopPoint, tileTopPoint);
-                        // console.log(tileBottomPoint, objBottomPoint , tileTopPoint);
-                        // console.log("down");
-                        return false;
-                   }
-                }
-            }
+            if(isObjectInDirection[direction]) return false;
         }
     }
 
@@ -322,16 +303,10 @@ const isKeyOn = key => keys[key];
 
 const findClosestGem = player => gems.find(gem => g.calcDistance(player.pos, gem.pos) <= g.gemPickupDistance);
 
-// Returns true if one part of smaller is on or within the border of the larger
-const isPositionWithinBounds = (smaller, larger) => 
-    smaller.x >= larger.x 
-    && smaller.x <= larger.r 
-    && smaller.y >= larger.y 
-    && smaller.y <= larger.b;
 
 // Returns the gem touching or on a specific tile that is not picked up
 const getGemOnTile = tile => 
-    gems.find(gem => gem.carrier === -1 && isPositionWithinBounds(gem.pos, g.calcTilePos(tile)));
+    gems.find(gem => gem.carrier === -1 && isPositionWithinBounds(gem.pos, g.calcObjBounds(tile, g.tileSize)));
 
 // Sets game state to playing and no winner and tells controller that the game is loading
 const initiateGameState = () => {
@@ -359,7 +334,7 @@ const calcLag = miliseconds => {
 };
 
 // Merges currentData and newData where there are differences not caused by local player.
-const proccessData = (currentData, newData, valuesToCheck) => {
+const mergeData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && isDefined(newData) && newData.length !== 0){
 
         // Create an array of new and olds ids
@@ -373,54 +348,54 @@ const proccessData = (currentData, newData, valuesToCheck) => {
             valuesToDelete =  _.difference(curIdList, newIdList);
             
             // Remove values not present
-            for(let i = 0; i < valuesToDelete.length; i ++){
-                _.remove(currentData, val => val === valuesToDelete[i]);
+
+            for(let toDelete of valuesToDelete){
+                _.remove(currentData, val => val === toDelete);
             }
 
-            // Add values present
-            for(let i = 0; i < valuesToAdd.length; i++){
-                currentData.push(newData.find(({id}) => id === valuesToAdd[i])); // jshint ignore:line
+            for(let toAdd of valuesToAdd){
+                currentData.push(newData.find(({id}) => id === toAdd));
             }
         }
 
         // Change existing values
-        for(let i = 0; i < newData.length; i++){
-
+        for(let newPeice of newData){
             // If no specific value should be proccessed, update the whole object
             if(!isDefined(valuesToCheck)){ 
-                if(isDefined(newData[i].requestId) && newData[i].requestId !== currentData[i].requestId ){
-                    let newRequestId = +parseRequestId(newData[i].requestId)[1];
-                    let curRequestId = +parseRequestId(currentData[i].requestId)[1];
+                let curPeice = currentData.find(({id}) => id === newPeice.id);
+                if(isDefined(newPeice.requestId) && newPeice.requestId !== curPeice.requestId){
+                    let newRequestId = +parseRequestId(newPeice.requestId)[1];
+                    let curRequestId = +parseRequestId(curPeice.requestId)[1];
                     
                     if(newRequestId >= curRequestId) calcLag(newRequestId);
 
-                    // If data has not been proccessed
-                    if(!proccessedActions.includes(newData[i].requestId)){
+                    // If newPeice has not been proccessed
+                    if(!proccessedActions.includes(newPeice.requestId)){
                         if((newRequestId >= curRequestId)){ 
-                            // Copy the whole object into the current data
-                            currentData[i] = Object.assign({}, newData[i]);
-                            proccessedActions.push(newData[i].requestId);
+                            // Copy the whole object into the current newPeice
+                            curPeice = Object.assign({}, newPeice);
+                            proccessedActions.push(newPeice.requestId);
                         }
                     }
                 }
             }
-
             // If specific values should be proccesed, update only those values. 
             else { 
-                for(let j = 0; j < valuesToCheck.length; j++){
-                    if(isDefined(newData[i][valuesToCheck[j]]) && newData[i][valuesToCheck[j]].requestId !== currentData[i][valuesToCheck[j]].requestId){ 
+                for(let value of valuesToCheck){
+                    let curPeice = currentData.find(({id}) => id === newPeice.id);
+                    if(isDefined(newPeice[value]) && newPeice[value].requestId !== curPeice[value].requestId){ 
 
-                        let newRequestId = +parseRequestId(newData[i][valuesToCheck[j]].requestId)[1];
-                        let curRequestId = +parseRequestId(currentData[i][valuesToCheck[j]].requestId)[1];
+                        let newRequestId = +parseRequestId(newPeice[value].requestId)[1];
+                        let curRequestId = +parseRequestId(curPeice[value].requestId)[1];
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
-                        if(!proccessedActions.includes(newData[i][valuesToCheck[j]].requestId)){
+                        if(!proccessedActions.includes(newPeice[value].requestId)){
                             // If this game has not proccessed it and the value is not an old one,
                             // Copy the proccessed peice of data into the current data.
                             if(newRequestId >= curRequestId){ 
-                                proccessedActions.push(newData[i][valuesToCheck[j]].requestId);
-                                currentData[i][valuesToCheck[j]] = Object.assign({}, newData[i][valuesToCheck[j]]);
+                                proccessedActions.push(newPeice[value].requestId);
+                                curPeice[value] = Object.assign({}, newPeice[value]);
                                 //TODO: Fix issue where older peice of data is replacing newer data.
                                 // Is move being replaced by mine?  Didin't pick up a move.
                                 // Is move replacing mine?  Only a move of same timestamp, not a mine.
@@ -447,14 +422,14 @@ const dropGem = gem => {
 
 // Updates the positoin of the gems if they are on a player
 const updateGemPosition = () => {
-    for(let i = 0; i < gems.length; i++){
+    for(let gem of gems){
         // If the gem is being carried
-        if(gems[i].carrier !== -1){
+        if(gem.carrier !== -1){
             // Update the positoin based on the player's position
             // If the player is dead, drop the gem.
-            let carrier = players.find(player => player.id === gems[i].carrier); // jshint ignore:line
-            if(g.isPlayerAlive(carrier)) gems[i].pos = Object.assign({}, carrier.pos);                
-            else dropGem(gems[i]);
+            let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
+            if(g.isPlayerAlive(carrier)) gem.pos = Object.assign({}, carrier.pos);                
+            else dropGem(gem);
         }
     }
 };
@@ -494,16 +469,16 @@ const update = delta => {
                 if(isDefined(selectedTile)){
                     let targetPlayer = null;
 
-                    for(let i = 0; i < players.length; i++){
-                        let otherPlayersTile = g.findTileBelowPlayer(players[i], tiles);
+                    for(let aPlayer of players){
+                        let otherPlayersTile = g.findTileBelowPlayer(aPlayer, tiles);
 
                         // The logic that you find a tile in a direction, which is one away, and you check the attack distance, is convoluted.  This is saying if they are within 1 of the square in front of you.
 
                         // TODO: Refactor to select the nearest object
 
-                        let objectDistance = g.calcDistance(g.calcTilePos(selectedTile), g.calcTilePos(otherPlayersTile))/g.tileSize;
-                        if(objectDistance <= g.attackDistance && players[i].id !== player.id){
-                            targetPlayer = players[i];
+                        let objectDistance = g.calcDistance(g.calcObjBounds(selectedTile, g.tileSize), g.calcObjBounds(otherPlayersTile, g.tileSize))/g.tileSize;
+                        if(objectDistance <= g.attackDistance && aPlayer.id !== player.id){
+                            targetPlayer = aPlayer;
                             break;
                         }
                     }
@@ -672,11 +647,11 @@ const mainLoop = (timestamp) => {
         lastFrameTimeMs = timestamp;
 
         while (delta >= timestep) {
-            if(proccessDataThisFrame){
-                proccessData(players, newPlayers, ["health", "pos"]);
-                proccessData(tiles, newTiles, ["hard"]);
-                proccessData(gems, newGems);
-                proccessDataThisFrame = false;
+            if(mergeDataThisFrame){
+                mergeData(players, newPlayers, ["health", "pos"]);
+                mergeData(tiles, newTiles, ["hard"]);
+                mergeData(gems, newGems);
+                mergeDataThisFrame = false;
             }
             update(timestep);
             delta -= timestep;
@@ -764,7 +739,7 @@ const activateButtons = () => {
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
         let tile = tiles.find(data => {
-            let t = g.calcTilePos(data);
+            let t = g.calcObjBounds(data, g.tileSize);
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
     
@@ -791,13 +766,13 @@ const activateServerListener = () => {
             console.log("new data");
             newGems = filteredGems;
         }        
-        proccessDataThisFrame = true;
+        mergeDataThisFrame = true;
     });
 
     g.c.addEventListener("serverUpdateGames", (e) => {
         games = e.detail;
         initialLobbyLoad = false;
-        proccessDataThisFrame = true;
+        mergeDataThisFrame = true;
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
@@ -823,7 +798,7 @@ const activateServerListener = () => {
         
 
         initialPlayerDraw = false;
-        proccessDataThisFrame = true;
+        mergeDataThisFrame = true;
 
         // Update list of players
         
@@ -848,7 +823,7 @@ const activateServerListener = () => {
             newTiles = filteredTiles;
         }
 
-        proccessDataThisFrame = true;
+        mergeDataThisFrame = true;
 
     });
 
@@ -867,7 +842,7 @@ const activateServerListener = () => {
             model.savePlayerStats(localPlayerStats);
             model.finishGame(Date.now());
         }
-        proccessDataThisFrame = true;
+        mergeDataThisFrame = true;
     });
 
 };

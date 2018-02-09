@@ -141,56 +141,56 @@ const drawTiles = (tiles, players) => {
                 if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
                     if(hardness > 1.95){
-                        g.ctx.drawImage(img('stone'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stone'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     }
                     else if(hardness > 1.7){
-                        g.ctx.drawImage(img('stoneBroke1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneBroke1'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     }
                     else if(hardness > 1.5){
-                        g.ctx.drawImage(img('stoneBroke2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneBroke2'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     }
                     else if(hardness > 1.3){
-                        g.ctx.drawImage(img('stoneBroke3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, 
+                        g.ctx.drawImage(img('stoneBroke3'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, 
                         g.tileSize,  g.tileSize);
                     }
                     else if(hardness > 1.1){
-                        g.ctx.drawImage(img('stoneBroke4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneBroke4'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     }
                     else if(hardness > 1){
-                        g.ctx.drawImage(img('stoneBroke5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneBroke5'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.9){
-                        g.ctx.drawImage(img('stoneFrac1'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneFrac1'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.8){
-                        g.ctx.drawImage(img('stoneFrac2'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneFrac2'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     } else  if (hardness > 0.6){
-                        g.ctx.drawImage(img('stoneFrac3'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneFrac3'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     } else  if (hardness > 0.4){
-                        g.ctx.drawImage(img('stoneFrac4'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneFrac4'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     } else  if (hardness > 0.2){
-                        g.ctx.drawImage(img('stoneFrac5'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneFrac5'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     } else  if (hardness > 0.0){
-                        g.ctx.drawImage(img('stoneFrac6'),g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('stoneFrac6'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     }
                     
                 // console.log("b",  distance);
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     
                 } else {
                     if(tiles[i].teamBase === thisPlayer.team){
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tiles[i], g.tileSize).x,g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
-                        g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tiles[i], g.tileSize).x,g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     }
                    
@@ -200,18 +200,18 @@ const drawTiles = (tiles, players) => {
             } else {
                 if(tiles[i].teamBase === thisPlayer.team){
                     g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage(img('dirt'),g.calcTilePos(tiles[i]).x,g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.drawImage(img('dirt'),g.calcObjBounds(tiles[i], g.tileSize).x,g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     
                 } else if (tiles[i].hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                    g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     
                 } 
                 // else {
                 //     g.ctx.fillStyle = unknownColor;
-                //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+                //     g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
                     
                 // }
                 // console.log("b", distance);
@@ -220,7 +220,7 @@ const drawTiles = (tiles, players) => {
         } 
         // else {
         //     g.ctx.fillStyle = unknownColor;
-        //     g.ctx.fillRect(g.calcTilePos(tiles[i]).x, g.calcTilePos(tiles[i]).y, g.tileSize,  g.tileSize);
+        //     g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
             
         // }   
 
