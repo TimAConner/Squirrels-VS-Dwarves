@@ -268,7 +268,7 @@ const canMove = (direction, player, delta) => {
               down: () => isWithinXAxis(playerPos, tilePos) && ((playerPos.b+increment) > tilePos.y) && ((playerPos.b+increment) < tilePos.b)
             };
 
-            if(isObjectInDirection[direction]) return false;
+            if(isObjectInDirection[direction]()) return false;
         }
     }
 
