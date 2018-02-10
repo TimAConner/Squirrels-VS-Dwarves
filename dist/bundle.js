@@ -369,13 +369,14 @@ smaller.x >= larger.x
 && smaller.y >= larger.y 
 && smaller.y <= larger.b;
 
-const isWithinYAxis = (player, obj) => 
-(player.y > obj.y && player.y < obj.b) || (player.b > obj.y && player.b < obj.b);
+const isWithinYAxis = (player, obj) => willHitOnTop(player.y, obj) || willHitOnBottom(player.b, obj);
 
-const isWithinXAxis = (player, obj) =>  
-(player.r > obj.x && player.r < obj.r) || (player.x > obj.x && player.x < obj.r);
+const isWithinXAxis = (player, obj) =>  willHitOnLeft(player.x, obj) || willHitOnRight(player.r, obj);
 
-// const doesHitOnLeft = (playerX, obj) => (((playerX) > obj.x) && ((playerX) < obj.r));
+const willHitOnLeft = (xPos, obj) => ((xPos > obj.x) && (xPos < obj.r));
+const willHitOnRight = (rPos, obj) => ((rPos > obj.x) && (rPos < obj.r));
+const willHitOnTop = (yPos, obj) => ((yPos > obj.y) && (yPos< obj.b));
+const willHitOnBottom = (bPos, obj) => ((bPos > obj.y) && (bPos < obj.b));
 
 const canMove = (direction, player, delta) => {
     let playerPos = g.calcObjBounds(player, g.playerSize, true);
@@ -385,10 +386,10 @@ const canMove = (direction, player, delta) => {
         let tilePos = g.calcObjBounds(tile, g.tileSize);
         if(tile.hard.points > 0 || tile.hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
             const isObjectInDirection = {
-              left: () => isWithinYAxis(playerPos, tilePos) && (((playerPos.x-increment) < tilePos.r && (playerPos.x-increment) > tilePos.x)),
-              right: () => isWithinYAxis(playerPos, tilePos) && ((((playerPos.r+increment) > tilePos.x) && (playerPos.r+increment) < tilePos.r)),
-              up: () => isWithinXAxis(playerPos, tilePos) && ((playerPos.y-increment) > tilePos.y && (playerPos.y-increment) < tilePos.b),
-              down: () => isWithinXAxis(playerPos, tilePos) && ((playerPos.b+increment) > tilePos.y) && ((playerPos.b+increment) < tilePos.b)
+              left: () => isWithinYAxis(playerPos, tilePos) && willHitOnLeft(playerPos.x-increment, tilePos),
+              right: () => isWithinYAxis(playerPos, tilePos) && willHitOnRight(playerPos.r+increment, tilePos),
+              up: () => isWithinXAxis(playerPos, tilePos) && willHitOnTop(playerPos.y-increment, tilePos),
+              down: () => isWithinXAxis(playerPos, tilePos) && willHitOnBottom(playerPos.b+increment, tilePos)
             };
 
             if(isObjectInDirection[direction]()) return false;
@@ -717,6 +718,12 @@ const update = delta => {
             } else if(isKeyOn("ArrowRight") && player.pos.dir !== "right"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
+            } else {// If nothing is being pressed, tell the server that the player is not moving and use the animation direction as the direction to set the player.
+                if(isDefined(playerUpdateObject.player.pos.isMoving) || playerUpdateObject.player.pos.isMoving){
+                    playerUpdateObject.player.pos.isMoving = false;
+                    playerUpdateObject.speedMultiplier = 0;
+                    updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
+                }
             }
         }
     }
