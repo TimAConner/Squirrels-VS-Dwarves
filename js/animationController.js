@@ -87,8 +87,7 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
 
 // Add animations below.
 
-addAnimation('dwarfAnimation', 
-{
+addAnimation('dwarfAnimation', {
     frames: [1, 2],
     defaultFrame : 0,
     curFrame: 0,
@@ -97,11 +96,9 @@ addAnimation('dwarfAnimation',
     w: 22,
     xOffset: 0,
     h: 21
-}
-);
+});
 
-addAnimation('dwarfAnimationLeft', 
-{
+addAnimation('dwarfAnimationLeft', {
     frames: [0, 1],
     defaultFrame : 2,
     curFrame: 0,
@@ -110,8 +107,7 @@ addAnimation('dwarfAnimationLeft',
     w: 21,
     xOffset: 0,
     h: 21
-}
-);
+});
 
 
 /*

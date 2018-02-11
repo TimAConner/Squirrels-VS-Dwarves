@@ -88,8 +88,7 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
 
 // Add animations below.
 
-addAnimation('dwarfAnimation', 
-{
+addAnimation('dwarfAnimation', {
     frames: [1, 2],
     defaultFrame : 0,
     curFrame: 0,
@@ -98,11 +97,9 @@ addAnimation('dwarfAnimation',
     w: 22,
     xOffset: 0,
     h: 21
-}
-);
+});
 
-addAnimation('dwarfAnimationLeft', 
-{
+addAnimation('dwarfAnimationLeft', {
     frames: [0, 1],
     defaultFrame : 2,
     curFrame: 0,
@@ -111,8 +108,7 @@ addAnimation('dwarfAnimationLeft',
     w: 21,
     xOffset: 0,
     h: 21
-}
-);
+});
 
 
 /*
@@ -144,12 +140,10 @@ const login = require("./login");
 const g = require("./game");
 const $ = require("jquery");
 const gameMaker = require("./gameMaker");
-
 const _ = require("lodash");
-
-
 const angular = require("angular");
 
+let app = angular.module("menuApp", []);
 
 // 0 menu, 1 game, 2 winner
 
@@ -157,26 +151,21 @@ let onlineGameState = 0,
 localGameState = 0,
 waitingForGame = false;
 
-
 let winner = 0;
 
+let players = [],
+tiles = [],
+gems = [],
+games = [];
 
-let players = [];
-let tiles = [];
-let gems = [];
-let games = [];
+let proccessedActions = [],
+completedActions = [];
 
-let proccessedActions = [];
-let completedActions = [];
-
-let newPlayers = [];
-let newTiles = [];
-let newGems = [];
-
-
+let newPlayers = [],
+newTiles = [],
+newGems = [];
 
 let speedMultiplier = 0.1;
-
 
 let localPlayerStats =  {  
     id: 0,
@@ -186,8 +175,8 @@ let localPlayerStats =  {
     team: 0,
     spawnTime: 0,
     deathTime: 0
-};
-let statsSent = false;
+},
+statsSent = false;
 
 //  Use timestamp instead?
 let keys = {
@@ -201,169 +190,23 @@ let keys = {
 };
 
 
-let initialLobbyLoad = true;
-
-let initialTileDraw = true;
-let initialPlayerDraw = true;
-let initialGemDraw = true;
-let initialGameState = true;
+let initialLobbyLoad = true,
+initialTileDraw = true,
+initialPlayerDraw = true,
+initialGemDraw = true,
+initialGameState = true;
 
 let mergeDataThisFrame = false;
-
-
 
 let timestep = 1000 / 60,
 delta = 0,
 lastFrameTimeMs = 0;
 
-
 let lag = 0; // Time between current timestamp and new peices of data timestamp.
 let countDataReturned = 0, // Count of data returned after sending information.
 countDataSent = 0; // Count of data sent to  firebase.
 
-let app = angular.module("myApp", []);
-
 const isDefined = obj => typeof obj !== "undefined";
-
-app.controller("myCtrl", ['$scope', function($scope) {
-
-    let convertMiliToHMS = millis => {
-        let hours = Math.floor(millis / 3600000);
-        let minutes = Math.floor(millis / 60000)%60;
-        let seconds = ((millis % 60000) / 1000).toFixed(0);
-        return `${hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
-       // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
-    };
-
-    let convertMiliToDate = millis => {
-        let date = new Date(millis);
-        return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear()}`;
-    };
-
-    const filterPlayers = (players, compareFunc) =>
-        Object.keys(players).filter(x => compareFunc(players[x].uid, g.uid)).map(x => players[x]);
-
-    $("#game-canvas").on("serverUpdatePlayer", ({detail: players}) => {
-        // Force Angular to digest new players to update the html
-        _.defer(function(){ 
-            $scope.$apply(function(){
-                if(players !== null){
-                    $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
-                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner != thisPlayer);
-                } else {
-                    $scope.otherPlayers = [];
-                    $scope.ownedPlayers = [];
-                }
-            });
-        });
-    });
-
-    $("#game-canvas").on("serverUpdateGames", ({detail: lobbies}) => {
-        // Force Angular to digest new lobbies to update the html
-        _.defer(function(){ 
-            $scope.$apply(function(){
-                if(lobbies !== null){ 
-                    // Add firebase key to lobbys
-                    let lobbyDetails = Object.keys(lobbies).map(lobbyKey => {
-
-                        let lobby = lobbies[lobbyKey];
-                        lobby.key = lobbyKey;
-
-                        //Add game length to lobby information
-                        if(isDefined(lobby.gameEnd)){
-                            lobby.gameLength = convertMiliToHMS(+lobby.gameEnd - +lobby.gameStart);
-                        }
-
-                        // Add game date
-                        lobby.date = convertMiliToDate(lobby.gameStart);
-
-                        // For each player, add a life time.
-                        if(isDefined(lobby.players)) {
-                            Object.values(lobby.players).forEach(player => {
-                                // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
-                                player.lifeTime = 
-                                    player.deathTime === 0 
-                                        ? convertMiliToHMS(lobby.gameEnd - player.spawnTime) 
-                                        : convertMiliToHMS(player.deathTime - player.spawnTime);
-                            });
-                        }
-
-                        return lobby;
-                    });
-
-                    // Reverse order of lobbies to have newer first.
-                    $scope.lobbyList = _.reverse(lobbyDetails);
-                }
-            });
-        });
-    });
-
-    $scope.selectGame = id => {
-        resetGameState();
-        model.detachGameListeners(); // Detach previous game listeners
-        model.setGameId(id);
-        model.listenToCurGame();// Listen to new game data
-    };
-
-    $scope.deleteGame = id => {
-        model.deleteLobby(id);
-        model.deleteMap(id);
-        // If you are in the lobby that you are deleting, detach game listeners.
-        if(model.getGameId() === id){
-            model.detachGameListeners();
-            model.setGameId("");
-        }
-    };
-
-
-    // Select the player to be played
-    // and puts its values into the localPlayerStats to be later sent when game is complete.
-
-    // TODO: Make sure that localPlayerStats are being sent to the database properly.
-    $scope.selectPlayer = id => {
-        g.playerId = id;      
-        let player = players.find(x => x.id === g.playerId);
-        if(isDefined(player)){
-            localPlayerStats.uid = g.uid;
-            localPlayerStats.id = g.playerId;
-            localPlayerStats.spawnTime = Date.now();
-            localPlayerStats.team = player.team;       
-        }
-        startPlay();
-    };
-
-    $scope.removePlayer = id => {
-        model.deletePlayer({id});
-    };
-    
-    $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
-    
-    $scope.addDwarf = () => {
-        gameMaker.addPlayer(0, tiles, players.length);
-    };
-
-    $scope.addSquirrel = () => {
-        gameMaker.addPlayer(1, tiles, players.length);
-    };
-
-    $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
-
-    $scope.isObjectEmpty = obj => !isDefined(obj) || Object.keys(obj).length === 0;
-
-    // Add a lobby and map to the lobby and listen to that game once it is done.
-    $scope.addGame = () =>  {
-        model.addLobby(Date.now(), generateBattleName())
-        .then(gameId => {
-            resetGameState();
-            model.setGameId(gameId);
-            gameMaker.addGame()
-            .then(() => {
-                model.listenToCurGame();
-            });
-        });
-    };
-
-}]);
 
 // Returns true if one part of smaller is on or within the border of the larger
 const isPositionWithinBounds = (smaller, larger) => 
@@ -566,11 +409,9 @@ const updateGemPosition = () => {
     }
 };
 
-
-const update = delta => {
+const checkInput = delta => {
     // boxPos += boxVelocity * delta; // velocity is now time-sensitive
     
-    updateGemPosition();
 
     /*
         Controls
@@ -747,7 +588,6 @@ const addRequestId = (object, requestId) => {
 };
 
 const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
-
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
 
@@ -776,30 +616,47 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
 
 
 const mainLoop = (timestamp) => {
-    if (g.uid === ""){
+    if (g.uid === ""){ // Login screen
         view.showSignIn();
-    } else if(initialLobbyLoad){// Loading screen
+    } else if(initialLobbyLoad){ // Loading screen
         view.showLoadingScreen();
-    } else if (onlineGameState === 2 && localGameState === 1){ // Winner
+    } else if (onlineGameState === 2 && localGameState === 1){ // Wwinner screen
         view.viewWinnerScreen(winner);
-    } else if(localGameState === 1 && onlineGameState === 1){  // Game Playing
+    } else if(localGameState === 1 && onlineGameState === 1){  // Game playing screen
+        // Show game canvas
         view.viewGame();
-        waitingForGame = false;
 
+        if(waitingForGame) waitingForGame = false;
+
+        // Update delta
         delta += timestamp - lastFrameTimeMs;
         lastFrameTimeMs = timestamp;
 
+        // Runs update as many times until it catches up with timestamp.
         while (delta >= timestep) {
+
+            // Merge new data with current data stored
             if(mergeDataThisFrame){
                 mergeData(players, newPlayers, ["health", "pos"]);
                 mergeData(tiles, newTiles, ["hard"]);
                 mergeData(gems, newGems);
                 mergeDataThisFrame = false;
             }
-            update(timestep);
+            
+            // Updates gem position if a player is carrying one
+            updateGemPosition();    
+            
+            // Check input and execute it
+            checkInput(timestep);
+
+            // Update delta
             delta -= timestep;
         }
+        
+        // Updates lag & data sent / returned ui
         view.printDataCount(countDataReturned, countDataSent);
+
+        // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
     } else if (localGameState === 0){ // Menu
         view.viewMainMenu();
@@ -809,6 +666,7 @@ const mainLoop = (timestamp) => {
         view.showLoadingScreen();
     }
     
+    // Requests browser to call this before next painting of the page.
     requestAnimationFrame(mainLoop);
 };
 
@@ -818,12 +676,6 @@ const resetGameState = () => {
     initialPlayerDraw = true;
     initialGemDraw = true;
     initialGameState = true;
-};
-
-module.exports.startGame = () => {
-    activateServerListener();
-    activateButtons();
-    requestAnimationFrame(mainLoop);
 };
 
 const startPlay = () => {
@@ -839,38 +691,7 @@ const generateBattleName = () => {
     return `${randomType} ${randomName}`;
 };
 
-const activateButtons = () => {
-
-    $("#signIn").on("click", function(){
-        // Commented out for testing purpose.  Comment back in to test with multiple users.
-            // login.googleSignin().then((data) => {
-            //      console.log(data);
-            //     g.uid = data.email;
-            //     g.name = data.name;
-            // });
-        g.uid = "timaconner1@gmail.com";
-        g.fullName = "Tim Conner";
-        view.showSignIn();
-
-        // Initialize firebase and start listening to the list of lobbys
-        model.initFirebase().then(() => {
-            model.listenToLobbys();
-        });
-
-    });
-    document.getElementById("back-to-main-menu").addEventListener("click", () => {
-        localGameState = 0;
-    });
-
-
-
-    // document.getElementById("main-menu-play").addEventListener("click", () => {
-    //     startPlay();
-    // });
-
-    // Get and set gameId on model
-
-   
+const activateDebugListeners = () => {
     /* 
         If canvas is clicked on, find the tile being clicked, a
         and return its object from the tile array
@@ -889,20 +710,13 @@ const activateButtons = () => {
         console.log(tile);
         console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.hard.requestId) !== -1));
     });
-
-
-
-    
 };
-
-
 
 const activateServerListener = () => {
     
     g.c.addEventListener("serverUpdateGems", (e) => {
         let filteredGems = _.compact(e.detail);
         if(initialGemDraw === true){
-            // console.log(gems);
             gems = filteredGems;
             initialGemDraw = false;
         } else {
@@ -919,8 +733,6 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdatePlayer", (e) => {
-        // console.log("listened");
-        // console.log('e.detail', e.detail);
         if(e.detail !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
@@ -942,16 +754,9 @@ const activateServerListener = () => {
 
         initialPlayerDraw = false;
         mergeDataThisFrame = true;
-
-        // Update list of players
-        
-        // console.log('players', newPlayers);
-        // console.log('tiles', newTiles);
-
     });
+    
     g.c.addEventListener("serverUpdateTiles", (e) => {
-        // console.log("tile", e.detail);
-
         let filteredTiles = _.compact(e.detail);
 
         for(let i = 0; i < filteredTiles.length; i++){
@@ -971,9 +776,6 @@ const activateServerListener = () => {
     });
 
     g.c.addEventListener("serverUpdateGameState", (e) => {
-        // console.log("loaded");
-        
-        console.log("new data");
         initialGameState = false;
         onlineGameState = e.detail.gameState; 
         winner = e.detail.winningTeam;
@@ -989,7 +791,6 @@ const activateServerListener = () => {
     });
 
 };
-
 
 // Prevent key defaults
 window.addEventListener("keydown", function(e) {
@@ -1017,6 +818,171 @@ window.onkeyup = function(event) {
             keys[prop] = false;
         }
     }
+};
+
+app.controller("menuCtrl", ['$scope', function($scope) {
+    
+    let convertMiliToHMS = millis => {
+        let hours = Math.floor(millis / 3600000);
+        let minutes = Math.floor(millis / 60000)%60;
+        let seconds = ((millis % 60000) / 1000).toFixed(0);
+        return `${hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
+        // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
+    };
+
+    let convertMiliToDate = millis => {
+        let date = new Date(millis);
+        return `${date.getMonth()+1}/${date.getDate()}/${date.getFullYear()}`;
+    };
+
+    const filterPlayers = (players, compareFunc) =>
+        Object.keys(players).filter(x => compareFunc(players[x].uid, g.uid)).map(x => players[x]);
+
+    $("#game-canvas").on("serverUpdatePlayer", ({detail: players}) => {
+        // Force Angular to digest new players to update the html
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(players !== null){
+                    $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
+                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner != thisPlayer);
+                } else {
+                    $scope.otherPlayers = [];
+                    $scope.ownedPlayers = [];
+                }
+            });
+        });
+    });
+
+    $("#game-canvas").on("serverUpdateGames", ({detail: lobbies}) => {
+        // Force Angular to digest new lobbies to update the html
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(lobbies !== null){ 
+                    // Add firebase key to lobbys
+                    let lobbyDetails = Object.keys(lobbies).map(lobbyKey => {
+
+                        let lobby = lobbies[lobbyKey];
+                        lobby.key = lobbyKey;
+
+                        //Add game length to lobby information
+                        if(isDefined(lobby.gameEnd)){
+                            lobby.gameLength = convertMiliToHMS(+lobby.gameEnd - +lobby.gameStart);
+                        }
+
+                        // Add game date
+                        lobby.date = convertMiliToDate(lobby.gameStart);
+
+                        // For each player, add a life time.
+                        if(isDefined(lobby.players)) {
+                            Object.values(lobby.players).forEach(player => {
+                                // If the player died, calculate lifetime from spawn to death, else from spawn to end of game.
+                                player.lifeTime = 
+                                    player.deathTime === 0 
+                                        ? convertMiliToHMS(lobby.gameEnd - player.spawnTime) 
+                                        : convertMiliToHMS(player.deathTime - player.spawnTime);
+                            });
+                        }
+
+                        return lobby;
+                    });
+
+                    // Reverse order of lobbies to have newer first.
+                    $scope.lobbyList = _.reverse(lobbyDetails);
+                }
+            });
+        });
+    });
+
+    $scope.selectGame = id => {
+        resetGameState();
+        model.detachGameListeners(); // Detach previous game listeners
+        model.setGameId(id);
+        model.listenToCurGame();// Listen to new game data
+    };
+
+    $scope.deleteGame = id => {
+        model.deleteLobby(id);
+        model.deleteMap(id);
+        // If you are in the lobby that you are deleting, detach game listeners.
+        if(model.getGameId() === id){
+            model.detachGameListeners();
+            model.setGameId("");
+        }
+    };
+
+    // Select the player to be played
+    // and puts its values into the localPlayerStats to be later sent when game is complete.
+
+    // TODO: Make sure that localPlayerStats are being sent to the database properly.
+    $scope.selectPlayer = id => {
+        g.playerId = id;      
+        let player = players.find(x => x.id === g.playerId);
+        if(isDefined(player)){
+            localPlayerStats.uid = g.uid;
+            localPlayerStats.id = g.playerId;
+            localPlayerStats.spawnTime = Date.now();
+            localPlayerStats.team = player.team;       
+        }
+        startPlay();
+    };
+
+    $scope.removePlayer = id => {
+        model.deletePlayer({id});
+    };
+    
+    $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
+    
+    $scope.addDwarf = () => {
+        gameMaker.addPlayer(0, tiles, players.length);
+    };
+
+    $scope.addSquirrel = () => {
+        gameMaker.addPlayer(1, tiles, players.length);
+    };
+
+    $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
+
+    $scope.isObjectEmpty = obj => !isDefined(obj) || Object.keys(obj).length === 0;
+
+    // Add a lobby and map to the lobby and listen to that game once it is done.
+    $scope.addGame = () =>  {
+        model.addLobby(Date.now(), generateBattleName())
+        .then(gameId => {
+            resetGameState();
+            model.setGameId(gameId);
+            gameMaker.addGame()
+            .then(() => {
+                model.listenToCurGame();
+            });
+        });
+    };
+
+    $scope.goToMainMenu = () => {
+        localGameState = 0;
+    };
+
+    $scope.signIn = () => {
+        // Commented out for testing purpose.  Comment back in to test with multiple users.
+        // login.googleSignin().then((data) => {
+        //      console.log(data);
+        //     g.uid = data.email;
+        //     g.name = data.name;
+        // });
+        g.uid = "timaconner1@gmail.com";
+        g.fullName = "Tim Conner";
+        view.showSignIn();
+
+        // Initialize firebase and start listening to the list of lobbys
+        model.initFirebase().then(() => {
+            model.listenToLobbys();
+        });
+    };
+}]);
+
+module.exports.startGame = () => {
+    activateServerListener();
+    activateDebugListeners();
+    requestAnimationFrame(mainLoop);
 };
 },{"./game":3,"./gameMaker":4,"./login":6,"./model":9,"./view":10,"angular":162,"jquery":169,"lodash":170}],3:[function(require,module,exports){
 "use strict";
