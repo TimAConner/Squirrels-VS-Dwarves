@@ -8,6 +8,7 @@ let ctx = c.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
 
+const playerSpeed = 0.1;
 const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
@@ -63,6 +64,7 @@ const findTileBelowPlayer = (player, tiles) => {
 module.exports = {
     c,
     ctx,
+    playerSpeed,
     tileSize,
     playerSize,
     attackDistance,

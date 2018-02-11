@@ -43,32 +43,6 @@ const findAnimation = name => {
     return animation;
 };
 
-addAnimation('dwarfAnimation', 
-    {
-        frames: [1, 2],
-        defaultFrame : 0,
-        curFrame: 0,
-        lastFrame: 0,
-        interval: 250,
-        w: 22,
-        xOffset: 0,
-        h: 21
-    }
-);
-
-addAnimation('dwarfAnimationLeft', 
-    {
-        frames: [0, 1],
-        defaultFrame : 2,
-        curFrame: 0,
-        lastFrame: 0,
-        interval: 250,
-        w: 21,
-        xOffset: 0,
-        h: 21
-    }
-);
-
 // Calculates location in the spritesheet of the current frame.
 const calcFrame = ({frames, curFrame, w, xOffset}) => {
     let frameIndex = frames[curFrame%frames.length];
@@ -110,6 +84,35 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
         if(shouldIncrementFrame(animation)) selectNextFrame(animation);
     }
 };
+
+// Add animations below.
+
+addAnimation('dwarfAnimation', 
+{
+    frames: [1, 2],
+    defaultFrame : 0,
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 22,
+    xOffset: 0,
+    h: 21
+}
+);
+
+addAnimation('dwarfAnimationLeft', 
+{
+    frames: [0, 1],
+    defaultFrame : 2,
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    xOffset: 0,
+    h: 21
+}
+);
+
 
 /*
  Export just drawPlayerAniation so this can be called refrenced by

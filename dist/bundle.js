@@ -44,32 +44,6 @@ const findAnimation = name => {
     return animation;
 };
 
-addAnimation('dwarfAnimation', 
-    {
-        frames: [1, 2],
-        defaultFrame : 0,
-        curFrame: 0,
-        lastFrame: 0,
-        interval: 250,
-        w: 22,
-        xOffset: 0,
-        h: 21
-    }
-);
-
-addAnimation('dwarfAnimationLeft', 
-    {
-        frames: [0, 1],
-        defaultFrame : 2,
-        curFrame: 0,
-        lastFrame: 0,
-        interval: 250,
-        w: 21,
-        xOffset: 0,
-        h: 21
-    }
-);
-
 // Calculates location in the spritesheet of the current frame.
 const calcFrame = ({frames, curFrame, w, xOffset}) => {
     let frameIndex = frames[curFrame%frames.length];
@@ -111,6 +85,35 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
         if(shouldIncrementFrame(animation)) selectNextFrame(animation);
     }
 };
+
+// Add animations below.
+
+addAnimation('dwarfAnimation', 
+{
+    frames: [1, 2],
+    defaultFrame : 0,
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 22,
+    xOffset: 0,
+    h: 21
+}
+);
+
+addAnimation('dwarfAnimationLeft', 
+{
+    frames: [0, 1],
+    defaultFrame : 2,
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    xOffset: 0,
+    h: 21
+}
+);
+
 
 /*
  Export just drawPlayerAniation so this can be called refrenced by
@@ -369,22 +372,27 @@ smaller.x >= larger.x
 && smaller.y >= larger.y 
 && smaller.y <= larger.b;
 
-const isWithinYAxis = (player, obj) => willHitOnTop(player.y, obj) || willHitOnBottom(player.b, obj);
-
-const isWithinXAxis = (player, obj) =>  willHitOnLeft(player.x, obj) || willHitOnRight(player.r, obj);
-
 const willHitOnLeft = (xPos, obj) => ((xPos > obj.x) && (xPos < obj.r));
 const willHitOnRight = (rPos, obj) => ((rPos > obj.x) && (rPos < obj.r));
-const willHitOnTop = (yPos, obj) => ((yPos > obj.y) && (yPos< obj.b));
+const willHitOnTop = (yPos, obj) => ((yPos > obj.y) && (yPos < obj.b));
 const willHitOnBottom = (bPos, obj) => ((bPos > obj.y) && (bPos < obj.b));
 
-const canMove = (direction, player, delta) => {
+const isWithinYAxis = (player, obj) => willHitOnTop(player.y, obj) || willHitOnBottom(player.b, obj);
+const isWithinXAxis = (player, obj) =>  willHitOnLeft(player.x, obj) || willHitOnRight(player.r, obj);
+
+const canPlayerMove = (direction, delta) => {
+    let player = players.find(({id}) => id === g.playerId);
     let playerPos = g.calcObjBounds(player, g.playerSize, true);
     let increment = speedMultiplier*delta;
 
     for(let tile of tiles){
         let tilePos = g.calcObjBounds(tile, g.tileSize);
-        if(tile.hard.points > 0 || tile.hard.points === -2){ // If it  is still hard or if hardness is -2, unbreakable.
+        // Can't move through objects that are still hard or if -2 (unbrekable)
+        if(tile.hard.points > 0 || tile.hard.points === -2){ 
+            /* 
+            Functions in isObjectInDirection check if on x or y axis of object, 
+            and if the next movement in that direction will run into the object
+            */
             const isObjectInDirection = {
               left: () => isWithinYAxis(playerPos, tilePos) && willHitOnLeft(playerPos.x-increment, tilePos),
               right: () => isWithinYAxis(playerPos, tilePos) && willHitOnRight(playerPos.r+increment, tilePos),
@@ -471,12 +479,12 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             let valuesToAdd =  _.difference(newIdList, curIdList),
             valuesToDelete =  _.difference(curIdList, newIdList);
             
-            // Remove values not present
-
+            // Remove values not present in new data
             for(let toDelete of valuesToDelete){
                 _.remove(currentData, val => val === toDelete);
             }
 
+            // Add values present in new data
             for(let toAdd of valuesToAdd){
                 currentData.push(newData.find(({id}) => id === toAdd));
             }
@@ -613,6 +621,7 @@ const update = delta => {
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
+                        console.log('attack');
                         countDataSent++;
 
                         model.savePlayerHealth(targetPlayer).then(data => {
@@ -629,6 +638,7 @@ const update = delta => {
                             localPlayerStats.mined += g.mineStrength;
 
                             addRequestId(selectedTile.hard, `${requestId}mine`);
+                            console.log('mine');
                             countDataSent++;
 
                             model.saveTileHard(selectedTile).then(data => {
@@ -648,7 +658,7 @@ const update = delta => {
                     if(isDefined(gemOnTile) && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
-
+                        console.log('pickup');
                         countDataSent ++;
                         model.saveGem(gems[gems.indexOf(gemOnTile)]).then(data => {
                             countDataReturned ++;
@@ -682,6 +692,7 @@ const update = delta => {
                                 setWinnerGameState(player.team);
                                 model.deleteCurrentMap();
                             }
+                            console.log('drop');
                             countDataSent ++;
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(data => {
                                 countDataReturned++;
@@ -693,25 +704,25 @@ const update = delta => {
             } 
             
             // Check if can move, if can move in direction, move, if can't update direction.
-            if(isKeyOn("ArrowUp") && canMove("up", player, delta)){
+            if(isKeyOn("ArrowUp") && canPlayerMove("up", delta)){
                 updatePlayerState("up", "y", playerUpdateObject);
             } else if(isKeyOn("ArrowUp") && player.pos.dir !== "up"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("up", "y", playerUpdateObject);
-            } else if (isKeyOn("ArrowDown") && canMove("down", player, delta)){
+            } else if (isKeyOn("ArrowDown") && canPlayerMove("down", delta)){
 
                 updatePlayerState("down", "y", playerUpdateObject);
 
             } else if(isKeyOn("ArrowDown") && player.pos.dir !== "down"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("down", "y", playerUpdateObject);
-            } else if(isKeyOn("ArrowLeft") && canMove("left", player, delta)){
+            } else if(isKeyOn("ArrowLeft") && canPlayerMove("left", delta)){
                 updatePlayerState("left", "x", playerUpdateObject);
 
             } else if(isKeyOn("ArrowLeft") && player.pos.dir !== "left"){
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("left", "x", playerUpdateObject);
-            } else if(isKeyOn("ArrowRight") && canMove("right", player, delta)){
+            } else if(isKeyOn("ArrowRight") && canPlayerMove("right", delta)){
 
                 updatePlayerState("right", "x", playerUpdateObject);
             
@@ -719,7 +730,7 @@ const update = delta => {
                 playerUpdateObject.speedMultiplier = 0;
                 updatePlayerState("right", "x", playerUpdateObject);
             } else {// If nothing is being pressed, tell the server that the player is not moving and use the animation direction as the direction to set the player.
-                if(isDefined(playerUpdateObject.player.pos.isMoving) || playerUpdateObject.player.pos.isMoving){
+                if(!isDefined(playerUpdateObject.player.pos.isMoving) || playerUpdateObject.player.pos.isMoving){
                     playerUpdateObject.player.pos.isMoving = false;
                     playerUpdateObject.speedMultiplier = 0;
                     updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
@@ -752,8 +763,10 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
     pos.dir = direction;
 
     addRequestId(pos, `${requestId}move`);
+    
+    console.log('move');
     countDataSent ++;
-
+    
     model.savePlayerPos(player).then(({pos: {requestId}}) => {
         countDataReturned ++;
         calcLag(parseRequestId(requestId)[1]);
@@ -1016,6 +1029,7 @@ let ctx = c.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
 
+const playerSpeed = 0.1;
 const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
@@ -1071,6 +1085,7 @@ const findTileBelowPlayer = (player, tiles) => {
 module.exports = {
     c,
     ctx,
+    playerSpeed,
     tileSize,
     playerSize,
     attackDistance,
