@@ -12,6 +12,7 @@ Bahlor
 https://coderwall.com/p/iygcpa/gameloop-the-correct-way
 
 */
+
 const model = require("./model");
 const view = require("./view");
 const login = require("./login");
@@ -29,7 +30,7 @@ let onlineGameState = 0,
 localGameState = 0,
 waitingForGame = false;
 
-let winner = 0;
+let winnerTeamId = 0;
 
 let players = [],
 tiles = [],
@@ -153,7 +154,6 @@ const findTileInPlayerDir = ({pos: playerPos, pos: {dir: playerDirection}}) => {
 // Returns true if a key is being pressed down
 const isKeyOn = key => keys[key];
 
-
 const findClosestGem = player => gems.find(gem => g.calcDistance(player.pos, gem.pos) <= g.gemPickupDistance);
 
 
@@ -179,7 +179,7 @@ const setWinnerGameState = teamId => {
 };
 
 //Returns  an array of matches on the requesst id
-const parseRequestId = requestId => requestId.match("(.*)-(-.*)");
+const parseRequestId = requestId => requestId.match("(.*)-(-.*)")[1];
 
 // Calculates lag and sets lag variable that is used by view
 const calcLag = miliseconds => {
@@ -217,8 +217,8 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             if(!isDefined(valuesToCheck)){ 
                 let curPeice = currentData.find(({id}) => id === newPeice.id);
                 if(isDefined(newPeice.requestId) && newPeice.requestId !== curPeice.requestId){
-                    let newRequestId = +parseRequestId(newPeice.requestId)[1];
-                    let curRequestId = +parseRequestId(curPeice.requestId)[1];
+                    let newRequestId = +parseRequestId(newPeice.requestId);
+                    let curRequestId = +parseRequestId(curPeice.requestId);
                     
                     if(newRequestId >= curRequestId) calcLag(newRequestId);
 
@@ -238,8 +238,8 @@ const mergeData = (currentData, newData, valuesToCheck) => {
                     let curPeice = currentData.find(({id}) => id === newPeice.id);
                     if(isDefined(newPeice[value]) && newPeice[value].requestId !== curPeice[value].requestId){ 
 
-                        let newRequestId = +parseRequestId(newPeice[value].requestId)[1];
-                        let curRequestId = +parseRequestId(curPeice[value].requestId)[1];
+                        let newRequestId = +parseRequestId(newPeice[value].requestId);
+                        let curRequestId = +parseRequestId(curPeice[value].requestId);
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
@@ -340,12 +340,11 @@ const checkInput = delta => {
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
-                        console.log('attack');
                         countDataSent++;
 
                         model.savePlayerHealth(targetPlayer).then(data => {
                             countDataReturned ++;
-                            calcLag(parseRequestId(data.health.requestId)[1]);
+                            calcLag(parseRequestId(data.health.requestId));
                         });
 
                     } 
@@ -357,12 +356,11 @@ const checkInput = delta => {
                             localPlayerStats.mined += g.mineStrength;
 
                             addRequestId(selectedTile.hard, `${requestId}mine`);
-                            console.log('mine');
                             countDataSent++;
 
                             model.saveTileHard(selectedTile).then(data => {
                                 countDataReturned ++;
-                                calcLag(parseRequestId(data.hard.requestId)[1]);
+                                calcLag(parseRequestId(data.hard.requestId));
                             });
                         }
                     }
@@ -373,15 +371,13 @@ const checkInput = delta => {
                 let selectedTile = g.findTileBelowPlayer(player, tiles);
                 if(isDefined(selectedTile)){
                     let gemOnTile = findClosestGem(player);
-                    // console.log('gemOnTile', gemOnTile);
                     if(isDefined(gemOnTile) && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
                         addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
-                        console.log('pickup');
                         countDataSent ++;
                         model.saveGem(gems[gems.indexOf(gemOnTile)]).then(data => {
                             countDataReturned ++;
-                            calcLag(parseRequestId(data.requestId)[1]);
+                            calcLag(parseRequestId(data.requestId));
                         }); 
                     }
                 } 
@@ -411,11 +407,10 @@ const checkInput = delta => {
                                 setWinnerGameState(player.team);
                                 model.deleteCurrentMap();
                             }
-                            console.log('drop');
                             countDataSent ++;
                             model.saveGem(gems[gems.indexOf(carriedGem)]).then(data => {
                                 countDataReturned++;
-                                calcLag(parseRequestId(data.requestId)[1]);
+                                calcLag(parseRequestId(data.requestId));
                             }); 
                         }
                     }
@@ -482,12 +477,11 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
 
     addRequestId(pos, `${requestId}move`);
     
-    console.log('move');
     countDataSent ++;
     
     model.savePlayerPos(player).then(({pos: {requestId}}) => {
         countDataReturned ++;
-        calcLag(parseRequestId(requestId)[1]);
+        calcLag(parseRequestId(requestId));
     });
 };
 
@@ -498,8 +492,9 @@ const mainLoop = (timestamp) => {
         view.showSignIn();
     } else if(initialLobbyLoad){ // Loading screen
         view.showLoadingScreen();
-    } else if (onlineGameState === 2 && localGameState === 1){ // Wwinner screen
-        view.viewWinnerScreen(winner);
+    } else if (onlineGameState === 2 && localGameState === 1){ // Winner screen
+        resetGameState();
+        view.viewWinnerScreen(winnerTeamId);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game playing screen
         // Show game canvas
         view.viewGame();
@@ -590,10 +585,10 @@ const activateDebugListeners = () => {
     });
 };
 
-const activateServerListener = () => {
+const activateServerListeners = () => {
     
-    g.c.addEventListener("serverUpdateGems", (e) => {
-        let filteredGems = _.compact(e.detail);
+    g.c.addEventListener("serverUpdateGems", ({detail: gemData}) => {
+        let filteredGems = _.compact(gemData);
         if(initialGemDraw === true){
             gems = filteredGems;
             initialGemDraw = false;
@@ -604,18 +599,18 @@ const activateServerListener = () => {
         mergeDataThisFrame = true;
     });
 
-    g.c.addEventListener("serverUpdateGames", (e) => {
-        games = e.detail;
+    g.c.addEventListener("serverUpdateGames", ({detail:  lobbyData}) => {
+        games = lobbyData;
         initialLobbyLoad = false;
         mergeDataThisFrame = true;
     });
 
-    g.c.addEventListener("serverUpdatePlayer", (e) => {
-        if(e.detail !== null){
+    g.c.addEventListener("serverUpdatePlayer", ({detail: playerData}) => {
+        if(playerData !== null){
             
         // Filter the results, because firebase will return empty values if there are gaps in the array.
-        let filteredPlayers = Object.keys(e.detail).map(key => {
-            let player = e.detail[key];
+        let filteredPlayers = Object.keys(playerData).map(key => {
+            let player = playerData[key];
             player.id = key;
             return player;
         }); 
@@ -634,8 +629,8 @@ const activateServerListener = () => {
         mergeDataThisFrame = true;
     });
     
-    g.c.addEventListener("serverUpdateTiles", (e) => {
-        let filteredTiles = _.compact(e.detail);
+    g.c.addEventListener("serverUpdateTiles", ({detail: tileData}) => {
+        let filteredTiles = _.compact(tileData);
 
         for(let i = 0; i < filteredTiles.length; i++){
             filteredTiles[i].id = i;
@@ -653,10 +648,10 @@ const activateServerListener = () => {
 
     });
 
-    g.c.addEventListener("serverUpdateGameState", (e) => {
+    g.c.addEventListener("serverUpdateGameState", ({detail: gameStateData}) => {
         initialGameState = false;
-        onlineGameState = e.detail.gameState; 
-        winner = e.detail.winningTeam;
+        onlineGameState = gameStateData.gameState; 
+        winnerTeamId = gameStateData.winningTeam;
         
         // If the game has been won by a player online, 
         // then send states and finish the game locally.
@@ -679,10 +674,8 @@ window.addEventListener("keydown", function(e) {
 
 // When a key is pressed, set it to true.
 window.onkeydown = function(event) {
-    // console.log(event.key);
     for(let prop in keys){
         if(prop == event.key){
-        // console.log("event.keycode", event.keycode);
             keys[prop] = true;
         }
     }
@@ -692,7 +685,6 @@ window.onkeydown = function(event) {
 window.onkeyup = function(event) {
     for(let prop in keys){
         if(prop == event.key){
-            // console.log("event.keycode", event.keycode);
             keys[prop] = false;
         }
     }
@@ -722,7 +714,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
             $scope.$apply(function(){
                 if(players !== null){
                     $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
-                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner != thisPlayer);
+                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => isDefined(playerOwner) && playerOwner != thisPlayer);
                 } else {
                     $scope.otherPlayers = [];
                     $scope.ownedPlayers = [];
@@ -858,7 +850,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 }]);
 
 module.exports.startGame = () => {
-    activateServerListener();
+    activateServerListeners();
     activateDebugListeners();
     requestAnimationFrame(mainLoop);
 };
