@@ -1642,13 +1642,13 @@ let DwarfAnimation = {
     h: 21
 };
 
-let tileDestructionList = [
-    {hard: "1.95", img: img('stone')},
+let tileDestructionAnimation = [
+    {hard: 1.9, img: img('stone')},
     {hard: 1.7, img: img('stoneBroke1')},
     {hard: 1.5, img: img('stoneBroke2')},
     {hard: 1.3, img: img('stoneBroke3')},
     {hard: 1.1, img: img('stoneBroke4')},
-    {hard: 1, img:img('stoneBroke5')},
+    {hard: 1.0, img: img('stoneBroke5')},
     {hard: 0.9, img: img('stoneFrac1')},
     {hard: 0.8, img: img('stoneFrac2')},
     {hard: 0.6, img: img('stoneFrac3')},
@@ -1666,9 +1666,9 @@ let tileDestructionList = [
 // };
 
 
-// Cleared on each update.  Contains the tiles that should be drawn that frame.
-// TODO: Move inside function.
-let tilesToDraw = [];
+// // Cleared on each update.  Contains the tiles that should be drawn that frame.
+// // TODO: Move inside function.
+// let tilesToDraw = [];
 
 // Set by draw()
 let thisPlayer;
@@ -1687,60 +1687,56 @@ const findPlayerTile = (player) => {
     };
 };
 
-const doesTileExist = (tile, tiles) => {
-    return tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
-};
+const doesTileExist = (tile, tiles) => tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
 
 
 // Tile is being check is if within one of other tiles
 const isTileWithinOne = (tile, otherTiles) => {
-    for(let i = 0; i < otherTiles.length; i++){
-        // console.log('Math.abs(tile.pos.x - otherTiles[i].pos.x)', Math.abs(tile.pos.x - otherTiles[i].pos.x));
-        // console.log('Math.abs(tile.pos.y - otherTiles[i].pos.y)', Math.abs(tile.pos.y - otherTiles[i].pos.y));
-        if(Math.abs(tile.pos.x - otherTiles[i].pos.x) <= 1 &&  Math.abs(tile.pos.y - otherTiles[i].pos.y) <= 1 && otherTiles[i].hard.points <= 0 && otherTiles[i].hard.points !== -2){
-            // console.log(tile);
+    for(let testingTile of otherTiles){
+         if(Math.abs(tile.pos.x - testingTile.pos.x) <= 1 &&  Math.abs(tile.pos.y - testingTile.pos.y) <= 1 && testingTile.hard.points <= 0 && testingTile.hard.points !== -2){
             return true;
         }
     }
-
     return false;
 };
 
-const drawTiles = (tiles, players) => {
-    tilesToDraw = [];
-
+const calcVisibleTiles = (tiles, players) => {
+    let tilesToDraw = [];
+    
     let tilesToBeAddedToDraw = [];
     
     let playerTile = g.findTileBelowPlayer(thisPlayer, tiles);
-
-    // Draw tiles around team mates
-    for(let i = 0; i < players.length; i++){
-        if(players[i].team === thisPlayer.team && g.isPlayerAlive(players[i])){
-            tilesToDraw.push(g.findTileBelowPlayer(players[i], tiles));
-        }
-    }
-
+    // Add seed tile that player is on
     if(isDefined(playerTile)){
         tilesToDraw.push(playerTile);
     }
 
-    // Find all tiles touching the player that are hard <= 0
+    // Add seed tile that team mate is on
+    for(let player of players){
+        let allyTile = g.findTileBelowPlayer(player, tiles);
+        if(isDefined(allyTile) && player.team === thisPlayer.team && g.isPlayerAlive(player)){
+            tilesToDraw.push(allyTile);
+        }
+    }
+
+    // Find all tiles that are touching player or marked as touching a tile touching a player.
     for(let i = 0; i < sightDistance; i++){
-        for(let a = 0; a < tiles.length; a++){
-            if(isTileWithinOne(tiles[a], tilesToDraw)){
-                tilesToBeAddedToDraw.push(tiles[a]);
+        for(let tile of tiles){
+            if(isTileWithinOne(tile, tilesToDraw)){
+                tilesToBeAddedToDraw.push(tile);
             }
         }
-
         // Add tiles  to tilesToDraw (the tiles that are being used to check if a tile is within oen), only after a whole loop so that the tile that is added will not be used to check other tiles against.
-        // console.log('tilesToDraw', tilesToDraw);
         tilesToDraw = tilesToDraw.concat(tilesToBeAddedToDraw);
-        // console.log('tilesToDraw', tilesToDraw);
     }
-    // console.log('tileToBeAddedToDraw', tilesToBeAddedToDraw);
 
+    return tilesToDraw;
+};
 
-    for(let i = 0; i < tiles.length; i++){
+const drawTiles = (tiles, players) => {
+    let tilesToDraw = calcVisibleTiles(tiles, players);
+    
+    for(let tile of tiles){
         let playerTile;
 
         if(isDefined(thisPlayer)){
@@ -1748,88 +1744,47 @@ const drawTiles = (tiles, players) => {
         }
         
         if(isDefined(playerTile)){
-
-            // let a = (playerTile.pos.x+0.5) - (tiles[i].pos.x+0.5),
-            // b = (playerTile.pos.y+0.5) - (tiles[i].pos.y+0.5),
-            // distance = Math.sqrt(a*a + b*b);
-
-            
-            if(isDefined(doesTileExist(tiles[i], tilesToDraw))){
-                let hardness = tiles[i].hard.points;
+            if(isDefined(doesTileExist(tile, tilesToDraw))){
+                let hardness = tile.hard.points;
                 if(hardness > 0){
-                    g.ctx.fillStyle = rockColor; 
-
-                    for(let img of tileDestructionList){
-                        if(hardness > +img.hard){
-                            g.ctx.drawImage(img.img,g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                    for(let anim of tileDestructionAnimation){
+                        if(hardness > +anim.hard){
+                            g.ctx.drawImage(anim.img,g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                             break;
                         }
                     }
-                    
-                // console.log("b",  distance);
-                } else if (tiles[i].hard.points === -2) {
+                } else if (tile.hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                    g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                     
                 } else {
-                    if(tiles[i].teamBase === thisPlayer.team){
+                    if(tile.teamBase === thisPlayer.team){
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tiles[i], g.tileSize).x,g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
-                        g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                        g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     } else {
                         g.ctx.fillStyle = minedColor; 
-                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tiles[i], g.tileSize).x,g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     }
-                   
-                    
-                // console.log("w", distance);
                 }
             } else {
-                if(tiles[i].teamBase === thisPlayer.team){
+                if(tile.teamBase === thisPlayer.team){
                     g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage(img('dirt'),g.calcObjBounds(tiles[i], g.tileSize).x,g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                    g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                     g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                    g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                     
-                } else if (tiles[i].hard.points === -2) {
+                } else if (tile.hard.points === -2) {
                     g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    
-                } 
-                // else {
-                //     g.ctx.fillStyle = unknownColor;
-                //     g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    
-                // }
-                // console.log("b", distance);
-            }   
-            
+                    g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
+                }
+            }  
         } 
-        // else {
-        //     g.ctx.fillStyle = unknownColor;
-        //     g.ctx.fillRect(g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-            
-        // }   
-
-       
         g.ctx.stroke();
     }
-};
-
-const canSeePlayer = (p1, p2, sightDistance) => {
-
-    let player1 = findPlayerTile(p1);
-    let player2 = findPlayerTile(p2);
-
-    let a = (player1.pos.x+0.5) - (player2.pos.x+0.5),
-    b = (player1.pos.y+0.5) - (player2.pos.y+0.5),
-    // Line must be ignored, because JS Hint doesn't recognize ** operator.
-    distance = Math.sqrt(a**2 + b**2);// jshint ignore:line
-
-    return Math.abs(distance) <= sightDistance;
 };
 
 const drawPlayers = (players, playerId, tiles) => {
