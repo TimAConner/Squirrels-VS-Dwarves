@@ -288,13 +288,6 @@ const updateGemPosition = () => {
 };
 
 const checkInput = delta => {
-    // boxPos += boxVelocity * delta; // velocity is now time-sensitive
-    
-
-    /*
-        Controls
-    */
-
     if(isDefined(g.playerId)){
 
         let player = players.find(player => player.id == g.playerId);
@@ -587,6 +580,7 @@ const activateDebugListeners = () => {
 
 const activateServerListeners = () => {
     
+    // Update the list of gems in the current game
     g.c.addEventListener("serverUpdateGems", ({detail: gemData}) => {
         let filteredGems = _.compact(gemData);
         if(initialGemDraw === true){
@@ -599,12 +593,14 @@ const activateServerListeners = () => {
         mergeDataThisFrame = true;
     });
 
+    // Updates the list of lobbies
     g.c.addEventListener("serverUpdateGames", ({detail:  lobbyData}) => {
         games = lobbyData;
         initialLobbyLoad = false;
         mergeDataThisFrame = true;
     });
 
+    // Updat the list of players in the current game
     g.c.addEventListener("serverUpdatePlayer", ({detail: playerData}) => {
         if(playerData !== null){
             
@@ -628,7 +624,8 @@ const activateServerListeners = () => {
         initialPlayerDraw = false;
         mergeDataThisFrame = true;
     });
-    
+
+    // Update the list of tiles in the current game
     g.c.addEventListener("serverUpdateTiles", ({detail: tileData}) => {
         let filteredTiles = _.compact(tileData);
 
@@ -648,6 +645,7 @@ const activateServerListeners = () => {
 
     });
 
+    // Update game state of the current game
     g.c.addEventListener("serverUpdateGameState", ({detail: gameStateData}) => {
         initialGameState = false;
         onlineGameState = gameStateData.gameState; 
@@ -666,28 +664,18 @@ const activateServerListeners = () => {
 };
 
 // Prevent key defaults
-window.addEventListener("keydown", function(e) {
-    if(Object.keys(keys).indexOf(e.key) > -1) {
-        e.preventDefault();
-    }
+window.addEventListener("keydown", e => {
+    if(isDefined(keys[e.key])) e.preventDefault();
 }, false);
 
 // When a key is pressed, set it to true.
-window.onkeydown = function(event) {
-    for(let prop in keys){
-        if(prop == event.key){
-            keys[prop] = true;
-        }
-    }
+window.onkeydown = ({key: input}) => {
+    for(let key in keys) if(key == input) keys[key] = true;
 };
 
 // When a key is up, set it to false.
-window.onkeyup = function(event) {
-    for(let prop in keys){
-        if(prop == event.key){
-            keys[prop] = false;
-        }
-    }
+window.onkeyup = ({key: input}) => {
+    for(let key in keys) if(key == input) keys[key] = false;
 };
 
 app.controller("menuCtrl", ['$scope', function($scope) {

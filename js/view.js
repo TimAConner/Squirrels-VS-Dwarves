@@ -38,6 +38,20 @@ let DwarfAnimation = {
     h: 21
 };
 
+let tileDestructionList = [
+    {hard: "1.95", img: img('stone')},
+    {hard: 1.7, img: img('stoneBroke1')},
+    {hard: 1.5, img: img('stoneBroke2')},
+    {hard: 1.3, img: img('stoneBroke3')},
+    {hard: 1.1, img: img('stoneBroke4')},
+    {hard: 1, img:img('stoneBroke5')},
+    {hard: 0.9, img: img('stoneFrac1')},
+    {hard: 0.8, img: img('stoneFrac2')},
+    {hard: 0.6, img: img('stoneFrac3')},
+    {hard: 0.4, img: img('stoneFrac4')},
+    {hard: 0.2, img: img('stoneFrac5')},
+    {hard: 0.0, img: img('stoneFrac6')}
+];
 
 // // Angular
 
@@ -69,7 +83,7 @@ const findPlayerTile = (player) => {
     };
 };
 
-const doesTileExists = (tile, tiles) => {
+const doesTileExist = (tile, tiles) => {
     return tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
 };
 
@@ -136,44 +150,16 @@ const drawTiles = (tiles, players) => {
             // distance = Math.sqrt(a*a + b*b);
 
             
-            if(isDefined(doesTileExists(tiles[i], tilesToDraw))){
+            if(isDefined(doesTileExist(tiles[i], tilesToDraw))){
                 let hardness = tiles[i].hard.points;
                 if(hardness > 0){
                     g.ctx.fillStyle = rockColor; 
-                    if(hardness > 1.95){
-                        g.ctx.drawImage(img('stone'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    }
-                    else if(hardness > 1.7){
-                        g.ctx.drawImage(img('stoneBroke1'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    }
-                    else if(hardness > 1.5){
-                        g.ctx.drawImage(img('stoneBroke2'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    }
-                    else if(hardness > 1.3){
-                        g.ctx.drawImage(img('stoneBroke3'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, 
-                        g.tileSize,  g.tileSize);
-                    }
-                    else if(hardness > 1.1){
-                        g.ctx.drawImage(img('stoneBroke4'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    }
-                    else if(hardness > 1){
-                        g.ctx.drawImage(img('stoneBroke5'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    } else  if (hardness > 0.9){
-                        g.ctx.drawImage(img('stoneFrac1'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    } else  if (hardness > 0.8){
-                        g.ctx.drawImage(img('stoneFrac2'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                    } else  if (hardness > 0.6){
-                        g.ctx.drawImage(img('stoneFrac3'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                        
-                    } else  if (hardness > 0.4){
-                        g.ctx.drawImage(img('stoneFrac4'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                        
-                    } else  if (hardness > 0.2){
-                        g.ctx.drawImage(img('stoneFrac5'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                        
-                    } else  if (hardness > 0.0){
-                        g.ctx.drawImage(img('stoneFrac6'),g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
-                        
+
+                    for(let img of tileDestructionList){
+                        if(hardness > +img.hard){
+                            g.ctx.drawImage(img.img,g.calcObjBounds(tiles[i], g.tileSize).x, g.calcObjBounds(tiles[i], g.tileSize).y, g.tileSize,  g.tileSize);
+                            break;
+                        }
                     }
                     
                 // console.log("b",  distance);
