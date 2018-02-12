@@ -1284,7 +1284,7 @@ controller.startGame();
                         "x": x,
                         "y": y
                     },
-                    "hard": {
+                    "tough": {
                         "points": generateTile(w*h),
                         "requestId": "0--0"
                     }
@@ -1294,18 +1294,18 @@ controller.startGame();
 
                 // Set map bounds tiles
                 if(x === 0 || x === w-1 || y === 0 || y === h-1){ 
-                    obj.hard.points = -2;
+                    obj.tough.points = -2;
                 }
 
                 // Set dwarf base tiles
                 if(x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2){
-                    obj.hard.points = 0;
+                    obj.tough.points = 0;
                     obj.teamBase = 0;
                 }
     
                 // Set squirrel base tiles
                 if(x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2){
-                    obj.hard.points = 0;
+                    obj.tough.points = 0;
                     obj.teamBase = 1;
                 }
     
@@ -1643,18 +1643,18 @@ let DwarfAnimation = {
 };
 
 let tileDestructionAnimation = [
-    {hard: 1.9, img: img('stone')},
-    {hard: 1.7, img: img('stoneBroke1')},
-    {hard: 1.5, img: img('stoneBroke2')},
-    {hard: 1.3, img: img('stoneBroke3')},
-    {hard: 1.1, img: img('stoneBroke4')},
-    {hard: 1.0, img: img('stoneBroke5')},
-    {hard: 0.9, img: img('stoneFrac1')},
-    {hard: 0.8, img: img('stoneFrac2')},
-    {hard: 0.6, img: img('stoneFrac3')},
-    {hard: 0.4, img: img('stoneFrac4')},
-    {hard: 0.2, img: img('stoneFrac5')},
-    {hard: 0.0, img: img('stoneFrac6')}
+    {tough: 1.9, img: img('stone')},
+    {tough: 1.7, img: img('stoneBroke1')},
+    {tough: 1.5, img: img('stoneBroke2')},
+    {tough: 1.3, img: img('stoneBroke3')},
+    {tough: 1.1, img: img('stoneBroke4')},
+    {tough: 1.0, img: img('stoneBroke5')},
+    {tough: 0.9, img: img('stoneFrac1')},
+    {tough: 0.8, img: img('stoneFrac2')},
+    {tough: 0.6, img: img('stoneFrac3')},
+    {tough: 0.4, img: img('stoneFrac4')},
+    {tough: 0.2, img: img('stoneFrac5')},
+    {tough: 0.0, img: img('stoneFrac6')}
 ];
 
 // // Angular
@@ -1687,13 +1687,13 @@ const findPlayerTile = (player) => {
     };
 };
 
-const doesTileExist = (tile, tiles) => tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y);
+const shouldTileBeDrawn = (tile, tiles) => isDefined(tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y)) ? true : false;
 
 
 // Tile is being check is if within one of other tiles
 const isTileWithinOne = (tile, otherTiles) => {
     for(let testingTile of otherTiles){
-         if(Math.abs(tile.pos.x - testingTile.pos.x) <= 1 &&  Math.abs(tile.pos.y - testingTile.pos.y) <= 1 && testingTile.hard.points <= 0 && testingTile.hard.points !== -2){
+         if(Math.abs(tile.pos.x - testingTile.pos.x) <= 1 &&  Math.abs(tile.pos.y - testingTile.pos.y) <= 1 && testingTile.tough.points <= 0 && testingTile.tough.points !== -2){
             return true;
         }
     }
@@ -1744,28 +1744,25 @@ const drawTiles = (tiles, players) => {
         }
         
         if(isDefined(playerTile)){
-            if(isDefined(doesTileExist(tile, tilesToDraw))){
-                let hardness = tile.hard.points;
-                if(hardness > 0){
+            if(shouldTileBeDrawn(tile, tilesToDraw)){
+                let {tough: {points: toughness}} = tile;
+                if(toughness > 0){
                     for(let anim of tileDestructionAnimation){
-                        if(hardness > +anim.hard){
+                        if(toughness > +anim.tough){
                             g.ctx.drawImage(anim.img,g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                             break;
                         }
                     }
-                } else if (tile.hard.points === -2) {
-                    g.ctx.fillStyle = edgeColor;
+                } else if (toughness === -2) {
                     g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                     
                 } else {
                     if(tile.teamBase === thisPlayer.team){
-                        g.ctx.fillStyle = minedColor; 
                         g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                         g.ctx.fillStyle = baseColor;
                         g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     } else {
-                        g.ctx.fillStyle = minedColor; 
                         g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                         
                     }
@@ -1777,7 +1774,7 @@ const drawTiles = (tiles, players) => {
                     g.ctx.fillStyle = baseColor;
                     g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                     
-                } else if (tile.hard.points === -2) {
+                } else if (tile.tough.points === -2) {
                     g.ctx.fillStyle = edgeColor;
                     g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
                 }
