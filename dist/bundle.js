@@ -579,7 +579,7 @@ const addRequestId = (object, requestId) => {
 const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
-console.log('direction', direction);
+    
     // Set animation direction
     if (direction === "left") {
         pos.animDirHorizontal = "left";
@@ -1759,15 +1759,13 @@ const drawTile = (imgName, tile, color = null) => {
 
 const drawTiles = (tiles, players) => {
     let tilesToDraw = calcVisibleTiles(tiles, players);
-
-    for(let tile of tiles){
-        let playerTile;
-
-        if(isDefined(thisPlayer)){
-            playerTile = findPlayerTile(thisPlayer);
-        }
-        
-        if(isDefined(playerTile)){
+    
+    let playerTile;
+    if(isDefined(thisPlayer)){
+        playerTile = findPlayerTile(thisPlayer);
+    }
+    if(isDefined(playerTile)){
+        for(let tile of tiles){
             let tileToughness = tile.tough.points;
             
             const tileType = {
@@ -1804,64 +1802,58 @@ const drawTiles = (tiles, players) => {
                 }
             }
         } 
+
         g.ctx.stroke();
     }
 };
 
+const drawHealthBar = player => {
+    g.ctx.fillStyle = "red";
+    g.ctx.strokeRect(player.pos.x, player.pos.y - 10, g.playerSize, 5);
+    g.ctx.fillRect(player.pos.x+1, player.pos.y - 9, g.playerSize*(player.health.points*0.01)-1, 3);
+};
+
+const isASquirrel = ({team}) => team === 1 ? true : false;
+const isADwarf = ({team}) => team === 0 ? true : false;
+
 const drawPlayers = (players, playerId, tiles) => {
-    // console.log("players", players); 
-    for(let i = 0; i < players.length; i++){
-        // let playerDirection = (players[i].dir*30);
-        // g.ctx.rotate(playerDirection * Math.PI / 180);
-        // console.log("playeri", players[i], thisPlayer);
-      
-        let playerTile = g.findTileBelowPlayer(players[i], tiles);
-
-        if((players[i].team === thisPlayer.team || thisPlayer.id == players[i].id || tilesToDraw.find(tile => tile === playerTile)) && g.isPlayerAlive(players[i])){// jshint ignore:line
-            // console.log("in here", players[i]);
-            
-
-        //    g.ctx.setTransform(1,0,0,1,players[i].pos.x,players[i].pos.y); // set position of image center
-           
-        //     if(players[i].pos.dir === "right"){
-        //         g.ctx.rotate(90); // rotate
-        //     }
+    for(let player of players){
+        let playerTile = g.findTileBelowPlayer(player, tiles);
+        if((player.team === thisPlayer.team || thisPlayer.id == player.id || tilesToDraw.find(tile => tile === playerTile)) && g.isPlayerAlive(player)){// jshint ignore:line
 
         // Draw health
-        g.ctx.fillStyle = "red";
-        g.ctx.strokeRect(players[i].pos.x, players[i].pos.y - 10, g.playerSize, 5);
-        g.ctx.fillRect(players[i].pos.x+1, players[i].pos.y - 9, g.playerSize*(players[i].health.points*0.01)-1, 3);
-        g.ctx.stroke();
+        drawHealthBar(player);
 
-        if(players[i].team === 1){
-            g.ctx.drawImage(img('squirrel'), players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
-            
-        } else {
-            if(isDefined(players[i].pos.animDirHorizontal)) {
-                if(players[i].pos.animDirHorizontal === "left" && players[i].pos.animDirVertical === "up") {
-                    drawPlayerAnimation('dwarfSpriteLeftUp', 'dwarfAnimationLeft', players[i].pos);
-                }else if(players[i].pos.animDirHorizontal === "left" && players[i].pos.animDirVertical === "down") {
-                    drawPlayerAnimation('dwarfSpriteLeftDown', 'dwarfAnimationLeft', players[i].pos);
-                }else if(players[i].pos.animDirHorizontal === "right" && players[i].pos.animDirVertical === "up") {
-                    drawPlayerAnimation('dwarfSpriteRightUp', 'dwarfAnimationRight', players[i].pos);
-                }else if(players[i].pos.animDirHorizontal === "right" && players[i].pos.animDirVertical === "down") {
-                    drawPlayerAnimation('dwarfSpriteRightDown', 'dwarfAnimationRight', players[i].pos);
-                }else if(players[i].pos.animDirHorizontal === "right"){
-                    drawPlayerAnimation('dwarfSpriteRight', 'dwarfAnimationRight', players[i].pos);
-                }else if(players[i].pos.animDirHorizontal === "left") {
-                    drawPlayerAnimation('dwarfSpriteLeft', 'dwarfAnimationLeft', players[i].pos);
+        if(isASquirrel(player)){ // Is Squirrel
+            g.ctx.drawImage(img('squirrel'), player.pos.x, player.pos.y, g.playerSize, g.playerSize);
+        } else if(isADwarf(player)){
+
+            const dwarfAnimationDirector = {
+                "left": {
+                    "up": 'dwarfSpriteLeftUp',
+                    "down": 'dwarfSpriteLeftDown',
+                    "none": 'dwarfSpriteLeft',
+                    "animation": 'dwarfAnimationLeft'
+                },
+                "right": {
+                    "up": 'dwarfSpriteRightUp',
+                    "down": 'dwarfSpriteRightDown',
+                    "none": 'dwarfSpriteRight',
+                    "animation": 'dwarfAnimationRight'
+                }
+            };
+
+            let {pos: {animDirHorizontal: horizontal, animDirVertical: vertical}} = player;
+
+            if(isDefined(horizontal)) {
+                if(isDefined(dwarfAnimationDirector[horizontal][vertical])){
+                    drawPlayerAnimation(dwarfAnimationDirector[horizontal][vertical], dwarfAnimationDirector[horizontal].animation, player.pos);    
                 }
             }
         }
             
         g.ctx.stroke();
-            // g.ctx.setTransform(1,0,0,1,0,0); // restore default transform
-
-            // g.ctx.fillRect(players[i].pos.x, players[i].pos.y, players[i].size.w, players[i].size.h);
-            
         }
-        
-        // g.ctx.rotate(-playerDirection * Math.PI / 180);
     }
 };
 

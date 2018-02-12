@@ -457,7 +457,7 @@ const addRequestId = (object, requestId) => {
 const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
-console.log('direction', direction);
+    
     // Set animation direction
     if (direction === "left") {
         pos.animDirHorizontal = "left";
