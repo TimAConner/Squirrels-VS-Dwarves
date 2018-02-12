@@ -109,8 +109,8 @@ const canPlayerMove = (direction, delta) => {
 
     for(let tile of tiles){
         let tilePos = g.calcObjBounds(tile, g.tileSize);
-        // Can't move through objects that are still hard or if -2 (unbrekable)
-        if(tile.hard.points > 0 || tile.hard.points === -2){ 
+        // Can't move through objects that are still tough or if -2 (unbrekable)
+        if(tile.tough.points > 0 || tile.tough.points === -2){ 
             /* 
             Functions in isObjectInDirection check if on x or y axis of object, 
             and if the next movement in that direction will run into the object
@@ -308,6 +308,7 @@ const checkInput = delta => {
             };
 
             if(isKeyOn(" ")){
+
                 let selectedTile = findTileInPlayerDir(player);
 
                 if(isDefined(selectedTile)){
@@ -344,16 +345,16 @@ const checkInput = delta => {
                     // If there is not a player, then mine a block.
                     else {
                         //  If the tile has not been mined
-                        if(selectedTile.hard.points >= 0){ 
-                            selectedTile.hard.points -= g.mineStrength;
+                        if(selectedTile.tough.points >= 0){ 
+                            selectedTile.tough.points -= g.mineStrength;
                             localPlayerStats.mined += g.mineStrength;
 
-                            addRequestId(selectedTile.hard, `${requestId}mine`);
+                            addRequestId(selectedTile.tough, `${requestId}mine`);
                             countDataSent++;
 
-                            model.saveTileHard(selectedTile).then(data => {
+                            model.saveTileTough(selectedTile).then(data => {
                                 countDataReturned ++;
-                                calcLag(parseRequestId(data.hard.requestId));
+                                calcLag(parseRequestId(data.tough.requestId));
                             });
                         }
                     }
@@ -440,7 +441,7 @@ const checkInput = delta => {
                 if(!isDefined(playerUpdateObject.player.pos.isMoving) || playerUpdateObject.player.pos.isMoving){
                     playerUpdateObject.player.pos.isMoving = false;
                     playerUpdateObject.speedMultiplier = 0;
-                    updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
+                    updatePlayerState(playerUpdateObject.player.pos.animDirHorizontal, "x", playerUpdateObject);
                 }
             }
         }
@@ -456,18 +457,33 @@ const addRequestId = (object, requestId) => {
 const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
-
+console.log('direction', direction);
     // Set animation direction
-    if (direction === "left") pos.animDir = "left";
-    else if (direction === "right") pos.animDir = "right";
+    if (direction === "left") {
+        pos.animDirHorizontal = "left";
+        pos.animDirVertical = "none";
+    }
+    else if (direction === "right"){
+        pos.animDirHorizontal = "right";
+        pos.animDirVertical = "none";
+    } 
+    else if (direction === "up"){
+        pos.animDirVertical = "up";
+    }
+    else if (direction === "down"){
+        pos.animDirVertical = "down";
+    }
 
     // Invert speed multiplier if moving up or left
-    if (direction === "up" || direction === "left") speedMultiplier = -speedMultiplier;
+    if (direction === "up" || direction === "left"){
+        speedMultiplier = -speedMultiplier;
+    } 
 
     // Move character and set direction
     pos[changeIn] += speedMultiplier * delta;
     pos.dir = direction;
 
+    // console.log('pos.dir', pos.dir);
     addRequestId(pos, `${requestId}move`);
     
     countDataSent ++;
@@ -504,7 +520,7 @@ const mainLoop = (timestamp) => {
             // Merge new data with current data stored
             if(mergeDataThisFrame){
                 mergeData(players, newPlayers, ["health", "pos"]);
-                mergeData(tiles, newTiles, ["hard"]);
+                mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
                 mergeDataThisFrame = false;
             }
@@ -574,7 +590,7 @@ const activateDebugListeners = () => {
         });
     
         console.log(tile);
-        console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.hard.requestId) !== -1));
+        console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.tough.requestId) !== -1));
     });
 };
 

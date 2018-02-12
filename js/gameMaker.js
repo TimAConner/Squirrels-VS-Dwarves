@@ -17,7 +17,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "z": 0,
             "requestId": "0--0",
             "dir": "up",
-            "animDir": "right"
+            "animDirHorizontal": "right",
+            "animDirVertical": "none"
         },
         "health": {
             "points": 100,

@@ -176,14 +176,14 @@ module.exports.deletePlayer = (player) => {
     });
 };
 
-module.exports.saveTileHard = (tile) => {
+module.exports.saveTileTough = (tile) => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${url}/tiles/${+tile.id}/.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify({
-                hard: tile.hard
+                tough: tile.tough
             })
         })
         .done(data => resolve(data));

@@ -21,7 +21,7 @@ let currentTime = 0;
 // Array of total animations
 let animations = [];
 
-// TODO: Refactor addAnimation using object . keys so you don't have to hardcode the destructoring.
+// TODO: Refactor addAnimation using object . keys so you don't have to toughcode the destructoring.
 const addAnimation = (name, animation) => {
     let {frames, curFrame, lastFrame, interval, w, h, defaultFrame, xOffset} = animation;
     let animationObject = {
@@ -88,7 +88,7 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
 
 // Add animations below.
 
-addAnimation('dwarfAnimation', {
+addAnimation('dwarfAnimationRight', {
     frames: [1, 2],
     defaultFrame : 0,
     curFrame: 0,
@@ -231,8 +231,8 @@ const canPlayerMove = (direction, delta) => {
 
     for(let tile of tiles){
         let tilePos = g.calcObjBounds(tile, g.tileSize);
-        // Can't move through objects that are still hard or if -2 (unbrekable)
-        if(tile.hard.points > 0 || tile.hard.points === -2){ 
+        // Can't move through objects that are still tough or if -2 (unbrekable)
+        if(tile.tough.points > 0 || tile.tough.points === -2){ 
             /* 
             Functions in isObjectInDirection check if on x or y axis of object, 
             and if the next movement in that direction will run into the object
@@ -430,6 +430,7 @@ const checkInput = delta => {
             };
 
             if(isKeyOn(" ")){
+
                 let selectedTile = findTileInPlayerDir(player);
 
                 if(isDefined(selectedTile)){
@@ -466,16 +467,16 @@ const checkInput = delta => {
                     // If there is not a player, then mine a block.
                     else {
                         //  If the tile has not been mined
-                        if(selectedTile.hard.points >= 0){ 
-                            selectedTile.hard.points -= g.mineStrength;
+                        if(selectedTile.tough.points >= 0){ 
+                            selectedTile.tough.points -= g.mineStrength;
                             localPlayerStats.mined += g.mineStrength;
 
-                            addRequestId(selectedTile.hard, `${requestId}mine`);
+                            addRequestId(selectedTile.tough, `${requestId}mine`);
                             countDataSent++;
 
-                            model.saveTileHard(selectedTile).then(data => {
+                            model.saveTileTough(selectedTile).then(data => {
                                 countDataReturned ++;
-                                calcLag(parseRequestId(data.hard.requestId));
+                                calcLag(parseRequestId(data.tough.requestId));
                             });
                         }
                     }
@@ -562,7 +563,7 @@ const checkInput = delta => {
                 if(!isDefined(playerUpdateObject.player.pos.isMoving) || playerUpdateObject.player.pos.isMoving){
                     playerUpdateObject.player.pos.isMoving = false;
                     playerUpdateObject.speedMultiplier = 0;
-                    updatePlayerState(playerUpdateObject.player.pos.animDir, "x", playerUpdateObject);
+                    updatePlayerState(playerUpdateObject.player.pos.animDirHorizontal, "x", playerUpdateObject);
                 }
             }
         }
@@ -578,18 +579,33 @@ const addRequestId = (object, requestId) => {
 const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
-
+console.log('direction', direction);
     // Set animation direction
-    if (direction === "left") pos.animDir = "left";
-    else if (direction === "right") pos.animDir = "right";
+    if (direction === "left") {
+        pos.animDirHorizontal = "left";
+        pos.animDirVertical = "none";
+    }
+    else if (direction === "right"){
+        pos.animDirHorizontal = "right";
+        pos.animDirVertical = "none";
+    } 
+    else if (direction === "up"){
+        pos.animDirVertical = "up";
+    }
+    else if (direction === "down"){
+        pos.animDirVertical = "down";
+    }
 
     // Invert speed multiplier if moving up or left
-    if (direction === "up" || direction === "left") speedMultiplier = -speedMultiplier;
+    if (direction === "up" || direction === "left"){
+        speedMultiplier = -speedMultiplier;
+    } 
 
     // Move character and set direction
     pos[changeIn] += speedMultiplier * delta;
     pos.dir = direction;
 
+    // console.log('pos.dir', pos.dir);
     addRequestId(pos, `${requestId}move`);
     
     countDataSent ++;
@@ -626,7 +642,7 @@ const mainLoop = (timestamp) => {
             // Merge new data with current data stored
             if(mergeDataThisFrame){
                 mergeData(players, newPlayers, ["health", "pos"]);
-                mergeData(tiles, newTiles, ["hard"]);
+                mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
                 mergeDataThisFrame = false;
             }
@@ -696,7 +712,7 @@ const activateDebugListeners = () => {
         });
     
         console.log(tile);
-        console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.hard.requestId) !== -1));
+        console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.tough.requestId) !== -1));
     });
 };
 
@@ -1068,7 +1084,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "z": 0,
             "requestId": "0--0",
             "dir": "up",
-            "animDir": "right"
+            "animDirHorizontal": "right",
+            "animDirVertical": "none"
         },
         "health": {
             "points": 100,
@@ -1162,12 +1179,19 @@ const findImage = (name) => {
     return image;
 };
 
-addImage('dwarfSprite', './img/dwarf22Width.png');
+addImage('dwarfSpriteRight', './img/dwarf22WidthRight.png');
+addImage('dwarfSpriteRightUp', './img/dwarf22WidthRightUp.png');
+addImage('dwarfSpriteRightDown', './img/dwarf22WidthRightDown.png');
+
 addImage('dwarfSpriteLeft', './img/dwarf22WidthLeft.png');
+addImage('dwarfSpriteLeftUp', './img/dwarf22WidthLeftUp.png');
+addImage('dwarfSpriteLeftDown', './img/dwarf22WidthLeftDown.png');
+
 addImage('dwarf', './img/dwarf.png');
 addImage('squirrel', './img/squirrel.png');
 addImage('dirt', "./img/small.png");
 addImage('stone', "./img/stone.jpeg");
+addImage('wall', "./img/textureStone.png");
  
 addImage('stoneBroke1', "./img/stoneBroke1.jpg");
 addImage('stoneBroke2', "./img/stoneBroke2.jpg");
@@ -1496,14 +1520,14 @@ module.exports.deletePlayer = (player) => {
     });
 };
 
-module.exports.saveTileHard = (tile) => {
+module.exports.saveTileTough = (tile) => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${url}/tiles/${+tile.id}/.json`,
             type: 'PATCH',
             dataType: 'json',
             data: JSON.stringify({
-                hard: tile.hard
+                tough: tile.tough
             })
         })
         .done(data => resolve(data));
@@ -1622,15 +1646,7 @@ const drawPlayerAnimation = require("./animationController");
 let sightDistance = 3;
 
 // Square colors
-let unknownColor = "black",
-minedColor = "blue",
-rockColor = "brown",
-baseColor = "#FFA50080",
-allyColor = "green",
-enemyColor = "red",
-allyGemColor = "yellow",
-enemyGemColor = "yellow",
-edgeColor = "gray";
+let baseColor = "#FFA50080";
 
 
 let DwarfAnimation = {
@@ -1643,18 +1659,18 @@ let DwarfAnimation = {
 };
 
 let tileDestructionAnimation = [
-    {tough: 1.9, img: img('stone')},
-    {tough: 1.7, img: img('stoneBroke1')},
-    {tough: 1.5, img: img('stoneBroke2')},
-    {tough: 1.3, img: img('stoneBroke3')},
-    {tough: 1.1, img: img('stoneBroke4')},
-    {tough: 1.0, img: img('stoneBroke5')},
-    {tough: 0.9, img: img('stoneFrac1')},
-    {tough: 0.8, img: img('stoneFrac2')},
-    {tough: 0.6, img: img('stoneFrac3')},
-    {tough: 0.4, img: img('stoneFrac4')},
-    {tough: 0.2, img: img('stoneFrac5')},
-    {tough: 0.0, img: img('stoneFrac6')}
+    {tough: 1.9, imgName: 'stone'},
+    {tough: 1.7, imgName: 'stoneBroke1'},
+    {tough: 1.5, imgName: 'stoneBroke2'},
+    {tough: 1.3, imgName: 'stoneBroke3'},
+    {tough: 1.1, imgName: 'stoneBroke4'},
+    {tough: 1.0, imgName: 'stoneBroke5'},
+    {tough: 0.9, imgName: 'stoneFrac1'},
+    {tough: 0.8, imgName: 'stoneFrac2'},
+    {tough: 0.6, imgName: 'stoneFrac3'},
+    {tough: 0.4, imgName: 'stoneFrac4'},
+    {tough: 0.2, imgName: 'stoneFrac5'},
+    {tough: 0.0, imgName: 'stoneFrac6'}
 ];
 
 // // Angular
@@ -1733,9 +1749,17 @@ const calcVisibleTiles = (tiles, players) => {
     return tilesToDraw;
 };
 
+const drawTile = (imgName, tile, color = null) => {
+    g.ctx.drawImage(img(imgName), g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
+    if(color !== null){
+        g.ctx.fillStyle = color;
+        g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
+    }
+};
+
 const drawTiles = (tiles, players) => {
     let tilesToDraw = calcVisibleTiles(tiles, players);
-    
+
     for(let tile of tiles){
         let playerTile;
 
@@ -1744,41 +1768,41 @@ const drawTiles = (tiles, players) => {
         }
         
         if(isDefined(playerTile)){
-            if(shouldTileBeDrawn(tile, tilesToDraw)){
-                let {tough: {points: toughness}} = tile;
-                if(toughness > 0){
+            let tileToughness = tile.tough.points;
+            
+            const tileType = {
+                isIndestructable: () => tileToughness === -2,
+                isVisible: () => shouldTileBeDrawn(tile, tilesToDraw),
+                isRock: () =>  tileToughness > 0,
+                isDirt: () => tileToughness <= 0,
+                isTeamBase: () => tile.teamBase === thisPlayer.team,
+            };
+
+            if (tileType.isIndestructable()) {
+                drawTile('wall', tile);
+                continue;
+            } 
+
+            if(tileType.isTeamBase()){
+                drawTile('dirt', tile, baseColor);
+                continue;
+            } 
+
+            if(tileType.isVisible()){
+                if(tileType.isRock()){
+                    animationLoop:
                     for(let anim of tileDestructionAnimation){
-                        if(toughness > +anim.tough){
-                            g.ctx.drawImage(anim.img,g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
+                        if(tileToughness > +anim.tough){
+                            drawTile(anim.imgName, tile);
                             break;
                         }
                     }
-                } else if (toughness === -2) {
-                    g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                    
-                } else {
-                    if(tile.teamBase === thisPlayer.team){
-                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                        g.ctx.fillStyle = baseColor;
-                        g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                        
-                    } else {
-                        g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                        
-                    }
+                    continue;
+                } else if(tileType.isDirt()) {
+                    drawTile('dirt', tile);
+                    continue;
                 }
-            } else {
-                if(tile.teamBase === thisPlayer.team){
-                    g.ctx.fillStyle = minedColor; 
-                    g.ctx.drawImage(img('dirt'),g.calcObjBounds(tile, g.tileSize).x,g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                    g.ctx.fillStyle = baseColor;
-                    g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                    
-                } else if (tile.tough.points === -2) {
-                    g.ctx.fillStyle = edgeColor;
-                    g.ctx.fillRect(g.calcObjBounds(tile, g.tileSize).x, g.calcObjBounds(tile, g.tileSize).y, g.tileSize,  g.tileSize);
-                }
-            }  
+            }
         } 
         g.ctx.stroke();
     }
@@ -1813,10 +1837,18 @@ const drawPlayers = (players, playerId, tiles) => {
             g.ctx.drawImage(img('squirrel'), players[i].pos.x, players[i].pos.y, g.playerSize, g.playerSize);
             
         } else {
-            if(isDefined(players[i].pos.animDir)) {
-                if(players[i].pos.animDir === "right"){
-                    drawPlayerAnimation('dwarfSprite', 'dwarfAnimation', players[i].pos);
-                } else {
+            if(isDefined(players[i].pos.animDirHorizontal)) {
+                if(players[i].pos.animDirHorizontal === "left" && players[i].pos.animDirVertical === "up") {
+                    drawPlayerAnimation('dwarfSpriteLeftUp', 'dwarfAnimationLeft', players[i].pos);
+                }else if(players[i].pos.animDirHorizontal === "left" && players[i].pos.animDirVertical === "down") {
+                    drawPlayerAnimation('dwarfSpriteLeftDown', 'dwarfAnimationLeft', players[i].pos);
+                }else if(players[i].pos.animDirHorizontal === "right" && players[i].pos.animDirVertical === "up") {
+                    drawPlayerAnimation('dwarfSpriteRightUp', 'dwarfAnimationRight', players[i].pos);
+                }else if(players[i].pos.animDirHorizontal === "right" && players[i].pos.animDirVertical === "down") {
+                    drawPlayerAnimation('dwarfSpriteRightDown', 'dwarfAnimationRight', players[i].pos);
+                }else if(players[i].pos.animDirHorizontal === "right"){
+                    drawPlayerAnimation('dwarfSpriteRight', 'dwarfAnimationRight', players[i].pos);
+                }else if(players[i].pos.animDirHorizontal === "left") {
                     drawPlayerAnimation('dwarfSpriteLeft', 'dwarfAnimationLeft', players[i].pos);
                 }
             }

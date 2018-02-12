@@ -20,7 +20,7 @@ let currentTime = 0;
 // Array of total animations
 let animations = [];
 
-// TODO: Refactor addAnimation using object . keys so you don't have to hardcode the destructoring.
+// TODO: Refactor addAnimation using object . keys so you don't have to toughcode the destructoring.
 const addAnimation = (name, animation) => {
     let {frames, curFrame, lastFrame, interval, w, h, defaultFrame, xOffset} = animation;
     let animationObject = {
@@ -87,7 +87,7 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
 
 // Add animations below.
 
-addAnimation('dwarfAnimation', {
+addAnimation('dwarfAnimationRight', {
     frames: [1, 2],
     defaultFrame : 0,
     curFrame: 0,
