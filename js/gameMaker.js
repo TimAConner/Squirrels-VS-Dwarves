@@ -34,7 +34,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
-        let createdTiles = mapMaker.generateTiles(20, 20);
+        let createdTiles = mapMaker.generateTiles(21, 20);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
