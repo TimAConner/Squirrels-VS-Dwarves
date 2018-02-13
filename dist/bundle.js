@@ -632,12 +632,13 @@ const mainLoop = (timestamp) => {
 
         if(waitingForGame) waitingForGame = false;
 
-        // Update delta
+        // Update delta, the time that hasn't been simulated left.
         delta += timestamp - lastFrameTimeMs;
         lastFrameTimeMs = timestamp;
 
-        // Runs update as many times until it catches up with timestamp.
+        // Runs update as many times until it catches up with the current time.
         while (delta >= timestep) {
+            // console.log('delta, timestep', delta, timestep);
 
             // Merge new data with current data stored
             if(mergeDataThisFrame){
@@ -890,6 +891,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     });
 
     $scope.selectGame = id => {
+        console.log('id', id);
         resetGameState();
         model.detachGameListeners(); // Detach previous game listeners
         model.setGameId(id);
@@ -1254,48 +1256,92 @@ controller.startGame();
   const g = require("./game");
   const _ = require("lodash");
 
-  let freqTable = [
-        {
+  let freqTable = {
+        "2":  {
             'count': 0.2,
             'value': 2
         },
-        {
+        "0.75": {
             'count': 0.1,
             'value': 0.75
         },
-        {
+        "0": {
             'count': 0.1,
             'value': 0
         },
-        {
+        "1":  {
             'count': 0.4,
             'value': 1
         },
-        {
+        "0.5": {
             'count': 0.2,
             'value': 0.5
         }
-    ];
+    };
+
+    let freqTableCopy = {
+        "2":  {
+            'count': 0.2,
+            'value': 2
+        },
+        "0.75": {
+            'count': 0.1,
+            'value': 0.75
+        },
+        "0": {
+            'count': 0.1,
+            'value': 0
+        },
+       "1":  {
+            'count': 0.4,
+            'value': 1
+        },
+        "0.5": {
+            'count': 0.2,
+            'value': 0.5
+        }
+    };  
+
 
     let curFreqCount = {};
 
 
-  let generateTile = totalTiles => {
-      // Generate a random index in the frequency table
-    let randFreqIndex = freqTable[Math.floor(Math.random() * freqTable.length)];
+
+// Create half of the array.  Dupliate it, change x to right side max minues the 1.
+
+  const generateTile = totalTiles => {
+    console.log('generate tiles freqTable', freqTable);
+
+    let freqTableArray = Object.values(freqTable);
+
+    // Generate a random index in the frequency table
+    let randFreqIndex = freqTableArray[Math.floor(Math.random() * freqTableArray.length)];
+    
+    // console.log('randFreqIndex', randFreqIndex, freqTableArray.length);
 
     // Add values used to list of numbers used
     curFreqCount[randFreqIndex.value] = (curFreqCount[randFreqIndex.value] += 1) || 1;
 
-    // Remove the value from the frequency table if it's frequent enogh in curFreqCount
+    // Remove the value from the frequency table if it's frequent enough in curFreqCount
     if((curFreqCount[randFreqIndex.value] / totalTiles) >= randFreqIndex.count){
-       _.remove(freqTable, randFreqIndex);
-    }
+    //    _.remove(freqTableArray, randFreqIndex);
+    console.log('delete');
+        delete freqTable[randFreqIndex.value];
+    }   
     
     return randFreqIndex.value;
   };
 
+  const resetFrequency = () => {
+    curFreqCount = {};
+    freqTable = Object.assign({}, freqTableCopy);
+    console.log('Just copied freqTable', freqTable);
+  };
+
   module.exports.generateTiles = (w, h) => {
+
+    resetFrequency();
+
     let tiles = [];
         let id = 0;
         for(let x = 0; x < w; x++){
@@ -1312,10 +1358,9 @@ controller.startGame();
                         "points": generateTile(w*h),
                         "requestId": "0--0"
                     }
-                    
                 };
 
-
+                
                 // Set map bounds tiles
                 if(x === 0 || x === w-1 || y === 0 || y === h-1){ 
                     obj.tough.points = -2;
@@ -1337,6 +1382,7 @@ controller.startGame();
                 tiles.push(obj);
             }
         }
+        console.log('tiles', tiles);
         return tiles;
   };
 
@@ -1645,6 +1691,8 @@ const drawPlayerAnimation = require("./animationController");
 // Number of squares that can be seen around player
 let sightDistance = 3;
 
+let tilesToDraw = [];
+
 // Square colors
 let baseColor = "#FFA50080";
 
@@ -1717,7 +1765,7 @@ const isTileWithinOne = (tile, otherTiles) => {
 };
 
 const calcVisibleTiles = (tiles, players) => {
-    let tilesToDraw = [];
+    tilesToDraw = [];
     
     let tilesToBeAddedToDraw = [];
     
@@ -1813,8 +1861,8 @@ const drawHealthBar = player => {
     g.ctx.fillRect(player.pos.x+1, player.pos.y - 9, g.playerSize*(player.health.points*0.01)-1, 3);
 };
 
-const isASquirrel = ({team}) => team === 1 ? true : false;
-const isADwarf = ({team}) => team === 0 ? true : false;
+const isOnSquirrelTeam = ({team}) => team === 1 ? true : false;
+const isOnDwarfTeam = ({team}) => team === 0 ? true : false;
 
 const drawPlayers = (players, playerId, tiles) => {
     for(let player of players){
@@ -1824,9 +1872,9 @@ const drawPlayers = (players, playerId, tiles) => {
         // Draw health
         drawHealthBar(player);
 
-        if(isASquirrel(player)){ // Is Squirrel
+        if(isOnSquirrelTeam(player)){ // Is Squirrel
             g.ctx.drawImage(img('squirrel'), player.pos.x, player.pos.y, g.playerSize, g.playerSize);
-        } else if(isADwarf(player)){
+        } else if(isOnDwarfTeam(player)){
 
             const dwarfAnimationDirector = {
                 "left": {
@@ -1843,11 +1891,15 @@ const drawPlayers = (players, playerId, tiles) => {
                 }
             };
 
-            let {pos: {animDirHorizontal: horizontal, animDirVertical: vertical}} = player;
+            let {pos: {animDirHorizontal: horizontalDir, animDirVertical: verticalDir}} = player;
 
-            if(isDefined(horizontal)) {
-                if(isDefined(dwarfAnimationDirector[horizontal][vertical])){
-                    drawPlayerAnimation(dwarfAnimationDirector[horizontal][vertical], dwarfAnimationDirector[horizontal].animation, player.pos);    
+            if(isDefined(horizontalDir)) {
+                if(isDefined(dwarfAnimationDirector[horizontalDir][verticalDir])){
+                    drawPlayerAnimation(
+                        dwarfAnimationDirector[horizontalDir][verticalDir], 
+                        dwarfAnimationDirector[horizontalDir].animation,
+                        player.pos
+                    );    
                 }
             }
         }
@@ -1858,22 +1910,20 @@ const drawPlayers = (players, playerId, tiles) => {
 };
 
 const drawGems = (gems, players) => {
-    for(let i = 0; i < gems.length; i++){
-
-
-        if(gems[i].team === 1){
-            if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+    for(let gem of gems){
+        if(isOnSquirrelTeam(gem)){
+            if(gem.carrier === -1){ 
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gem.pos.x, gem.pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gem.pos.x, gem.pos.y, g.tileSize/2, g.tileSize/2);
             }
-        } else {
-            if(gems[i].carrier === -1){
-                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+        } else if (isOnDwarfTeam(gem)) {
+            if(gem.carrier === -1){
+                g.ctx.drawImage(img('acorn'), gem.pos.x, gem.pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('acorn'), gem.pos.x, gem.pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();

@@ -5,29 +5,56 @@
 
   let freqTable = {
         "2":  {
-            'count': 0.9,
+            'count': 0.2,
             'value': 2
+        },
+        "0.75": {
+            'count': 0.1,
+            'value': 0.75
         },
         "0": {
             'count': 0.1,
             'value': 0
+        },
+        "1":  {
+            'count': 0.4,
+            'value': 1
+        },
+        "0.5": {
+            'count': 0.2,
+            'value': 0.5
         }
     };
 
     let freqTableCopy = {
         "2":  {
-            'count': 0.9,
+            'count': 0.2,
             'value': 2
+        },
+        "0.75": {
+            'count': 0.1,
+            'value': 0.75
         },
         "0": {
             'count': 0.1,
             'value': 0
+        },
+       "1":  {
+            'count': 0.4,
+            'value': 1
+        },
+        "0.5": {
+            'count': 0.2,
+            'value': 0.5
         }
     };  
 
 
     let curFreqCount = {};
 
+
+
+// Create half of the array.  Dupliate it, change x to right side max minues the 1.
 
   const generateTile = totalTiles => {
     console.log('generate tiles freqTable', freqTable);

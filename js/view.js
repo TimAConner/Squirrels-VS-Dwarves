@@ -17,6 +17,8 @@ const drawPlayerAnimation = require("./animationController");
 // Number of squares that can be seen around player
 let sightDistance = 3;
 
+let tilesToDraw = [];
+
 // Square colors
 let baseColor = "#FFA50080";
 
@@ -89,7 +91,7 @@ const isTileWithinOne = (tile, otherTiles) => {
 };
 
 const calcVisibleTiles = (tiles, players) => {
-    let tilesToDraw = [];
+    tilesToDraw = [];
     
     let tilesToBeAddedToDraw = [];
     
@@ -130,8 +132,7 @@ const drawTile = (imgName, tile, color = null) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = tiles;
-    // calcVisibleTiles(tiles, players);
+    let tilesToDraw = calcVisibleTiles(tiles, players);
     
     let playerTile;
     if(isDefined(thisPlayer)){
