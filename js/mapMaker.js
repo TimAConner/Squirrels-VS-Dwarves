@@ -3,48 +3,65 @@
   const g = require("./game");
   const _ = require("lodash");
 
-  let freqTable = [
-        {
-            'count': 0.2,
+  let freqTable = {
+        "2":  {
+            'count': 0.9,
             'value': 2
         },
-        {
-            'count': 0.1,
-            'value': 0.75
-        },
-        {
+        "0": {
             'count': 0.1,
             'value': 0
-        },
-        {
-            'count': 0.4,
-            'value': 1
-        },
-        {
-            'count': 0.2,
-            'value': 0.5
         }
-    ];
+    };
+
+    let freqTableCopy = {
+        "2":  {
+            'count': 0.9,
+            'value': 2
+        },
+        "0": {
+            'count': 0.1,
+            'value': 0
+        }
+    };  
+
 
     let curFreqCount = {};
 
 
-  let generateTile = totalTiles => {
-      // Generate a random index in the frequency table
-    let randFreqIndex = freqTable[Math.floor(Math.random() * freqTable.length)];
+  const generateTile = totalTiles => {
+    console.log('generate tiles freqTable', freqTable);
+
+    let freqTableArray = Object.values(freqTable);
+
+    // Generate a random index in the frequency table
+    let randFreqIndex = freqTableArray[Math.floor(Math.random() * freqTableArray.length)];
+    
+    // console.log('randFreqIndex', randFreqIndex, freqTableArray.length);
 
     // Add values used to list of numbers used
     curFreqCount[randFreqIndex.value] = (curFreqCount[randFreqIndex.value] += 1) || 1;
 
-    // Remove the value from the frequency table if it's frequent enogh in curFreqCount
+    // Remove the value from the frequency table if it's frequent enough in curFreqCount
     if((curFreqCount[randFreqIndex.value] / totalTiles) >= randFreqIndex.count){
-       _.remove(freqTable, randFreqIndex);
-    }
+    //    _.remove(freqTableArray, randFreqIndex);
+    console.log('delete');
+        delete freqTable[randFreqIndex.value];
+    }   
     
     return randFreqIndex.value;
   };
 
+  const resetFrequency = () => {
+    curFreqCount = {};
+    freqTable = Object.assign({}, freqTableCopy);
+    console.log('Just copied freqTable', freqTable);
+  };
+
   module.exports.generateTiles = (w, h) => {
+
+    resetFrequency();
+
     let tiles = [];
         let id = 0;
         for(let x = 0; x < w; x++){
@@ -61,10 +78,9 @@
                         "points": generateTile(w*h),
                         "requestId": "0--0"
                     }
-                    
                 };
 
-
+                
                 // Set map bounds tiles
                 if(x === 0 || x === w-1 || y === 0 || y === h-1){ 
                     obj.tough.points = -2;
@@ -86,6 +102,7 @@
                 tiles.push(obj);
             }
         }
+        console.log('tiles', tiles);
         return tiles;
   };
 

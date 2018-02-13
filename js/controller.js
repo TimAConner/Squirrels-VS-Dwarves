@@ -510,12 +510,13 @@ const mainLoop = (timestamp) => {
 
         if(waitingForGame) waitingForGame = false;
 
-        // Update delta
+        // Update delta, the time that hasn't been simulated left.
         delta += timestamp - lastFrameTimeMs;
         lastFrameTimeMs = timestamp;
 
-        // Runs update as many times until it catches up with timestamp.
+        // Runs update as many times until it catches up with the current time.
         while (delta >= timestep) {
+            // console.log('delta, timestep', delta, timestep);
 
             // Merge new data with current data stored
             if(mergeDataThisFrame){
@@ -768,6 +769,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     });
 
     $scope.selectGame = id => {
+        console.log('id', id);
         resetGameState();
         model.detachGameListeners(); // Detach previous game listeners
         model.setGameId(id);

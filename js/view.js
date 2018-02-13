@@ -130,7 +130,8 @@ const drawTile = (imgName, tile, color = null) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = calcVisibleTiles(tiles, players);
+    let tilesToDraw = tiles;
+    // calcVisibleTiles(tiles, players);
     
     let playerTile;
     if(isDefined(thisPlayer)){
@@ -185,8 +186,8 @@ const drawHealthBar = player => {
     g.ctx.fillRect(player.pos.x+1, player.pos.y - 9, g.playerSize*(player.health.points*0.01)-1, 3);
 };
 
-const isASquirrel = ({team}) => team === 1 ? true : false;
-const isADwarf = ({team}) => team === 0 ? true : false;
+const isOnSquirrelTeam = ({team}) => team === 1 ? true : false;
+const isOnDwarfTeam = ({team}) => team === 0 ? true : false;
 
 const drawPlayers = (players, playerId, tiles) => {
     for(let player of players){
@@ -196,9 +197,9 @@ const drawPlayers = (players, playerId, tiles) => {
         // Draw health
         drawHealthBar(player);
 
-        if(isASquirrel(player)){ // Is Squirrel
+        if(isOnSquirrelTeam(player)){ // Is Squirrel
             g.ctx.drawImage(img('squirrel'), player.pos.x, player.pos.y, g.playerSize, g.playerSize);
-        } else if(isADwarf(player)){
+        } else if(isOnDwarfTeam(player)){
 
             const dwarfAnimationDirector = {
                 "left": {
@@ -215,11 +216,15 @@ const drawPlayers = (players, playerId, tiles) => {
                 }
             };
 
-            let {pos: {animDirHorizontal: horizontal, animDirVertical: vertical}} = player;
+            let {pos: {animDirHorizontal: horizontalDir, animDirVertical: verticalDir}} = player;
 
-            if(isDefined(horizontal)) {
-                if(isDefined(dwarfAnimationDirector[horizontal][vertical])){
-                    drawPlayerAnimation(dwarfAnimationDirector[horizontal][vertical], dwarfAnimationDirector[horizontal].animation, player.pos);    
+            if(isDefined(horizontalDir)) {
+                if(isDefined(dwarfAnimationDirector[horizontalDir][verticalDir])){
+                    drawPlayerAnimation(
+                        dwarfAnimationDirector[horizontalDir][verticalDir], 
+                        dwarfAnimationDirector[horizontalDir].animation,
+                        player.pos
+                    );    
                 }
             }
         }
@@ -230,22 +235,20 @@ const drawPlayers = (players, playerId, tiles) => {
 };
 
 const drawGems = (gems, players) => {
-    for(let i = 0; i < gems.length; i++){
-
-
-        if(gems[i].team === 1){
-            if(gems[i].carrier === -1){ 
-                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+    for(let gem of gems){
+        if(isOnSquirrelTeam(gem)){
+            if(gem.carrier === -1){ 
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gem.pos.x, gem.pos.y, g.tileSize, g.tileSize);
             }
              else {
-                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gem.pos.x, gem.pos.y, g.tileSize/2, g.tileSize/2);
             }
-        } else {
-            if(gems[i].carrier === -1){
-                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize, g.tileSize);
+        } else if (isOnDwarfTeam(gem)) {
+            if(gem.carrier === -1){
+                g.ctx.drawImage(img('acorn'), gem.pos.x, gem.pos.y, g.tileSize, g.tileSize);
             } 
             else {
-                g.ctx.drawImage(img('acorn'), gems[i].pos.x, gems[i].pos.y, g.tileSize/2, g.tileSize/2);
+                g.ctx.drawImage(img('acorn'), gem.pos.x, gem.pos.y, g.tileSize/2, g.tileSize/2);
             }
         }
         g.ctx.stroke();
