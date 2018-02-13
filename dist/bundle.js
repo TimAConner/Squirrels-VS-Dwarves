@@ -336,20 +336,29 @@ const mergeData = (currentData, newData, valuesToCheck) => {
         // Change existing values
         for(let newPeice of newData){
             // If no specific value should be proccessed, update the whole object
-            if(!isDefined(valuesToCheck)){ 
+            if(!isDefined(valuesToCheck)){
                 let curPeice = currentData.find(({id}) => id === newPeice.id);
-                if(isDefined(newPeice.requestId) && newPeice.requestId !== curPeice.requestId){
-                    let newRequestId = +parseRequestId(newPeice.requestId);
-                    let curRequestId = +parseRequestId(curPeice.requestId);
-                    
-                    if(newRequestId >= curRequestId) calcLag(newRequestId);
+                
+                if(isDefined(newPeice.requestId) ){
+                    if(newPeice.requestId !== curPeice.requestId){
+                        let newRequestId = +parseRequestId(newPeice.requestId);
+                        let curRequestId = +parseRequestId(curPeice.requestId);
+                        
+                        if(newRequestId >= curRequestId) calcLag(newRequestId);
 
-                    // If newPeice has not been proccessed
-                    if(!proccessedActions.includes(newPeice.requestId)){
-                        if((newRequestId >= curRequestId)){ 
-                            // Copy the whole object into the current newPeice
-                            curPeice = Object.assign({}, newPeice);
-                            proccessedActions.push(newPeice.requestId);
+                        // If newPeice has not been proccessed
+                        if(!proccessedActions.includes(newPeice.requestId)){
+                            if((newRequestId >= curRequestId)){ 
+                                // Copy the whole object into the current newPeice
+
+                                currentData[currentData.indexOf(curPeice)] = Object.assign({}, newPeice);
+                                
+                                for(let prop in curPeice){
+                                    curPeice[prop] = Object.assign({}, newPeice[prop]);
+                                }
+
+                                proccessedActions.push(newPeice.requestId);
+                            }
                         }
                     }
                 }
@@ -366,11 +375,15 @@ const mergeData = (currentData, newData, valuesToCheck) => {
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
                         if(!proccessedActions.includes(newPeice[value].requestId)){
+                            
                             // If this game has not proccessed it and the value is not an old one,
                             // Copy the proccessed peice of data into the current data.
+
                             if(newRequestId >= curRequestId){ 
+
                                 proccessedActions.push(newPeice[value].requestId);
                                 curPeice[value] = Object.assign({}, newPeice[value]);
+
                                 //TODO: Fix issue where older peice of data is replacing newer data.
                                 // Is move being replaced by mine?  Didin't pick up a move.
                                 // Is move replacing mine?  Only a move of same timestamp, not a mine.
@@ -403,7 +416,10 @@ const updateGemPosition = () => {
             // Update the positoin based on the player's position
             // If the player is dead, drop the gem.
             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
-            if(g.isPlayerAlive(carrier)) gem.pos = Object.assign({}, carrier.pos);                
+            if(g.isPlayerAlive(carrier)){
+                gem.pos.x = carrier.pos.x;
+                gem.pos.y = carrier.pos.y;
+            }              
             else dropGem(gem);
         }
     }
@@ -489,9 +505,9 @@ const checkInput = delta => {
                     let gemOnTile = findClosestGem(player);
                     if(isDefined(gemOnTile) && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
-                        addRequestId(gems[gems.indexOf(gemOnTile)], requestId);
+                        addRequestId(gemOnTile, requestId);
                         countDataSent ++;
-                        model.saveGem(gems[gems.indexOf(gemOnTile)]).then(data => {
+                        model.saveGem(gemOnTile).then(data => {
                             countDataReturned ++;
                             calcLag(parseRequestId(data.requestId));
                         }); 
@@ -517,14 +533,14 @@ const checkInput = delta => {
                             // Drop gems
                             carriedGem.carrier = -1;
                             
-                            addRequestId(gems[gems.indexOf(carriedGem)], requestId);
+                            addRequestId(carriedGem, requestId);
 
                             if(selectedTile.teamBase === player.team){
                                 setWinnerGameState(player.team);
                                 model.deleteCurrentMap();
                             }
                             countDataSent ++;
-                            model.saveGem(gems[gems.indexOf(carriedGem)]).then(data => {
+                            model.saveGem(carriedGem).then(data => {
                                 countDataReturned++;
                                 calcLag(parseRequestId(data.requestId));
                             }); 
@@ -645,11 +661,16 @@ const mainLoop = (timestamp) => {
                 mergeData(players, newPlayers, ["health", "pos"]);
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
+                // if(newGems.length !== 0){
+                //     gems = newGems;
+                //     console.log('update gems');
+                // }
                 mergeDataThisFrame = false;
             }
             
             // Updates gem position if a player is carrying one
             updateGemPosition();    
+            // console.log('gems', gems);
             
             // Check input and execute it
             checkInput(timestep);
@@ -660,7 +681,7 @@ const mainLoop = (timestamp) => {
         
         // Updates lag & data sent / returned ui
         view.printDataCount(countDataReturned, countDataSent);
-
+        view.printGemInfo(gems);
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
     } else if (localGameState === 0){ // Menu
@@ -713,7 +734,7 @@ const activateDebugListeners = () => {
         });
     
         console.log(tile);
-        console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.tough.requestId) !== -1));
+        // console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.tough.requestId) !== -1));
     });
 };
 
@@ -1802,7 +1823,7 @@ const drawTile = (imgName, tile, color = null) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = calcVisibleTiles(tiles, players);
+    tilesToDraw = calcVisibleTiles(tiles, players);
     
     let playerTile;
     if(isDefined(thisPlayer)){
@@ -1908,7 +1929,7 @@ const drawPlayers = (players, playerId, tiles) => {
 const drawGems = (gems, players) => {
     for(let gem of gems){
         if(isOnSquirrelTeam(gem)){
-            if(gem.carrier === -1){ 
+            if(gem.carrier === -1){ // Right now, the gem carrier is never -1.
                 g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gem.pos.x, gem.pos.y, g.tileSize, g.tileSize);
             }
              else {
@@ -1983,6 +2004,10 @@ module.exports.showSignIn = () => {
 
 module.exports.printDataCount = (returned, sent) => {
     $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
+};
+
+module.exports.printGemInfo = gems => {
+    $("#gemInfo").text(`${gems.length} | ${gems[0].carrier} | ${gems[1].carrier}`);
 };
 
 const showScreen = (screen) => {

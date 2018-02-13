@@ -132,7 +132,7 @@ const drawTile = (imgName, tile, color = null) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = calcVisibleTiles(tiles, players);
+    tilesToDraw = calcVisibleTiles(tiles, players);
     
     let playerTile;
     if(isDefined(thisPlayer)){
@@ -238,7 +238,7 @@ const drawPlayers = (players, playerId, tiles) => {
 const drawGems = (gems, players) => {
     for(let gem of gems){
         if(isOnSquirrelTeam(gem)){
-            if(gem.carrier === -1){ 
+            if(gem.carrier === -1){ // Right now, the gem carrier is never -1.
                 g.ctx.drawImage(img('gem'), 0, 0, 32, 32, gem.pos.x, gem.pos.y, g.tileSize, g.tileSize);
             }
              else {
@@ -313,6 +313,10 @@ module.exports.showSignIn = () => {
 
 module.exports.printDataCount = (returned, sent) => {
     $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
+};
+
+module.exports.printGemInfo = gems => {
+    $("#gemInfo").text(`${gems.length} | ${gems[0].carrier} | ${gems[1].carrier}`);
 };
 
 const showScreen = (screen) => {
