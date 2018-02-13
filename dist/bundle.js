@@ -1268,11 +1268,11 @@ controller.startGame();
             'value': 0.75
         },
         "0": {
-            'count': 0.1,
+            'count': 0.2,
             'value': 0
         },
         "1":  {
-            'count': 0.4,
+            'count': 0.3,
             'value': 1
         },
         "0.5": {
@@ -1316,70 +1316,70 @@ controller.startGame();
     resetTileGenerator();
 
     let tiles = [];
-        let id = 0;
+    let id = 0;
 
-        // Create half the map
-        for(let x = 0; x < w/2; x++){
-            for(let y = 0; y < h; y++){
+    let halfW = Math.floor(w/2)+1;
 
-                // Set default to unbroken tile
-                let obj = {
-                    "id": id,
-                    "pos": {
-                        "x": x,
-                        "y": y
-                    },
-                    "tough": {
-                        "points": generateTile(w*h),
-                        "requestId": "0--0"
-                    }
-                };
+    // Create half the map
+    for(let x = 0; x < halfW; x++){
+        for(let y = 0; y < h; y++){
+            // Set default to unbroken tile
+            let obj = {
+                "id": id,
+                "pos": {
+                    "x": x,
+                    "y": y
+                },
+                "tough": {
+                    "points": generateTile(halfW*h),
+                    "requestId": "0--0"
+                }
+            };
 
-                id ++;
-                tiles.push(obj);
+            id ++;
+            tiles.push(obj);
+        }
+    }
+
+    // Duplicate tiles and mirror it.
+    let tilesCopy = tiles.map(({id, pos: {x, y}, tough}) => {
+        id += 200;
+        x = w - x;
+        return {id, pos: {x, y},  tough};
+    });
+
+    // Join both sides of the map.
+    tiles = [...tiles, ...tilesCopy];
+
+    // Set teams bases and map boundaries.
+    tiles.map(tile => {
+        let x = tile.pos.x;
+        let y = tile.pos.y;
+
+
+        const specialTiles = {
+            MapBound: {
+                is: () => x === 0 || x === w || y === 0 || y === (h-1),
+                set: () => {tile.tough.points = -2;}
+            },
+            SquirrelBase: {
+                is: () => x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2,
+                set: () => {tile.tough.points = 0; tile.teamBase = 1;}
+            },
+            DwarfBase: {
+                is: () => x >=  1 && x <= 3 && y >= h/3 && y <= (h  /3)+2,
+                set: () => {tile.tough.points = 0; tile.teamBase = 0;}
             }
+        };
+    
+        for(let type in specialTiles){
+            if(specialTiles[type].is()) specialTiles[type].set();
         }
 
-        console.log('tiles.length', tiles.length);
-        // Duplicate tiles and mirror it.
-        let tilesCopy = tiles.map(({id, pos: {x, y}, tough}) => {
-            id += 200;
-            x = w - x;
-            return {id, pos: {x, y},  tough};
-        });
-        console.log('tilesCopy', tilesCopy);
-
-        tiles = tiles.concat(tilesCopy);
-        console.log('tiles', tiles);
-        // Add in map boundaires and team bases
-        tiles.map(tile => {
-            let x = tile.pos.x;
-            let y = tile.pos.y;
-
-            // Set map bounds tiles
-            if(x === 0 || x === w-1 || y === 0 || y === h-1){ 
-                tile.tough.points = -2;
-            }
-            
-            // Set squirrel base tiles
-            if(x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2){
-                tile.tough.points = 0;
-                console.log('1');
-                tile.teamBase = 1;
-            }
-            
-            // Set dwarf base tiles
-            if(x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2){
-                tile.tough.points = 0;
-                console.log('0');
-                tile.teamBase = 0;
-            }
-            
-            return tile;
-        });
-        
-        console.log('tiles', tiles);
-        return tiles;
+        return tile;
+    });
+    
+    return tiles;
   };
 
  
@@ -1802,8 +1802,7 @@ const drawTile = (imgName, tile, color = null) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = tiles;
-    //calcVisibleTiles(tiles, players);
+    let tilesToDraw = calcVisibleTiles(tiles, players);
     
     let playerTile;
     if(isDefined(thisPlayer)){

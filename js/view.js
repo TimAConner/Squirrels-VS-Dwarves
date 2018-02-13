@@ -132,8 +132,7 @@ const drawTile = (imgName, tile, color = null) => {
 };
 
 const drawTiles = (tiles, players) => {
-    let tilesToDraw = tiles;
-    //calcVisibleTiles(tiles, players);
+    let tilesToDraw = calcVisibleTiles(tiles, players);
     
     let playerTile;
     if(isDefined(thisPlayer)){
