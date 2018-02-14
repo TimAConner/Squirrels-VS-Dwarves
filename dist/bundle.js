@@ -205,7 +205,8 @@ lastFrameTimeMs = 0;
 
 let lag = 0; // Time between current timestamp and new peices of data timestamp.
 let countDataReturned = 0, // Count of data returned after sending information.
-countDataSent = 0; // Count of data sent to  firebase.
+countDataSent = 0, // Count of data sent to  firebase.
+totalDataRecieved = 0;
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
@@ -672,7 +673,7 @@ const mainLoop = (timestamp) => {
         }
         
         // Updates lag & data sent / returned ui
-        view.printDataCount(countDataReturned, countDataSent);
+        view.printDataCount(countDataReturned, countDataSent, totalDataRecieved);
         // view.printGemInfo(gems);
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
@@ -742,7 +743,7 @@ const activateServerListeners = () => {
             gems = filteredGems;
             initialGemDraw = false;
         } else {
-            console.log("new data");
+            totalDataRecieved++;
             newGems = filteredGems;
         }        
         mergeDataThisFrame = true;
@@ -770,7 +771,7 @@ const activateServerListeners = () => {
             if(initialPlayerDraw === true || localGameState === 0){
                 players = filteredPlayers;
             } else {
-                console.log("new data");
+                totalDataRecieved++;
                 newPlayers = filteredPlayers;
             }
         }
@@ -792,7 +793,7 @@ const activateServerListeners = () => {
             tiles = filteredTiles;
             initialTileDraw = false;
         } else {
-            console.log("new data");
+            totalDataRecieved++;
             newTiles = filteredTiles;
         }
 
@@ -804,6 +805,9 @@ const activateServerListeners = () => {
     g.c.addEventListener("serverUpdateGameState", ({detail: gameStateData}) => {
         initialGameState = false;
         if(isDefined(gameStateData)) {
+
+            totalDataRecieved++;
+
             onlineGameState = gameStateData.gameState; 
             winnerTeamId = gameStateData.winningTeam;
             
@@ -2035,8 +2039,9 @@ module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
 };
 
-module.exports.printDataCount = (returned, sent) => {
+module.exports.printDataCount = (returned, sent, recieved) => {
     $("#dataCount").text(`Returned/Sent: ${returned}/${sent}`);
+    $("#dataCount").append(`<p>Data Recieved: ${recieved}</p>`);
 };
 
 // module.exports.printGemInfo = gems => {

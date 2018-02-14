@@ -311,8 +311,9 @@ module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
 };
 
-module.exports.printDataCount = (returned, sent) => {
+module.exports.printDataCount = (returned, sent, recieved) => {
     $("#dataCount").text(`Returned/Sent: ${returned}/${sent}`);
+    $("#dataCount").append(`<p>Data Recieved: ${recieved}</p>`);
 };
 
 // module.exports.printGemInfo = gems => {
