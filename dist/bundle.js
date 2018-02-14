@@ -179,7 +179,7 @@ let localPlayerStats =  {
 },
 statsSent = false;
 
-//  Use timestamp instead?
+
 let keys = {
     ArrowLeft: false,
     ArrowRight: false,
@@ -207,7 +207,7 @@ let lag = 0; // Time between current timestamp and new peices of data timestamp.
 let countDataReturned = 0, // Count of data returned after sending information.
 countDataSent = 0; // Count of data sent to  firebase.
 
-const isDefined = obj => typeof obj !== "undefined";
+const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
 // Returns true if one part of smaller is on or within the border of the larger
 const isPositionWithinBounds = (smaller, larger) => 
@@ -334,30 +334,26 @@ const mergeData = (currentData, newData, valuesToCheck) => {
         }
 
         // Change existing values
-        for(let newPeice of newData){
+        for(let newPiece of newData){
             // If no specific value should be proccessed, update the whole object
             if(!isDefined(valuesToCheck)){
-                let curPeice = currentData.find(({id}) => id === newPeice.id);
+                let curPiece = currentData.find(({id}) => id === newPiece.id);
                 
-                if(isDefined(newPeice.requestId) ){
-                    if(newPeice.requestId !== curPeice.requestId){
-                        let newRequestId = +parseRequestId(newPeice.requestId);
-                        let curRequestId = +parseRequestId(curPeice.requestId);
+                if(isDefined(newPiece.requestId) ){
+                    if(newPiece.requestId !== curPiece.requestId){
+                        let newRequestId = +parseRequestId(newPiece.requestId);
+                        let curRequestId = +parseRequestId(curPiece.requestId);
                         
                         if(newRequestId >= curRequestId) calcLag(newRequestId);
 
-                        // If newPeice has not been proccessed
-                        if(!proccessedActions.includes(newPeice.requestId)){
+                        // If newPiece has not been proccessed
+                        if(!proccessedActions.includes(newPiece.requestId)){
                             if((newRequestId >= curRequestId)){ 
-                                // Copy the whole object into the current newPeice
+                                // Copy the whole object into the current newPiece
 
-                                currentData[currentData.indexOf(curPeice)] = Object.assign({}, newPeice);
-                                
-                                for(let prop in curPeice){
-                                    curPeice[prop] = Object.assign({}, newPeice[prop]);
-                                }
+                                currentData[currentData.indexOf(curPiece)] = Object.assign({}, newPiece);
 
-                                proccessedActions.push(newPeice.requestId);
+                                proccessedActions.push(newPiece.requestId);
                             }
                         }
                     }
@@ -366,25 +362,25 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             // If specific values should be proccesed, update only those values. 
             else { 
                 for(let value of valuesToCheck){
-                    let curPeice = currentData.find(({id}) => id === newPeice.id);
-                    if(isDefined(newPeice[value]) && newPeice[value].requestId !== curPeice[value].requestId){ 
+                    let curPiece = currentData.find(({id}) => id === newPiece.id);
+                    if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){ 
 
-                        let newRequestId = +parseRequestId(newPeice[value].requestId);
-                        let curRequestId = +parseRequestId(curPeice[value].requestId);
+                        let newRequestId = +parseRequestId(newPiece[value].requestId);
+                        let curRequestId = +parseRequestId(curPiece[value].requestId);
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
-                        if(!proccessedActions.includes(newPeice[value].requestId)){
+                        if(!proccessedActions.includes(newPiece[value].requestId)){
                             
                             // If this game has not proccessed it and the value is not an old one,
-                            // Copy the proccessed peice of data into the current data.
+                            // Copy the proccessed piece of data into the current data.
 
                             if(newRequestId >= curRequestId){ 
 
-                                proccessedActions.push(newPeice[value].requestId);
-                                curPeice[value] = Object.assign({}, newPeice[value]);
+                                proccessedActions.push(newPiece[value].requestId);
+                                curPiece[value] = Object.assign({}, newPiece[value]);
 
-                                //TODO: Fix issue where older peice of data is replacing newer data.
+                                //TODO: Fix issue where older piece of data is replacing newer data.
                                 // Is move being replaced by mine?  Didin't pick up a move.
                                 // Is move replacing mine?  Only a move of same timestamp, not a mine.
                                 // console.log('newRequestId, lag', newRequestId, lag);
@@ -414,12 +410,12 @@ const updateGemPosition = () => {
         // If the gem is being carried
         if(gem.carrier !== -1){
             // Update the positoin based on the player's position
-            // If the player is dead, drop the gem.
             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
-            if(g.isPlayerAlive(carrier)){
+            if(isDefined(carrier) && g.isPlayerAlive(carrier)){
                 gem.pos.x = carrier.pos.x;
                 gem.pos.y = carrier.pos.y;
             }              
+            // If the player is dead, drop the gem.
             else dropGem(gem);
         }
     }
@@ -640,7 +636,7 @@ const mainLoop = (timestamp) => {
     } else if(initialLobbyLoad){ // Loading screen
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner screen
-        resetGameState();
+        resetInitialDraw();
         view.viewWinnerScreen(winnerTeamId);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game playing screen
         // Show game canvas
@@ -661,10 +657,6 @@ const mainLoop = (timestamp) => {
                 mergeData(players, newPlayers, ["health", "pos"]);
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
-                // if(newGems.length !== 0){
-                //     gems = newGems;
-                //     console.log('update gems');
-                // }
                 mergeDataThisFrame = false;
             }
             
@@ -681,7 +673,7 @@ const mainLoop = (timestamp) => {
         
         // Updates lag & data sent / returned ui
         view.printDataCount(countDataReturned, countDataSent);
-        view.printGemInfo(gems);
+        // view.printGemInfo(gems);
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
     } else if (localGameState === 0){ // Menu
@@ -697,11 +689,16 @@ const mainLoop = (timestamp) => {
 };
 
 // Resets variables on whether or not the map has been drawn for the first time or not.
-const resetGameState = () => {
+const resetInitialDraw = () => {
     initialTileDraw = true;
     initialPlayerDraw = true;
     initialGemDraw = true;
     initialGameState = true;
+};
+
+const resetGameState = () => {
+    localGameState = 0;
+    onlineGameState = 0;
 };
 
 const startPlay = () => {
@@ -724,7 +721,6 @@ const activateDebugListeners = () => {
         along with whether or not it is in the proccessedActions array.
      */
     $("canvas").on("click", function(e){
-    
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
@@ -734,7 +730,6 @@ const activateDebugListeners = () => {
         });
     
         console.log(tile);
-        // console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.tough.requestId) !== -1));
     });
 };
 
@@ -808,17 +803,19 @@ const activateServerListeners = () => {
     // Update game state of the current game
     g.c.addEventListener("serverUpdateGameState", ({detail: gameStateData}) => {
         initialGameState = false;
-        onlineGameState = gameStateData.gameState; 
-        winnerTeamId = gameStateData.winningTeam;
-        
-        // If the game has been won by a player online, 
-        // then send states and finish the game locally.
-        if(onlineGameState === 2 && statsSent === false){
-            statsSent = true;
-            model.savePlayerStats(localPlayerStats);
-            model.finishGame(Date.now());
+        if(isDefined(gameStateData)) {
+            onlineGameState = gameStateData.gameState; 
+            winnerTeamId = gameStateData.winningTeam;
+            
+            // If the game has been won by a player online, 
+            // then send states and finish the game locally.
+            if(onlineGameState === 2 && statsSent === false){
+                statsSent = true;
+                model.savePlayerStats(localPlayerStats);
+                model.finishGame(Date.now(), winnerTeamId);
+            }
+            mergeDataThisFrame = true;
         }
-        mergeDataThisFrame = true;
     });
 
 };
@@ -858,7 +855,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     $("#game-canvas").on("serverUpdatePlayer", ({detail: players}) => {
         // Force Angular to digest new players to update the html
-        _.defer(function(){ 
+        _.defer(function(){
             $scope.$apply(function(){
                 if(players !== null){
                     $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
@@ -887,6 +884,11 @@ app.controller("menuCtrl", ['$scope', function($scope) {
                             lobby.gameLength = convertMiliToHMS(+lobby.gameEnd - +lobby.gameStart);
                         }
 
+                        //Add game winner information
+                        if(isDefined(lobby.winner)){
+                            lobby.winner = g.getTeamName(lobby.winner);
+                        }
+
                         // Add game date
                         lobby.date = convertMiliToDate(lobby.gameStart);
 
@@ -912,11 +914,12 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     });
 
     $scope.selectGame = id => {
-        console.log('id', id);
-        resetGameState();
         model.detachGameListeners(); // Detach previous game listeners
+        resetInitialDraw();
         model.setGameId(id);
-        model.listenToCurGame();// Listen to new game data
+        if(isDefined(id) && id !== "") {
+            model.listenToCurGame();// Listen to new game data
+        }
     };
 
     $scope.deleteGame = id => {
@@ -951,6 +954,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     
     $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
     
+    $scope.isThisLobbySelected = id => model.getGameId() === id;
+
     $scope.addDwarf = () => {
         gameMaker.addPlayer(0, tiles, players.length);
     };
@@ -958,6 +963,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.addSquirrel = () => {
         gameMaker.addPlayer(1, tiles, players.length);
     };
+
+    $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
 
     $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
@@ -967,7 +974,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.addGame = () =>  {
         model.addLobby(Date.now(), generateBattleName())
         .then(gameId => {
-            resetGameState();
+            resetInitialDraw();
             model.setGameId(gameId);
             gameMaker.addGame()
             .then(() => {
@@ -977,23 +984,37 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     };
 
     $scope.goToMainMenu = () => {
-        localGameState = 0;
+        $scope.selectGame("");// Selects no game
+        resetGameState();// Goes to menu 
+    };
+
+    $scope.signOut = () => {
+        if(countDataSent === countDataReturned){
+            login.signOut().then(data => {
+                location.reload();
+            });
+        } else {
+            alert("Please wait until all player data has been sent.");
+        }
     };
 
     $scope.signIn = () => {
-        // Commented out for testing purpose.  Comment back in to test with multiple users.
-        // login.googleSignin().then((data) => {
-        //      console.log(data);
-        //     g.uid = data.email;
-        //     g.name = data.name;
-        // });
-        g.uid = "timaconner1@gmail.com";
-        g.fullName = "Tim Conner";
-        view.showSignIn();
-
-        // Initialize firebase and start listening to the list of lobbys
         model.initFirebase().then(() => {
-            model.listenToLobbys();
+
+            // Commented out for testing purpose.  Comment back in to test with multiple users.
+            login.signIn().then(data => {
+                //  console.log(data);
+                g.uid = data.email;
+                g.name = data.name;
+
+                // Initialize firebase and start listening to the list of lobbys
+                model.listenToLobbys();
+            });
+
+            // g.uid = "timaconner1@gmail.com";
+            // g.fullName = "Tim Conner";
+
+            view.showSignIn();
         });
     };
 }]);
@@ -1007,7 +1028,6 @@ module.exports.startGame = () => {
 "use strict";
 
 // Holds information that needs to be accessible by multiple modules
-
 let c = document.getElementById('game-canvas');
 let ctx = c.getContext("2d");
 
@@ -1022,15 +1042,25 @@ const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
 
+const team1 = "Dwarf";
+const team2 = "Squirrel";
+
+
 let playerId = 0;
 let uid = "";
 let fullName = "";
 
 const battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
-const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
+const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill", "Skwir'el Village", "Skwir'el Ford", "The Great Hoard", "The Tiny Hoard"];
 
 
-const isPlayerAlive = ({health: {points: health}}) => health > 0 ? true : false;
+const isPlayerAlive = player => 
+    typeof player.health !== "undefined" 
+        ? (player.health.points > 0 
+            ? true 
+            : false)
+        : false;
+
 
 
 // Returns tile position based on their x and y and tilesize
@@ -1066,6 +1096,8 @@ const findTileBelowPlayer = (player, tiles) => {
     return sortedTiles[0];
 };
 
+const getTeamName = id => id === 0 ? team1 : team2;
+
 
 module.exports = {
     c,
@@ -1085,7 +1117,8 @@ module.exports = {
     isPlayerAlive,
     calcDistance,
     findTileBelowPlayer,
-    calcObjBounds
+    calcObjBounds,
+    getTeamName
 };
 },{}],4:[function(require,module,exports){
 "use strict";
@@ -1243,28 +1276,30 @@ const firebase = require("firebase");
 let provider = new firebase.auth.GoogleAuthProvider();
 
 
-module.exports.googleSignin = () => {
+module.exports.signIn = () => {
     return new Promise((resolve, reject) => { 
         firebase.auth()
         .signInWithPopup(provider).then((userData) => {
             resolve(userData.user);
-        }).catch((error) => {
-            console.log(error.code);
-            console.log(error.message);
+        }).catch(err => {
+            console.log('err', err);
+            reject();
         });
     });
 };
 
-// module.exports.googleSignout = (logOutFunction) => {
-//    firebase.auth()
-//    .signOut().then(
-//     () => {
-//       logOutFunction();
-//    }, 
-//    (error) => {
-//       console.log('Signout Failed');
-//    });
-// };
+module.exports.signOut = (logOutFunction) => {
+    return new Promise((resolve, reject) => { 
+        firebase.auth()
+        .signOut().then(
+        () => {
+            resolve();
+        }, err => {
+            console.log(err);
+            reject();
+        });
+    });
+};
 },{"firebase":166}],7:[function(require,module,exports){
 "use strict";
 let controller = require("./controller");
@@ -1419,11 +1454,15 @@ let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
 
 let gameId = "";
 
+// List of required tables that each game needs to run
+let requiredTables = ["gameState", "tiles", "players", "gems"];
+
 module.exports.setGameId = (id) => {
     gameId = id;
     url = `${baseUrl}/gameData/${gameId}`;
 };
 module.exports.getGameId = () => gameId;
+
 
 // Loads apiKey.  Resolves when complete.
 const loadAPI = () => {
@@ -1476,7 +1515,9 @@ module.exports.listenToLobbys = () => {
 
 // Detaches Firebase listeners that are listening to gameData/gameId
 module.exports.detachGameListeners = () => {
-    firebase.database().ref(`gameData/${gameId}`).off();
+    for(let table of requiredTables){
+        firebase.database().ref(`gameData/${gameId}/${table}`).off();
+    }
 };
 
 /* 
@@ -1487,12 +1528,10 @@ Runs once by default.
 module.exports.listenToCurGame = () => {
     // Try listening to only one of them.  One listens to tiles one listens to other.
     firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
-        //   console.log("-------Gem Update");
         let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
         c.dispatchEvent(serverUpdate);
     });
     firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
-    //   console.log("Update");
         let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
         c.dispatchEvent(serverUpdate);
     });
@@ -1501,7 +1540,6 @@ module.exports.listenToCurGame = () => {
         c.dispatchEvent(serverUpdate);
     });
     firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
-    //   console.log("Update");
         let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
         c.dispatchEvent(serverUpdate);
     });
@@ -1522,7 +1560,6 @@ module.exports.savePlayerPos = (player) => {
 };
 
 module.exports.savePlayerStats = playerStats => {
-    console.log('playerStats', playerStats);
     $.ajax({
         url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
         type: 'PUT',
@@ -1547,7 +1584,7 @@ module.exports.addLobby = (startTime, name) => {
     });
 };
 
-module.exports.finishGame = endTime => {
+module.exports.finishGame = (endTime,  winner) => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/${gameId}/.json`,
@@ -1555,6 +1592,7 @@ module.exports.finishGame = endTime => {
             dataType: 'json',
             data: JSON.stringify({
                 "gameEnd": endTime,
+                winner
             }),
         });
     });
@@ -1577,9 +1615,11 @@ module.exports.savePlayerHealth = (player) => {
 
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `${url}/players/${player.id}.json`);
-        JSONRequest.send();
+        $.ajax({
+            url:`${url}/players/${player.id}.json`,
+            type: 'DELETE',
+            dataType: 'json'
+        }).done(data => resolve(data));
     });
 };
 
@@ -1599,10 +1639,12 @@ module.exports.saveTileTough = (tile) => {
 
 module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(tiles);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `${url}/tiles.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/tiles.json`,
+            type: 'PUT',
+            dataType: 'json',   
+            data: JSON.stringify(tiles),
+        }).done(data => resolve(data));
     });
 };
 
@@ -1632,10 +1674,15 @@ module.exports.saveGameState = (state) => {
 };
 
 module.exports.addNewPlayer = (player) => {
-    let jsonString = JSON.stringify(player);
-    let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `${url}/players/.json`);
-    JSONRequest.send(jsonString);
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/players/.json`,
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify(player)
+        })
+        .done(data => resolve(data));
+    });
 };
 
 
@@ -1674,20 +1721,6 @@ module.exports.deleteLobby = id => {
         .done(data => resolve(data));
     });
 };
-
-// module.exports.getTiles = (url) => {
-//     return new Promise(function (resolve, reject){
-//         let JSONRequest = new XMLHttpRequest();
-//         JSONRequest.addEventListener("load", () => {
-//             resolve(JSON.parse(JSONRequest.responseText));
-//         });
-//         JSONRequest.addEventListener("error", () => {
-//             console.log("The files weren't loaded correctly!");
-//         });
-//         JSONRequest.open("GET", url);
-//         JSONRequest.send();
-//     });
-// };
 },{"firebase":166,"jquery":169}],10:[function(require,module,exports){
 "use strict";
 
@@ -1754,7 +1787,7 @@ let tileDestructionAnimation = [
 // Set by draw()
 let thisPlayer;
 
-const isDefined = obj => typeof obj !== "undefined";
+const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
 
 const findPlayerTile = (player) => {
@@ -2003,12 +2036,12 @@ module.exports.showSignIn = () => {
 };
 
 module.exports.printDataCount = (returned, sent) => {
-    $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
+    $("#dataCount").text(`Returned/Sent: ${returned}/${sent}`);
 };
 
-module.exports.printGemInfo = gems => {
-    $("#gemInfo").text(`${gems.length} | ${gems[0].carrier} | ${gems[1].carrier}`);
-};
+// module.exports.printGemInfo = gems => {
+//     $("#gemInfo").text(`${gems.length} | ${gems[0].carrier} | ${gems[1].carrier}`);
+// };
 
 const showScreen = (screen) => {
 

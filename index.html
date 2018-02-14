@@ -13,17 +13,20 @@
         <!-- <div id="actions">
 
         </div> -->
-        <div id="game-screen" class="hide">
-            <p id="lag">0</p>
-            <p id="dataCount">0</p>
-            <p id="gemInfo">0</p    >
-            <p id="player-health"></p>
-            <canvas id="game-canvas">
 
-            </canvas>
-        </div>
 
         <div ng-app="menuApp" ng-controller="menuCtrl">
+            <div id="game-screen" class="hide">
+                <p id="lag">0</p>
+                <p id="dataCount">0</p>
+                <p id="gemInfo"></p>
+                <p id="player-health"></p>
+                <button ng-click="signOut()">Logout</button>
+                <button ng-click="goToMainMenu()">Main Menu</button>
+                <canvas id="game-canvas">
+    
+                </canvas>
+            </div>
             <div id="victory-screen" class="hide">
                 <h1>The <span id="winner"></span> claim victory! <br/> Yet the feud is not over.</h1>
                 <button ng-click="goToMainMenu()">Main Menu</button>
@@ -32,8 +35,9 @@
                 <button ng-click="signIn()">Sign In / Register</button>
             </div>
             <div id="main-menu-screen" class="hide">
-            <p id="signInText"></p>
-            <div id="player-lobby">
+                <p id="signInText"></p>
+                <button ng-click="signOut()">Logout</button>
+                <div id="player-lobby">
                     <button ng-click="addGame()">New Game</button>
                     
                     <div ng-show="isLobbySelected()">
@@ -69,9 +73,11 @@
                         <h3>Lobbies</h3>
                         <ul ng-repeat="lobby in lobbyList" >
                             <li ng-show="!isFinished(lobby.gameEnd)">
+                                <p ng-show="isThisLobbySelected(lobby.key)">-----</p>
                                 <p>{{lobby.name}}</p>
                                 <button ng-click="selectGame(lobby.key)">Select</button>
                                 <button ng-click="deleteGame(lobby.key)">Delete</button>
+                                <p ng-show="isThisLobbySelected(lobby.key)">-----</p>
                             </li>
                         </ul>
                     </div>

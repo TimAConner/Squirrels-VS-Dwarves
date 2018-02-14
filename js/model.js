@@ -12,11 +12,15 @@ let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
 
 let gameId = "";
 
+// List of required tables that each game needs to run
+let requiredTables = ["gameState", "tiles", "players", "gems"];
+
 module.exports.setGameId = (id) => {
     gameId = id;
     url = `${baseUrl}/gameData/${gameId}`;
 };
 module.exports.getGameId = () => gameId;
+
 
 // Loads apiKey.  Resolves when complete.
 const loadAPI = () => {
@@ -69,7 +73,9 @@ module.exports.listenToLobbys = () => {
 
 // Detaches Firebase listeners that are listening to gameData/gameId
 module.exports.detachGameListeners = () => {
-    firebase.database().ref(`gameData/${gameId}`).off();
+    for(let table of requiredTables){
+        firebase.database().ref(`gameData/${gameId}/${table}`).off();
+    }
 };
 
 /* 
@@ -80,12 +86,10 @@ Runs once by default.
 module.exports.listenToCurGame = () => {
     // Try listening to only one of them.  One listens to tiles one listens to other.
     firebase.database().ref(`gameData/${gameId}/gameState`).on('value', function(snapshot) {
-        //   console.log("-------Gem Update");
         let serverUpdate = new CustomEvent("serverUpdateGameState", {'detail': snapshot.val()});
         c.dispatchEvent(serverUpdate);
     });
     firebase.database().ref(`gameData/${gameId}/tiles`).on('value', function(snapshot) {
-    //   console.log("Update");
         let serverUpdate = new CustomEvent("serverUpdateTiles", {'detail': snapshot.val()});
         c.dispatchEvent(serverUpdate);
     });
@@ -94,7 +98,6 @@ module.exports.listenToCurGame = () => {
         c.dispatchEvent(serverUpdate);
     });
     firebase.database().ref(`gameData/${gameId}/gems`).on('value', function(snapshot) {
-    //   console.log("Update");
         let serverUpdate = new CustomEvent("serverUpdateGems", {'detail': snapshot.val()});
         c.dispatchEvent(serverUpdate);
     });
@@ -115,7 +118,6 @@ module.exports.savePlayerPos = (player) => {
 };
 
 module.exports.savePlayerStats = playerStats => {
-    console.log('playerStats', playerStats);
     $.ajax({
         url:`${baseUrl}/games/${gameId}/players/${playerStats.id}/.json`,
         type: 'PUT',
@@ -171,9 +173,11 @@ module.exports.savePlayerHealth = (player) => {
 
 module.exports.deletePlayer = (player) => {
     return new Promise(function (resolve, reject){
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("DELETE", `${url}/players/${player.id}.json`);
-        JSONRequest.send();
+        $.ajax({
+            url:`${url}/players/${player.id}.json`,
+            type: 'DELETE',
+            dataType: 'json'
+        }).done(data => resolve(data));
     });
 };
 
@@ -193,10 +197,12 @@ module.exports.saveTileTough = (tile) => {
 
 module.exports.saveNewTileSet = (tiles) => {
     return new Promise(function (resolve, reject){
-        let jsonString = JSON.stringify(tiles);
-        let JSONRequest = new XMLHttpRequest();
-        JSONRequest.open("PUT", `${url}/tiles.json`);
-        JSONRequest.send(jsonString);
+        $.ajax({
+            url:`${url}/tiles.json`,
+            type: 'PUT',
+            dataType: 'json',   
+            data: JSON.stringify(tiles),
+        }).done(data => resolve(data));
     });
 };
 
@@ -226,10 +232,15 @@ module.exports.saveGameState = (state) => {
 };
 
 module.exports.addNewPlayer = (player) => {
-    let jsonString = JSON.stringify(player);
-    let JSONRequest = new XMLHttpRequest();
-    JSONRequest.open("POST", `${url}/players/.json`);
-    JSONRequest.send(jsonString);
+    return new Promise(function (resolve, reject){
+        $.ajax({
+            url:`${url}/players/.json`,
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify(player)
+        })
+        .done(data => resolve(data));
+    });
 };
 
 
@@ -268,17 +279,3 @@ module.exports.deleteLobby = id => {
         .done(data => resolve(data));
     });
 };
-
-// module.exports.getTiles = (url) => {
-//     return new Promise(function (resolve, reject){
-//         let JSONRequest = new XMLHttpRequest();
-//         JSONRequest.addEventListener("load", () => {
-//             resolve(JSON.parse(JSONRequest.responseText));
-//         });
-//         JSONRequest.addEventListener("error", () => {
-//             console.log("The files weren't loaded correctly!");
-//         });
-//         JSONRequest.open("GET", url);
-//         JSONRequest.send();
-//     });
-// };

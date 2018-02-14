@@ -1,7 +1,6 @@
 "use strict";
 
 // Holds information that needs to be accessible by multiple modules
-
 let c = document.getElementById('game-canvas');
 let ctx = c.getContext("2d");
 
@@ -25,10 +24,16 @@ let uid = "";
 let fullName = "";
 
 const battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
-const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
+const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill", "Skwir'el Village", "Skwir'el Ford", "The Great Hoard", "The Tiny Hoard"];
 
 
-const isPlayerAlive = ({health: {points: health}}) => health > 0 ? true : false;
+const isPlayerAlive = player => 
+    typeof player.health !== "undefined" 
+        ? (player.health.points > 0 
+            ? true 
+            : false)
+        : false;
+
 
 
 // Returns tile position based on their x and y and tilesize

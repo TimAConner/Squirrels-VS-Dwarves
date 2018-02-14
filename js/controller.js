@@ -57,7 +57,7 @@ let localPlayerStats =  {
 },
 statsSent = false;
 
-//  Use timestamp instead?
+
 let keys = {
     ArrowLeft: false,
     ArrowRight: false,
@@ -85,7 +85,7 @@ let lag = 0; // Time between current timestamp and new peices of data timestamp.
 let countDataReturned = 0, // Count of data returned after sending information.
 countDataSent = 0; // Count of data sent to  firebase.
 
-const isDefined = obj => typeof obj !== "undefined";
+const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
 // Returns true if one part of smaller is on or within the border of the larger
 const isPositionWithinBounds = (smaller, larger) => 
@@ -289,7 +289,7 @@ const updateGemPosition = () => {
         if(gem.carrier !== -1){
             // Update the positoin based on the player's position
             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
-            if(g.isPlayerAlive(carrier)){
+            if(isDefined(carrier) && g.isPlayerAlive(carrier)){
                 gem.pos.x = carrier.pos.x;
                 gem.pos.y = carrier.pos.y;
             }              
@@ -514,7 +514,7 @@ const mainLoop = (timestamp) => {
     } else if(initialLobbyLoad){ // Loading screen
         view.showLoadingScreen();
     } else if (onlineGameState === 2 && localGameState === 1){ // Winner screen
-        resetGameState();
+        resetInitialDraw();
         view.viewWinnerScreen(winnerTeamId);
     } else if(localGameState === 1 && onlineGameState === 1){  // Game playing screen
         // Show game canvas
@@ -551,7 +551,7 @@ const mainLoop = (timestamp) => {
         
         // Updates lag & data sent / returned ui
         view.printDataCount(countDataReturned, countDataSent);
-        view.printGemInfo(gems);
+        // view.printGemInfo(gems);
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
     } else if (localGameState === 0){ // Menu
@@ -567,11 +567,16 @@ const mainLoop = (timestamp) => {
 };
 
 // Resets variables on whether or not the map has been drawn for the first time or not.
-const resetGameState = () => {
+const resetInitialDraw = () => {
     initialTileDraw = true;
     initialPlayerDraw = true;
     initialGemDraw = true;
     initialGameState = true;
+};
+
+const resetGameState = () => {
+    localGameState = 0;
+    onlineGameState = 0;
 };
 
 const startPlay = () => {
@@ -594,7 +599,6 @@ const activateDebugListeners = () => {
         along with whether or not it is in the proccessedActions array.
      */
     $("canvas").on("click", function(e){
-    
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
@@ -604,7 +608,6 @@ const activateDebugListeners = () => {
         });
     
         console.log(tile);
-        // console.log("isTileInProccessedArray", (proccessedActions.indexOf(tile.tough.requestId) !== -1));
     });
 };
 
@@ -678,17 +681,19 @@ const activateServerListeners = () => {
     // Update game state of the current game
     g.c.addEventListener("serverUpdateGameState", ({detail: gameStateData}) => {
         initialGameState = false;
-        onlineGameState = gameStateData.gameState; 
-        winnerTeamId = gameStateData.winningTeam;
-        
-        // If the game has been won by a player online, 
-        // then send states and finish the game locally.
-        if(onlineGameState === 2 && statsSent === false){
-            statsSent = true;
-            model.savePlayerStats(localPlayerStats);
-            model.finishGame(Date.now(), winnerTeamId);
+        if(isDefined(gameStateData)) {
+            onlineGameState = gameStateData.gameState; 
+            winnerTeamId = gameStateData.winningTeam;
+            
+            // If the game has been won by a player online, 
+            // then send states and finish the game locally.
+            if(onlineGameState === 2 && statsSent === false){
+                statsSent = true;
+                model.savePlayerStats(localPlayerStats);
+                model.finishGame(Date.now(), winnerTeamId);
+            }
+            mergeDataThisFrame = true;
         }
-        mergeDataThisFrame = true;
     });
 
 };
@@ -728,7 +733,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     $("#game-canvas").on("serverUpdatePlayer", ({detail: players}) => {
         // Force Angular to digest new players to update the html
-        _.defer(function(){ 
+        _.defer(function(){
             $scope.$apply(function(){
                 if(players !== null){
                     $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
@@ -787,11 +792,12 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     });
 
     $scope.selectGame = id => {
-        console.log('id', id);
-        resetGameState();
         model.detachGameListeners(); // Detach previous game listeners
+        resetInitialDraw();
         model.setGameId(id);
-        model.listenToCurGame();// Listen to new game data
+        if(isDefined(id) && id !== "") {
+            model.listenToCurGame();// Listen to new game data
+        }
     };
 
     $scope.deleteGame = id => {
@@ -826,6 +832,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     
     $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
     
+    $scope.isThisLobbySelected = id => model.getGameId() === id;
+
     $scope.addDwarf = () => {
         gameMaker.addPlayer(0, tiles, players.length);
     };
@@ -844,7 +852,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.addGame = () =>  {
         model.addLobby(Date.now(), generateBattleName())
         .then(gameId => {
-            resetGameState();
+            resetInitialDraw();
             model.setGameId(gameId);
             gameMaker.addGame()
             .then(() => {
@@ -854,23 +862,37 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     };
 
     $scope.goToMainMenu = () => {
-        localGameState = 0;
+        $scope.selectGame("");// Selects no game
+        resetGameState();// Goes to menu 
+    };
+
+    $scope.signOut = () => {
+        if(countDataSent === countDataReturned){
+            login.signOut().then(data => {
+                location.reload();
+            });
+        } else {
+            alert("Please wait until all player data has been sent.");
+        }
     };
 
     $scope.signIn = () => {
-        // Commented out for testing purpose.  Comment back in to test with multiple users.
-        // login.googleSignin().then((data) => {
-        //      console.log(data);
-        //     g.uid = data.email;
-        //     g.name = data.name;
-        // });
-        g.uid = "timaconner1@gmail.com";
-        g.fullName = "Tim Conner";
-        view.showSignIn();
-
-        // Initialize firebase and start listening to the list of lobbys
         model.initFirebase().then(() => {
-            model.listenToLobbys();
+
+            // Commented out for testing purpose.  Comment back in to test with multiple users.
+            login.signIn().then(data => {
+                //  console.log(data);
+                g.uid = data.email;
+                g.name = data.name;
+
+                // Initialize firebase and start listening to the list of lobbys
+                model.listenToLobbys();
+            });
+
+            // g.uid = "timaconner1@gmail.com";
+            // g.fullName = "Tim Conner";
+
+            view.showSignIn();
         });
     };
 }]);

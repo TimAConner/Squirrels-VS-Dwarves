@@ -63,7 +63,7 @@ let tileDestructionAnimation = [
 // Set by draw()
 let thisPlayer;
 
-const isDefined = obj => typeof obj !== "undefined";
+const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
 
 const findPlayerTile = (player) => {
@@ -312,12 +312,12 @@ module.exports.showSignIn = () => {
 };
 
 module.exports.printDataCount = (returned, sent) => {
-    $("#dataCount").text(`Sent/Returned: ${returned}/${sent}`);
+    $("#dataCount").text(`Returned/Sent: ${returned}/${sent}`);
 };
 
-module.exports.printGemInfo = gems => {
-    $("#gemInfo").text(`${gems.length} | ${gems[0].carrier} | ${gems[1].carrier}`);
-};
+// module.exports.printGemInfo = gems => {
+//     $("#gemInfo").text(`${gems.length} | ${gems[0].carrier} | ${gems[1].carrier}`);
+// };
 
 const showScreen = (screen) => {
 
