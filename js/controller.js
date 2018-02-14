@@ -212,30 +212,26 @@ const mergeData = (currentData, newData, valuesToCheck) => {
         }
 
         // Change existing values
-        for(let newPeice of newData){
+        for(let newPiece of newData){
             // If no specific value should be proccessed, update the whole object
             if(!isDefined(valuesToCheck)){
-                let curPeice = currentData.find(({id}) => id === newPeice.id);
+                let curPiece = currentData.find(({id}) => id === newPiece.id);
                 
-                if(isDefined(newPeice.requestId) ){
-                    if(newPeice.requestId !== curPeice.requestId){
-                        let newRequestId = +parseRequestId(newPeice.requestId);
-                        let curRequestId = +parseRequestId(curPeice.requestId);
+                if(isDefined(newPiece.requestId) ){
+                    if(newPiece.requestId !== curPiece.requestId){
+                        let newRequestId = +parseRequestId(newPiece.requestId);
+                        let curRequestId = +parseRequestId(curPiece.requestId);
                         
                         if(newRequestId >= curRequestId) calcLag(newRequestId);
 
-                        // If newPeice has not been proccessed
-                        if(!proccessedActions.includes(newPeice.requestId)){
+                        // If newPiece has not been proccessed
+                        if(!proccessedActions.includes(newPiece.requestId)){
                             if((newRequestId >= curRequestId)){ 
-                                // Copy the whole object into the current newPeice
+                                // Copy the whole object into the current newPiece
 
-                                currentData[currentData.indexOf(curPeice)] = Object.assign({}, newPeice);
-                                
-                                for(let prop in curPeice){
-                                    curPeice[prop] = Object.assign({}, newPeice[prop]);
-                                }
+                                currentData[currentData.indexOf(curPiece)] = Object.assign({}, newPiece);
 
-                                proccessedActions.push(newPeice.requestId);
+                                proccessedActions.push(newPiece.requestId);
                             }
                         }
                     }
@@ -244,25 +240,25 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             // If specific values should be proccesed, update only those values. 
             else { 
                 for(let value of valuesToCheck){
-                    let curPeice = currentData.find(({id}) => id === newPeice.id);
-                    if(isDefined(newPeice[value]) && newPeice[value].requestId !== curPeice[value].requestId){ 
+                    let curPiece = currentData.find(({id}) => id === newPiece.id);
+                    if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){ 
 
-                        let newRequestId = +parseRequestId(newPeice[value].requestId);
-                        let curRequestId = +parseRequestId(curPeice[value].requestId);
+                        let newRequestId = +parseRequestId(newPiece[value].requestId);
+                        let curRequestId = +parseRequestId(curPiece[value].requestId);
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
-                        if(!proccessedActions.includes(newPeice[value].requestId)){
+                        if(!proccessedActions.includes(newPiece[value].requestId)){
                             
                             // If this game has not proccessed it and the value is not an old one,
-                            // Copy the proccessed peice of data into the current data.
+                            // Copy the proccessed piece of data into the current data.
 
                             if(newRequestId >= curRequestId){ 
 
-                                proccessedActions.push(newPeice[value].requestId);
-                                curPeice[value] = Object.assign({}, newPeice[value]);
+                                proccessedActions.push(newPiece[value].requestId);
+                                curPiece[value] = Object.assign({}, newPiece[value]);
 
-                                //TODO: Fix issue where older peice of data is replacing newer data.
+                                //TODO: Fix issue where older piece of data is replacing newer data.
                                 // Is move being replaced by mine?  Didin't pick up a move.
                                 // Is move replacing mine?  Only a move of same timestamp, not a mine.
                                 // console.log('newRequestId, lag', newRequestId, lag);
