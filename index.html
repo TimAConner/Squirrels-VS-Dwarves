@@ -46,9 +46,15 @@
                         <h3>Your Players</h3>
                         <ul ng-repeat="x in ownedPlayers" >
                             <li>
-                                <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
-                                <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
+                                <div ng-show="isAlive(x.id)">
+                                    <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
+                                    <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
+                                </div>
+                                <div ng-show="!isAlive(x.id)">
+                                    <p>{{x.id}} is dead.</p>
+                                </div>
                             </li>
+                            
                         </ul>
                     </div>
                     <div ng-show="isLobbySelected()">

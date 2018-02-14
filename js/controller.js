@@ -288,12 +288,12 @@ const updateGemPosition = () => {
         // If the gem is being carried
         if(gem.carrier !== -1){
             // Update the positoin based on the player's position
-            // If the player is dead, drop the gem.
             let carrier = players.find(player => player.id === gem.carrier); // jshint ignore:line
             if(g.isPlayerAlive(carrier)){
                 gem.pos.x = carrier.pos.x;
                 gem.pos.y = carrier.pos.y;
             }              
+            // If the player is dead, drop the gem.
             else dropGem(gem);
         }
     }
@@ -535,10 +535,6 @@ const mainLoop = (timestamp) => {
                 mergeData(players, newPlayers, ["health", "pos"]);
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
-                // if(newGems.length !== 0){
-                //     gems = newGems;
-                //     console.log('update gems');
-                // }
                 mergeDataThisFrame = false;
             }
             
@@ -832,6 +828,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.addSquirrel = () => {
         gameMaker.addPlayer(1, tiles, players.length);
     };
+
+    $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
 
     $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
