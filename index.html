@@ -80,6 +80,7 @@
                         <ul ng-repeat="lobby in lobbyList" >
                             <li ng-show="isFinished(lobby.gameEnd)">
                                 <p>{{lobby.name}} {{lobby.date}}</p>
+                                <p>A {{lobby.winner}} Victory</p>
                                 <p>Game Length: {{lobby.gameLength}}</p>
                                 <p>Players:</p>
                                 <ol ng-repeat="player in lobby.players" >

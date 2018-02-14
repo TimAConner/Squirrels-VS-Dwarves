@@ -16,6 +16,10 @@ const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
 
+const team1 = "Dwarf";
+const team2 = "Squirrel";
+
+
 let playerId = 0;
 let uid = "";
 let fullName = "";
@@ -60,6 +64,8 @@ const findTileBelowPlayer = (player, tiles) => {
     return sortedTiles[0];
 };
 
+const getTeamName = id => id === 0 ? team1 : team2;
+
 
 module.exports = {
     c,
@@ -79,5 +85,6 @@ module.exports = {
     isPlayerAlive,
     calcDistance,
     findTileBelowPlayer,
-    calcObjBounds
+    calcObjBounds,
+    getTeamName
 };

@@ -140,7 +140,7 @@ module.exports.addLobby = (startTime, name) => {
     });
 };
 
-module.exports.finishGame = endTime => {
+module.exports.finishGame = (endTime,  winner) => {
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${baseUrl}/games/${gameId}/.json`,
@@ -148,6 +148,7 @@ module.exports.finishGame = endTime => {
             dataType: 'json',
             data: JSON.stringify({
                 "gameEnd": endTime,
+                winner
             }),
         });
     });

@@ -686,7 +686,7 @@ const activateServerListeners = () => {
         if(onlineGameState === 2 && statsSent === false){
             statsSent = true;
             model.savePlayerStats(localPlayerStats);
-            model.finishGame(Date.now());
+            model.finishGame(Date.now(), winnerTeamId);
         }
         mergeDataThisFrame = true;
     });
@@ -755,6 +755,11 @@ app.controller("menuCtrl", ['$scope', function($scope) {
                         //Add game length to lobby information
                         if(isDefined(lobby.gameEnd)){
                             lobby.gameLength = convertMiliToHMS(+lobby.gameEnd - +lobby.gameStart);
+                        }
+
+                        //Add game winner information
+                        if(isDefined(lobby.winner)){
+                            lobby.winner = g.getTeamName(lobby.winner);
                         }
 
                         // Add game date
