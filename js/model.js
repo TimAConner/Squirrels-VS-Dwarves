@@ -191,7 +191,8 @@ module.exports.saveTileTough = (tile) => {
                 tough: tile.tough
             })
         })
-        .done(data => resolve(data));
+        .done(data => resolve(data))
+        .fail(data => reject(data));
     });
 };
 

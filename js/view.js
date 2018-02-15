@@ -162,7 +162,7 @@ const drawTiles = (tiles, players, drawAllTiles = false) => {
             // Debugging to check why tile 219 is not updating in the view
             if(tileDebugId !== null && tile.id === tileDebugId){
                 
-                console.log(tile.tough.points);
+                console.log(tileToughness);
                 //Test what type of object it is.
                for(let type in tileType){
                    console.log(type, tileType[type]());
@@ -173,11 +173,13 @@ const drawTiles = (tiles, players, drawAllTiles = false) => {
 
             if (tileType.isIndestructable()) {
                 drawTile('wall', tile);
+                tileDebugId = null;
                 continue;
             } 
 
             if(tileType.isTeamBase()){
                 drawTile('dirt', tile, baseColor);
+                tileDebugId = null;
                 continue;
             } 
 
@@ -307,7 +309,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     drawHealth(thisPlayer.health.points);
     drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players, true);
+    drawTiles(tiles, players);
     drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
@@ -341,8 +343,9 @@ module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
 };
 
-module.exports.printDataCount = (returned, sent, recieved) => {
+module.exports.printDataCount = (returned, sent, recieved, dropped) => {
     $("#dataCount").text(`Returned/Sent: ${returned}/${sent}`);
+    $("#dataCount").append(`<p>Sent Data Dropped: ${dropped}</p>`);
     $("#dataCount").append(`<p>Data Recieved: ${recieved}</p>`);
 };
 

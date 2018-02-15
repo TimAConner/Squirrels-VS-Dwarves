@@ -7,7 +7,8 @@ let ctx = c.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
 
-const playerSpeed = 0.1;
+const playerSpeed = 1;
+const playerWithGemSpeed = 0.5;
 const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
@@ -76,6 +77,7 @@ module.exports = {
     c,
     ctx,
     playerSpeed,
+    playerWithGemSpeed,
     tileSize,
     playerSize,
     attackDistance,

@@ -206,9 +206,14 @@ lastFrameTimeMs = 0;
 let lag = 0; // Time between current timestamp and new peices of data timestamp.
 let countDataReturned = 0, // Count of data returned after sending information.
 countDataSent = 0, // Count of data sent to  firebase.
-totalDataRecieved = 0;
+totalDataRecieved = 0, // Total data recieved from anywhere
+countDataDropped = 0; // Any data that XHR failed
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
+
+const toTwoDigits = number => (Math.round(number * 100) / 100);
+
+const isCarryingGem = ({id}) => gems.find(({carrier}) => carrier === id);
 
 // Returns true if one part of smaller is on or within the border of the larger
 const isPositionWithinBounds = (smaller, larger) => 
@@ -228,7 +233,7 @@ const isWithinXAxis = (player, obj) =>  willHitOnLeft(player.x, obj) || willHitO
 const canPlayerMove = (direction, delta) => {
     let player = players.find(({id}) => id === g.playerId);
     let playerPos = g.calcObjBounds(player, g.playerSize, true);
-    let increment = speedMultiplier*delta;
+    let increment = isCarryingGem(player) ? speedMultiplier*g.playerWithGemSpeed*delta : speedMultiplier*g.playerSpeed*delta;
 
     for(let tile of tiles){
         let tilePos = g.calcObjBounds(tile, g.tileSize);
@@ -487,9 +492,13 @@ const checkInput = delta => {
                             addRequestId(selectedTile.tough, `${requestId}mine`);
                             countDataSent++;
 
-                            model.saveTileTough(selectedTile).then(data => {
+                            model.saveTileTough(selectedTile)
+                            .then(data => {
                                 countDataReturned ++;
                                 calcLag(parseRequestId(data.tough.requestId));
+                            })
+                            .catch(data => {
+                                countDataDropped++;
                             });
                         }
                     }
@@ -615,9 +624,11 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
     } 
 
     // Move character and set direction
-    pos[changeIn] += speedMultiplier * delta;
+    pos[changeIn] += isCarryingGem(player) ? speedMultiplier*g.playerWithGemSpeed*delta : speedMultiplier*g.playerSpeed*delta;
     pos.dir = direction;
 
+
+    
     // console.log('pos.dir', pos.dir);
     addRequestId(pos, `${requestId}move`);
     
@@ -673,7 +684,7 @@ const mainLoop = (timestamp) => {
         }
         
         // Updates lag & data sent / returned ui
-        view.printDataCount(countDataReturned, countDataSent, totalDataRecieved);
+        view.printDataCount(countDataReturned, countDataSent, totalDataRecieved, countDataDropped);
         // view.printGemInfo(gems);
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
@@ -695,6 +706,11 @@ const resetInitialDraw = () => {
     initialPlayerDraw = true;
     initialGemDraw = true;
     initialGameState = true;
+
+    countDataDropped = 0;
+    countDataReturned = 0;
+    countDataSent = 0;
+    totalDataRecieved = 0;
 };
 
 const resetGameState = () => {
@@ -725,12 +741,12 @@ const activateDebugListeners = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-        let tile = tiles.find(data => {
+        let tile = tiles.filter(data => {
             let t = g.calcObjBounds(data, g.tileSize);
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
 
-        view.setTileDebugId(tile.id);
+        view.setTileDebugId(tile[0].id);
     
         console.log(tile);
     });
@@ -1040,7 +1056,8 @@ let ctx = c.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
 
-const playerSpeed = 0.1;
+const playerSpeed = 1;
+const playerWithGemSpeed = 0.5;
 const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
@@ -1109,6 +1126,7 @@ module.exports = {
     c,
     ctx,
     playerSpeed,
+    playerWithGemSpeed,
     tileSize,
     playerSize,
     attackDistance,
@@ -1135,6 +1153,7 @@ const g = require("./game");
 
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     let spawnPoint = tiles.find(x => x.teamBase === teamId); 
+    console.log('spawnPoint', spawnPoint);
     let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
 
     let player = {
@@ -1163,7 +1182,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
         // Size should be odd numbers so that the flipping of the map can happen.
-        let createdTiles = mapMaker.generateTiles(21, 20);
+        let createdTiles = mapMaker.generateTiles(21, 21);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
@@ -1465,7 +1484,15 @@ controller.startGame();
     
     // console.log("pos", _.uniqBy(tiles.map(({pos: {x, y}}) => {return {x,y};}), ['x', 'y']));
     // console.log("tough", _.uniqBy(tiles, 'tough'));
-    // console.log("id", _.uniqBy(tiles, 'id'));
+
+    // Remove duplicate tiles where the seem overlaps in the middle of the map.
+    for(let tileA in tiles){
+        for(let tileB in tiles){
+            if(tileA.id !== tileB.id && tileA.pos === tileB.pos){
+                _.remove(tiles, ({id}) => id === tileB.id);
+            }
+        }
+    }
     console.log('tiles', tiles);
     
     return tiles;
@@ -1666,7 +1693,8 @@ module.exports.saveTileTough = (tile) => {
                 tough: tile.tough
             })
         })
-        .done(data => resolve(data));
+        .done(data => resolve(data))
+        .fail(data => reject(data));
     });
 };
 
@@ -1919,7 +1947,7 @@ const drawTiles = (tiles, players, drawAllTiles = false) => {
             // Debugging to check why tile 219 is not updating in the view
             if(tileDebugId !== null && tile.id === tileDebugId){
                 
-                console.log(tile.tough.points);
+                console.log(tileToughness);
                 //Test what type of object it is.
                for(let type in tileType){
                    console.log(type, tileType[type]());
@@ -1930,11 +1958,13 @@ const drawTiles = (tiles, players, drawAllTiles = false) => {
 
             if (tileType.isIndestructable()) {
                 drawTile('wall', tile);
+                tileDebugId = null;
                 continue;
             } 
 
             if(tileType.isTeamBase()){
                 drawTile('dirt', tile, baseColor);
+                tileDebugId = null;
                 continue;
             } 
 
@@ -2064,7 +2094,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     drawHealth(thisPlayer.health.points);
     drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players, true);
+    drawTiles(tiles, players);
     drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
@@ -2098,8 +2128,9 @@ module.exports.showSignIn = () => {
     showScreen("#sign-in-screen");
 };
 
-module.exports.printDataCount = (returned, sent, recieved) => {
+module.exports.printDataCount = (returned, sent, recieved, dropped) => {
     $("#dataCount").text(`Returned/Sent: ${returned}/${sent}`);
+    $("#dataCount").append(`<p>Sent Data Dropped: ${dropped}</p>`);
     $("#dataCount").append(`<p>Data Recieved: ${recieved}</p>`);
 };
 

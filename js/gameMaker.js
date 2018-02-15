@@ -35,7 +35,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
         // Size should be odd numbers so that the flipping of the map can happen.
-        let createdTiles = mapMaker.generateTiles(21, 20);
+        let createdTiles = mapMaker.generateTiles(21, 21);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
