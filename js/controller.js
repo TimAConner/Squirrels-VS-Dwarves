@@ -607,6 +607,8 @@ const activateDebugListeners = () => {
             let t = g.calcObjBounds(data, g.tileSize);
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
+
+        view.setTileDebugId(tile.id);
     
         console.log(tile);
     });

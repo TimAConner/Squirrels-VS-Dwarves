@@ -2,6 +2,11 @@
 This is the testing ground for my front end capstone at the [Nashville Software School](http://nashvillesoftwareschool.com/)
 
 
+## Debugging Tips
+1. If something is not happening that should be happening:
+    1. Check if firebase is being updated, if it is, the issue is most likely in view or mergeData().
+    1. If firebase is not being updated, check in model or checkInput().
+
 ## Version 3.0 Goals
 - [x] Health Bars
 - [ ] Can't move through allies

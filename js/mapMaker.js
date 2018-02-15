@@ -63,11 +63,14 @@
     resetTileGenerator();
 
     let tiles = [];
-    let id = 0;
 
     let halfW = Math.floor(w/2);
     console.log('halfW', halfW);
     console.log('h', h);
+
+    let id = 0;
+
+    
     // Create half the map
     for(let x = 0; x <= halfW; x++){
         for(let y = 0; y <= h; y++){
@@ -95,8 +98,6 @@
             for(let type in specialTiles){
                 if(specialTiles[type].is()) specialTiles[type].set();
             }
-
-            id ++;
             tiles.push(obj);
         }
     }
@@ -104,7 +105,6 @@
     // Duplicate tiles and mirror it.
     let tilesCopy = tiles.map(({id, pos: {x, y}, tough, teamBase}) => {
         // Continue giving a unique id to the tiles
-        id += Math.floor((w*h)/2);
 
         // Flip the x and y coordinates
         x = w - x;
@@ -117,15 +117,19 @@
     });
 
     // Join both sides of the map.
-    console.log('[...tiles]', [...tiles]);
-    console.log('[...tilesCopy]', [...tilesCopy]);
+    // console.log('[...tiles]', [...tiles]);
+    // console.log('[...tilesCopy]', [...tilesCopy]);
     tiles = [...tiles, ...tilesCopy];
-    console.log('tiles', tiles);
+    // console.log('tiles', tiles);
     // Set teams bases and map boundaries.
+
+    
     tiles.map(tile => {
         let x = tile.pos.x;
         let y = tile.pos.y;
-
+        
+        tile.id = id;
+        id++;
 
         const specialTiles = {
             MapBound: {
@@ -143,6 +147,11 @@
         }
         return tile;
     });
+    
+    // console.log("pos", _.uniqBy(tiles.map(({pos: {x, y}}) => {return {x,y};}), ['x', 'y']));
+    // console.log("tough", _.uniqBy(tiles, 'tough'));
+    // console.log("id", _.uniqBy(tiles, 'id'));
+    console.log('tiles', tiles);
     
     return tiles;
   };

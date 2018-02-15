@@ -729,6 +729,8 @@ const activateDebugListeners = () => {
             let t = g.calcObjBounds(data, g.tileSize);
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
+
+        view.setTileDebugId(tile.id);
     
         console.log(tile);
     });
@@ -1161,7 +1163,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
         // Size should be odd numbers so that the flipping of the map can happen.
-        let createdTiles = mapMaker.generateTiles(20, 20);
+        let createdTiles = mapMaker.generateTiles(21, 20);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
@@ -1376,11 +1378,14 @@ controller.startGame();
     resetTileGenerator();
 
     let tiles = [];
-    let id = 0;
 
     let halfW = Math.floor(w/2);
     console.log('halfW', halfW);
     console.log('h', h);
+
+    let id = 0;
+
+    
     // Create half the map
     for(let x = 0; x <= halfW; x++){
         for(let y = 0; y <= h; y++){
@@ -1408,8 +1413,6 @@ controller.startGame();
             for(let type in specialTiles){
                 if(specialTiles[type].is()) specialTiles[type].set();
             }
-
-            id ++;
             tiles.push(obj);
         }
     }
@@ -1417,7 +1420,6 @@ controller.startGame();
     // Duplicate tiles and mirror it.
     let tilesCopy = tiles.map(({id, pos: {x, y}, tough, teamBase}) => {
         // Continue giving a unique id to the tiles
-        id += Math.floor((w*h)/2);
 
         // Flip the x and y coordinates
         x = w - x;
@@ -1430,15 +1432,19 @@ controller.startGame();
     });
 
     // Join both sides of the map.
-    console.log('[...tiles]', [...tiles]);
-    console.log('[...tilesCopy]', [...tilesCopy]);
+    // console.log('[...tiles]', [...tiles]);
+    // console.log('[...tilesCopy]', [...tilesCopy]);
     tiles = [...tiles, ...tilesCopy];
-    console.log('tiles', tiles);
+    // console.log('tiles', tiles);
     // Set teams bases and map boundaries.
+
+    
     tiles.map(tile => {
         let x = tile.pos.x;
         let y = tile.pos.y;
-
+        
+        tile.id = id;
+        id++;
 
         const specialTiles = {
             MapBound: {
@@ -1456,6 +1462,11 @@ controller.startGame();
         }
         return tile;
     });
+    
+    // console.log("pos", _.uniqBy(tiles.map(({pos: {x, y}}) => {return {x,y};}), ['x', 'y']));
+    // console.log("tough", _.uniqBy(tiles, 'tough'));
+    // console.log("id", _.uniqBy(tiles, 'id'));
+    console.log('tiles', tiles);
     
     return tiles;
   };
@@ -1768,6 +1779,8 @@ let tilesToDraw = [];
 // Square colors
 let baseColor = "#FFA50080";
 
+// Id of tile to debug
+let tileDebugId = null;
 
 let DwarfAnimation = {
     frame: [1, 2],
@@ -1823,6 +1836,8 @@ const findPlayerTile = (player) => {
     };
 };
 
+module.exports.setTileDebugId = id => tileDebugId = id;
+
 const shouldTileBeDrawn = (tile, tiles) => isDefined(tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y)) ? true : false;
 
 
@@ -1877,8 +1892,10 @@ const drawTile = (imgName, tile, color = null) => {
     }
 };
 
-const drawTiles = (tiles, players) => {
-    tilesToDraw = calcVisibleTiles(tiles, players);
+const drawTiles = (tiles, players, drawAllTiles = false) => {
+
+    tilesToDraw = drawAllTiles ? tiles : calcVisibleTiles(tiles, players);
+
     
     let playerTile;
     if(isDefined(thisPlayer)){
@@ -1888,6 +1905,9 @@ const drawTiles = (tiles, players) => {
         for(let tile of tiles){
             let tileToughness = tile.tough.points;
             
+            // TODO: Research: Can I define these in 
+            // game.js somehow and then use that decleration to then define them within this function?
+            // and anywhere else I'd want to run these tests?
             const tileType = {
                 isIndestructable: () => tileToughness === -2,
                 isVisible: () => shouldTileBeDrawn(tile, tilesToDraw),
@@ -1895,6 +1915,18 @@ const drawTiles = (tiles, players) => {
                 isDirt: () => tileToughness <= 0,
                 isTeamBase: () => tile.teamBase === thisPlayer.team,
             };
+            
+            // Debugging to check why tile 219 is not updating in the view
+            if(tileDebugId !== null && tile.id === tileDebugId){
+                
+                console.log(tile.tough.points);
+                //Test what type of object it is.
+               for(let type in tileType){
+                   console.log(type, tileType[type]());
+               }
+
+               // Reset id
+            }
 
             if (tileType.isIndestructable()) {
                 drawTile('wall', tile);
@@ -1915,9 +1947,18 @@ const drawTiles = (tiles, players) => {
                             break;
                         }
                     }
+                    if(tileDebugId !== null && tile.id === tileDebugId){
+                        console.log("rock");
+                        tileDebugId = null;
+                    }
                     continue;
                 } else if(tileType.isDirt()) {
+                    if(tileDebugId !== null && tile.id === tileDebugId){
+                        console.log("dirt");
+                        tileDebugId = null;
+                    }
                     drawTile('dirt', tile);
+                    
                     continue;
                 }
             }
@@ -2023,7 +2064,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     drawHealth(thisPlayer.health.points);
     drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players);
+    drawTiles(tiles, players, true);
     drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };

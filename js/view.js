@@ -22,6 +22,8 @@ let tilesToDraw = [];
 // Square colors
 let baseColor = "#FFA50080";
 
+// Id of tile to debug
+let tileDebugId = null;
 
 let DwarfAnimation = {
     frame: [1, 2],
@@ -77,6 +79,8 @@ const findPlayerTile = (player) => {
     };
 };
 
+module.exports.setTileDebugId = id => tileDebugId = id;
+
 const shouldTileBeDrawn = (tile, tiles) => isDefined(tiles.find(x => x.pos.x === tile.pos.x && x.pos.y === tile.pos.y)) ? true : false;
 
 
@@ -131,8 +135,10 @@ const drawTile = (imgName, tile, color = null) => {
     }
 };
 
-const drawTiles = (tiles, players) => {
-    tilesToDraw = calcVisibleTiles(tiles, players);
+const drawTiles = (tiles, players, drawAllTiles = false) => {
+
+    tilesToDraw = drawAllTiles ? tiles : calcVisibleTiles(tiles, players);
+
     
     let playerTile;
     if(isDefined(thisPlayer)){
@@ -142,6 +148,9 @@ const drawTiles = (tiles, players) => {
         for(let tile of tiles){
             let tileToughness = tile.tough.points;
             
+            // TODO: Research: Can I define these in 
+            // game.js somehow and then use that decleration to then define them within this function?
+            // and anywhere else I'd want to run these tests?
             const tileType = {
                 isIndestructable: () => tileToughness === -2,
                 isVisible: () => shouldTileBeDrawn(tile, tilesToDraw),
@@ -149,6 +158,18 @@ const drawTiles = (tiles, players) => {
                 isDirt: () => tileToughness <= 0,
                 isTeamBase: () => tile.teamBase === thisPlayer.team,
             };
+            
+            // Debugging to check why tile 219 is not updating in the view
+            if(tileDebugId !== null && tile.id === tileDebugId){
+                
+                console.log(tile.tough.points);
+                //Test what type of object it is.
+               for(let type in tileType){
+                   console.log(type, tileType[type]());
+               }
+
+               // Reset id
+            }
 
             if (tileType.isIndestructable()) {
                 drawTile('wall', tile);
@@ -169,9 +190,18 @@ const drawTiles = (tiles, players) => {
                             break;
                         }
                     }
+                    if(tileDebugId !== null && tile.id === tileDebugId){
+                        console.log("rock");
+                        tileDebugId = null;
+                    }
                     continue;
                 } else if(tileType.isDirt()) {
+                    if(tileDebugId !== null && tile.id === tileDebugId){
+                        console.log("dirt");
+                        tileDebugId = null;
+                    }
                     drawTile('dirt', tile);
+                    
                     continue;
                 }
             }
@@ -277,7 +307,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     drawHealth(thisPlayer.health.points);
     drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players);
+    drawTiles(tiles, players, true);
     drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
