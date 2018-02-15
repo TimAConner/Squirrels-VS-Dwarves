@@ -150,7 +150,15 @@
     
     // console.log("pos", _.uniqBy(tiles.map(({pos: {x, y}}) => {return {x,y};}), ['x', 'y']));
     // console.log("tough", _.uniqBy(tiles, 'tough'));
-    // console.log("id", _.uniqBy(tiles, 'id'));
+
+    // Remove duplicate tiles where the seem overlaps in the middle of the map.
+    for(let tileA in tiles){
+        for(let tileB in tiles){
+            if(tileA.id !== tileB.id && tileA.pos === tileB.pos){
+                _.remove(tiles, ({id}) => id === tileB.id);
+            }
+        }
+    }
     console.log('tiles', tiles);
     
     return tiles;

@@ -6,6 +6,7 @@ const g = require("./game");
 
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     let spawnPoint = tiles.find(x => x.teamBase === teamId); 
+    console.log('spawnPoint', spawnPoint);
     let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
 
     let player = {
