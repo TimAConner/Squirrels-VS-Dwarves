@@ -883,18 +883,18 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.signIn = () => {
         model.initFirebase().then(() => {
 
-            // Commented out for testing purpose.  Comment back in to test with multiple users.
-            login.signIn().then(data => {
-                //  console.log(data);
-                g.uid = data.email;
-                g.name = data.name;
+            // // Commented out for testing purpose.  Comment back in to test with multiple users.
+            // login.signIn().then(data => {
+            //     //  console.log(data);
+            //     g.uid = data.email;
+            //     g.name = data.name;
 
-                // Initialize firebase and start listening to the list of lobbys
-                model.listenToLobbys();
-            });
-
-            // g.uid = "timaconner1@gmail.com";
-            // g.fullName = "Tim Conner";
+            //     // Initialize firebase and start listening to the list of lobbys
+            // });
+            
+            model.listenToLobbys();
+            g.uid = "timaconner1@gmail.com";
+            g.fullName = "Tim Conner";
 
             view.showSignIn();
         });

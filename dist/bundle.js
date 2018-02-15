@@ -1005,18 +1005,18 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.signIn = () => {
         model.initFirebase().then(() => {
 
-            // Commented out for testing purpose.  Comment back in to test with multiple users.
-            login.signIn().then(data => {
-                //  console.log(data);
-                g.uid = data.email;
-                g.name = data.name;
+            // // Commented out for testing purpose.  Comment back in to test with multiple users.
+            // login.signIn().then(data => {
+            //     //  console.log(data);
+            //     g.uid = data.email;
+            //     g.name = data.name;
 
-                // Initialize firebase and start listening to the list of lobbys
-                model.listenToLobbys();
-            });
-
-            // g.uid = "timaconner1@gmail.com";
-            // g.fullName = "Tim Conner";
+            //     // Initialize firebase and start listening to the list of lobbys
+            // });
+            
+            model.listenToLobbys();
+            g.uid = "timaconner1@gmail.com";
+            g.fullName = "Tim Conner";
 
             view.showSignIn();
         });
@@ -1155,13 +1155,13 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     };
 
     model.addNewPlayer(player);  
-    console.log('g.playerId', g.playerId);
     g.playerId = newPlayerId;
 };
 
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
-        let createdTiles = mapMaker.generateTiles(21, 20);
+        // Size should be odd numbers so that the flipping of the map can happen.
+        let createdTiles = mapMaker.generateTiles(20, 20);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
@@ -1328,11 +1328,11 @@ controller.startGame();
             'value': 0.75
         },
         "0": {
-            'count': 0.2,
+            'count': 0.15,
             'value': 0
         },
         "1":  {
-            'count': 0.3,
+            'count': 0.35,
             'value': 1
         },
         "0.5": {
@@ -1378,11 +1378,12 @@ controller.startGame();
     let tiles = [];
     let id = 0;
 
-    let halfW = Math.floor(w/2)+1;
-
+    let halfW = Math.floor(w/2);
+    console.log('halfW', halfW);
+    console.log('h', h);
     // Create half the map
-    for(let x = 0; x < halfW; x++){
-        for(let y = 0; y < h; y++){
+    for(let x = 0; x <= halfW; x++){
+        for(let y = 0; y <= h; y++){
             // Set default to unbroken tile
             let obj = {
                 "id": id,
@@ -1391,10 +1392,22 @@ controller.startGame();
                     "y": y
                 },
                 "tough": {
-                    "points": generateTile(halfW*h),
+                    "points": generateTile((halfW+1)*(h+1)),
                     "requestId": "0--0"
+                },
+                "teamBase": -1
+            };
+
+            const specialTiles = {
+                Base: {
+                    is: () => x >=  1 && x <= 3 && y >= h/3 && y <= (h/3)+2,
+                    set: () => {obj.tough.points = 0; obj.teamBase = 0;}
                 }
             };
+        
+            for(let type in specialTiles){
+                if(specialTiles[type].is()) specialTiles[type].set();
+            }
 
             id ++;
             tiles.push(obj);
@@ -1402,15 +1415,25 @@ controller.startGame();
     }
 
     // Duplicate tiles and mirror it.
-    let tilesCopy = tiles.map(({id, pos: {x, y}, tough}) => {
-        id += 200;
+    let tilesCopy = tiles.map(({id, pos: {x, y}, tough, teamBase}) => {
+        // Continue giving a unique id to the tiles
+        id += Math.floor((w*h)/2);
+
+        // Flip the x and y coordinates
         x = w - x;
-        return {id, pos: {x, y},  tough};
+        y = h - y;
+
+        if(teamBase === 0){
+            teamBase = 1;
+        }
+        return {id, pos: {x, y},  tough, teamBase};
     });
 
     // Join both sides of the map.
+    console.log('[...tiles]', [...tiles]);
+    console.log('[...tilesCopy]', [...tilesCopy]);
     tiles = [...tiles, ...tilesCopy];
-
+    console.log('tiles', tiles);
     // Set teams bases and map boundaries.
     tiles.map(tile => {
         let x = tile.pos.x;
@@ -1419,16 +1442,8 @@ controller.startGame();
 
         const specialTiles = {
             MapBound: {
-                is: () => x === 0 || x === w || y === 0 || y === (h-1),
+                is: () => x === 0 || x === w || y === 0 || y === h,
                 set: () => {tile.tough.points = -2;}
-            },
-            SquirrelBase: {
-                is: () => x >=  w-5 && x <= w-2 && y >= h/3 && y <= (h/3)+2,
-                set: () => {tile.tough.points = 0; tile.teamBase = 1;}
-            },
-            DwarfBase: {
-                is: () => x >=  1 && x <= 3 && y >= h/3 && y <= (h  /3)+2,
-                set: () => {tile.tough.points = 0; tile.teamBase = 0;}
             }
         };
     
@@ -1436,6 +1451,9 @@ controller.startGame();
             if(specialTiles[type].is()) specialTiles[type].set();
         }
 
+        if(tile.teamBase === -1){
+            delete tile.teamBase;
+        }
         return tile;
     });
     

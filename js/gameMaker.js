@@ -28,13 +28,13 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     };
 
     model.addNewPlayer(player);  
-    console.log('g.playerId', g.playerId);
     g.playerId = newPlayerId;
 };
 
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
-        let createdTiles = mapMaker.generateTiles(21, 20);
+        // Size should be odd numbers so that the flipping of the map can happen.
+        let createdTiles = mapMaker.generateTiles(20, 20);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
