@@ -1057,7 +1057,7 @@ ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
 
 const playerSpeed = 1;
-const playerWithGemSpeed = 0.5;
+const playerWithGemSpeed = 0.1;
 const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
