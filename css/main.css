@@ -11,6 +11,10 @@ canvas {
 #loading-screen h3 {
   animation: pulse 2s infinite alternate; }
 
+#game-canvas {
+  display: block;
+  margin: 0 auto; }
+
 @keyframes pulse {
   0% {
     opacity: 1; }

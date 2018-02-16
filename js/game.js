@@ -1,63 +1,97 @@
 "use strict";
 
 // Holds information that needs to be accessible by multiple modules
+let c = document.getElementById('game-canvas');
+let ctx = c.getContext("2d");
 
-module.exports.c = document.getElementById('game-canvas');
-module.exports.ctx = module.exports.c.getContext("2d");
+ctx.canvas.width  = window.innerWidth;
+ctx.canvas.height = window.innerHeight;
 
-module.exports.ctx.canvas.width  = window.innerWidth;
-module.exports.ctx.canvas.height = window.innerHeight;
+const playerSpeed = 1;
+const playerWithGemSpeed = 0.75;
+const tileSize = 30;
+const playerSize = 25;
+const attackDistance = 1;
+const attackStrength = 1;
+const mineStrength = 0.01;
+const gemPickupDistance = 15;
 
-module.exports.tileSize = 30;
-module.exports.playerSize = 25;
-module.exports.attackDistance = 1;
-module.exports.attackStrength = 1;
-module.exports.mineStrength = 0.01;
-
-module.exports.playerId = 0;
-module.exports.uid = "";
-module.exports.fullName = "";
-
-module.exports.battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
-module.exports.battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill"];
+const team1 = "Dwarf";
+const team2 = "Squirrel";
 
 
-module.exports.isPlayerAlive = ({health: {points: health}}) => {
-    return health > 0 ? true : false;
-};
+let playerId = 0;
+let uid = "";
+let fullName = "";
+
+const battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "Siege of", "The Final Stand of", "Long Live", "The Legend of"];
+const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill", "Skwir'el Village", "Skwir'el Ford", "The Great Hoard", "The Tiny Hoard"];
+
+
+const isPlayerAlive = player => 
+    typeof player.health !== "undefined" 
+        ? (player.health.points > 0 
+            ? true 
+            : false)
+        : false;
+
 
 
 // Returns tile position based on their x and y and tilesize
-module.exports.calcTilePos = (tile) => {
-    let x = tile.pos.x * module.exports.tileSize,
-    y = tile.pos.y * module.exports.tileSize,
-    b = y + module.exports.tileSize, // Bottom
-    r = x + module.exports.tileSize; // Right
+const calcObjBounds = (obj, size, convertFromGrid = false) => {
+    let x = convertFromGrid ? obj.pos.x : obj.pos.x * size,// min x (Left)
+    y = convertFromGrid ? obj.pos.y : obj.pos.y * size,// min y (Top)
+    b = y + size, // max y (Bottom)
+    r = x + size; // max x (Right)
     return {x, y, b, r};
 };
 
-module.exports.findTileBelowPlayer = (player, tiles) => {
 
-    let playerX = (player.pos.x+module.exports.playerSize/2),
-    playerY = (player.pos.y+module.exports.playerSize/2);    
+// Takes two pos and deals with distance.
+const calcDistance = (posA,  posB) => {
+    // console.log('posA, posB', posA, posB);
+    let a = (posA.x) - (posB.x),
+    b = (posA.y) - (posB.y);
 
-    let sortedTiles = tiles.slice().sort((a, b) => {
-        let tileAX= module.exports.calcTilePos(a).x,
-        tileAY = module.exports.calcTilePos(a).y;
-        
-        let tileBX= module.exports.calcTilePos(b).x,
-        tileBY = module.exports.calcTilePos(b).y;
+    // Line must be ignored, because JS Hint doesn't recognize ** operator.
+    let distance = Math.abs(Math.sqrt(a**2 + b**2));// jshint ignore:line
 
-        let tileAXDifference = (player.pos.x) - (tileAX),
-        playerAYDIfference = (player.pos.y) - (tileAY),
-        tileADistance = Math.sqrt(tileAXDifference*tileAXDifference + playerAYDIfference*playerAYDIfference);
+    return distance; 
+};
 
-        let tileBXDifference = (player.pos.x) - (tileBX),
-        playerBYDIfference = (player.pos.y) - (tileBY),
-        tileBDistance = Math.sqrt(tileBXDifference*tileBXDifference + playerBYDIfference*playerBYDIfference);
-        
-        return Math.abs(tileADistance) - Math.abs(tileBDistance); 
+const findTileBelowPlayer = (player, tiles) => {
+    // Sorts through and finds tile closest to player
+    let sortedTiles = tiles.slice().sort((a, b) =>{ 
+        let TileADistance = calcDistance(player.pos, calcObjBounds(a, tileSize));
+        let TileBDistance = calcDistance(player.pos, calcObjBounds(b, tileSize));
+        return TileADistance - TileBDistance;
     });
 
     return sortedTiles[0];
+};
+
+const getTeamName = id => id === 0 ? team1 : team2;
+
+
+module.exports = {
+    c,
+    ctx,
+    playerSpeed,
+    playerWithGemSpeed,
+    tileSize,
+    playerSize,
+    attackDistance,
+    attackStrength,
+    mineStrength,
+    gemPickupDistance,
+    playerId,
+    uid,
+    fullName,
+    battleTypes,
+    battleNames,
+    isPlayerAlive,
+    calcDistance,
+    findTileBelowPlayer,
+    calcObjBounds,
+    getTeamName
 };

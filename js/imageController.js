@@ -30,12 +30,19 @@ const findImage = (name) => {
     return image;
 };
 
-addImage('dwarfSprite', './img/dwarf22Width.png');
+addImage('dwarfSpriteRight', './img/dwarf22WidthRight.png');
+addImage('dwarfSpriteRightUp', './img/dwarf22WidthRightUp.png');
+addImage('dwarfSpriteRightDown', './img/dwarf22WidthRightDown.png');
+
 addImage('dwarfSpriteLeft', './img/dwarf22WidthLeft.png');
+addImage('dwarfSpriteLeftUp', './img/dwarf22WidthLeftUp.png');
+addImage('dwarfSpriteLeftDown', './img/dwarf22WidthLeftDown.png');
+
 addImage('dwarf', './img/dwarf.png');
 addImage('squirrel', './img/squirrel.png');
 addImage('dirt', "./img/small.png");
 addImage('stone', "./img/stone.jpeg");
+addImage('wall', "./img/textureStone.png");
  
 addImage('stoneBroke1', "./img/stoneBroke1.jpg");
 addImage('stoneBroke2', "./img/stoneBroke2.jpg");

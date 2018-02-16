@@ -6,6 +6,7 @@ const g = require("./game");
 
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     let spawnPoint = tiles.find(x => x.teamBase === teamId); 
+    console.log('spawnPoint', spawnPoint);
     let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
 
     let player = {
@@ -17,7 +18,8 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
             "z": 0,
             "requestId": "0--0",
             "dir": "up",
-            "animDir": "right"
+            "animDirHorizontal": "right",
+            "animDirVertical": "none"
         },
         "health": {
             "points": 100,
@@ -27,13 +29,13 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
     };
 
     model.addNewPlayer(player);  
-    console.log('g.playerId', g.playerId);
     g.playerId = newPlayerId;
 };
 
-module.exports.newGame = () => {
+module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
-        let createdTiles = mapMaker.generateTiles(20, 20);
+        // Size should be odd numbers so that the flipping of the map can happen.
+        let createdTiles = mapMaker.generateTiles(21, 21);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
@@ -71,7 +73,8 @@ module.exports.newGame = () => {
             "winningTeam": 0
         });
 
-        Promise.all([gemPromise1, gemPromise2, mapPromise, gameStatePromise]).then(function(values) {
+        Promise.all([gemPromise1, gemPromise2, mapPromise, gameStatePromise])
+        .then(function(values) {
             resolve();
         });
 

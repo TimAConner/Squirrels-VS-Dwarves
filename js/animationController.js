@@ -20,7 +20,7 @@ let currentTime = 0;
 // Array of total animations
 let animations = [];
 
-// TODO: Refactor addAnimation using object . keys so you don't have to hardcode the destructoring.
+// TODO: Refactor addAnimation using object . keys so you don't have to toughcode the destructoring.
 const addAnimation = (name, animation) => {
     let {frames, curFrame, lastFrame, interval, w, h, defaultFrame, xOffset} = animation;
     let animationObject = {
@@ -42,32 +42,6 @@ const findAnimation = name => {
     if(typeof animation === "undefined") console.log(`Cannot find ${name} animation.`);
     return animation;
 };
-
-addAnimation('dwarfAnimation', 
-    {
-        frames: [1, 2],
-        defaultFrame : 0,
-        curFrame: 0,
-        lastFrame: 0,
-        interval: 250,
-        w: 22,
-        xOffset: 0,
-        h: 21
-    }
-);
-
-addAnimation('dwarfAnimationLeft', 
-    {
-        frames: [0, 1],
-        defaultFrame : 2,
-        curFrame: 0,
-        lastFrame: 0,
-        interval: 250,
-        w: 21,
-        xOffset: 0,
-        h: 21
-    }
-);
 
 // Calculates location in the spritesheet of the current frame.
 const calcFrame = ({frames, curFrame, w, xOffset}) => {
@@ -110,6 +84,31 @@ const drawPlayerAnimation = (imgName, animationName, position) => {
         if(shouldIncrementFrame(animation)) selectNextFrame(animation);
     }
 };
+
+// Add animations below.
+
+addAnimation('dwarfAnimationRight', {
+    frames: [1, 2],
+    defaultFrame : 0,
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 22,
+    xOffset: 0,
+    h: 21
+});
+
+addAnimation('dwarfAnimationLeft', {
+    frames: [0, 1],
+    defaultFrame : 2,
+    curFrame: 0,
+    lastFrame: 0,
+    interval: 250,
+    w: 21,
+    xOffset: 0,
+    h: 21
+});
+
 
 /*
  Export just drawPlayerAniation so this can be called refrenced by
