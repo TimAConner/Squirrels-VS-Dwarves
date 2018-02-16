@@ -1020,22 +1020,24 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         }
     };
 
-    $scope.signIn = () => {
+    $scope.signIn = (testingWithoutGoogle = true) => {
         model.initFirebase().then(() => {
 
             // Commented out for testing purpose.  Comment back in to test with multiple users.
-            login.signIn().then(data => {
-                //  console.log(data);
-                g.uid = data.email;
-                g.name = data.name;
-                model.listenToLobbys();
-
-                // Initialize firebase and start listening to the list of lobbys
-                view.showSignIn();
-            });
+            if(testingWithoutGoogle){
+                login.signIn().then(({email, displayName}) => {
+                    g.uid = email;
+                    g.fullName = displayName;
+                    model.listenToLobbys();
+    
+                    // Initialize firebase and start listening to the list of lobbys
+                    view.showSignIn();
+                });
+            } else {
+                g.uid = "timaconner1@gmail.com";
+                g.fullName = "Tim Conner";
+            }
             
-            // g.uid = "timaconner1@gmail.com";
-            // g.fullName = "Tim Conner";
 
         });
     };
