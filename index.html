@@ -77,11 +77,11 @@
                         <h3>Lobbies</h3>
                         <ul ng-repeat="lobby in lobbyList" >
                             <li ng-show="!isFinished(lobby.gameEnd)">
-                                <p ng-show="isThisLobbySelected(lobby.key)">-----</p>
+                                <hr ng-show="isThisLobbySelected(lobby.key)">
                                 <p>{{lobby.name}}</p>
                                 <button ng-click="selectGame(lobby.key)">Select</button>
                                 <button ng-click="deleteGame(lobby.key)">Delete</button>
-                                <p ng-show="isThisLobbySelected(lobby.key)">-----</p>
+                                <hr ng-show="isThisLobbySelected(lobby.key)">
                             </li>
                         </ul>
                     </div>
