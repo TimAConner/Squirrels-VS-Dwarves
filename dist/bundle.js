@@ -1023,20 +1023,20 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     $scope.signIn = () => {
         model.initFirebase().then(() => {
 
-            // // Commented out for testing purpose.  Comment back in to test with multiple users.
-            // login.signIn().then(data => {
-            //     //  console.log(data);
-            //     g.uid = data.email;
-            //     g.name = data.name;
+            // Commented out for testing purpose.  Comment back in to test with multiple users.
+            login.signIn().then(data => {
+                //  console.log(data);
+                g.uid = data.email;
+                g.name = data.name;
+                model.listenToLobbys();
 
-            //     // Initialize firebase and start listening to the list of lobbys
-            // });
+                // Initialize firebase and start listening to the list of lobbys
+                view.showSignIn();
+            });
             
-            model.listenToLobbys();
-            g.uid = "timaconner1@gmail.com";
-            g.fullName = "Tim Conner";
+            // g.uid = "timaconner1@gmail.com";
+            // g.fullName = "Tim Conner";
 
-            view.showSignIn();
         });
     };
 }]);
