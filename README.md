@@ -2,10 +2,39 @@
 This is the testing ground for my front end capstone at the [Nashville Software School](http://nashvillesoftwareschool.com/)
 
 
+
+## How To Contribute
+1. Clone down locally
+1. Run: npm init -y
+1. Run: npm install
+1. Run: grunt
+1. Start local sever
+    1. If you are using my firebase, then you will need to be added to it, othwerise you can create your own.
+    1. If using your own firebase,
+        1. Add apiKey.json file in js/
+            1. Fill in your api key and sender id
+            ```
+            {
+                "apiKey": "Your api key",
+                "messagingSenderId": "Your msi"
+            }
+            ```
+        1. To be able to use Google login, it must be enabled under Sign In providers Sign In Methods in Authentication.  
+            1. Your ip must be added to the list of acceptable ips in Authorized Domains under Sign In Methods in Authentication.
+1. You're ready to starting editing!
+
 ## Debugging Tips
 1. If something is not happening that should be happening:
     1. Check if firebase is being updated, if it is, the issue is most likely in view or mergeData().
     1. If firebase is not being updated, check in model or checkInput().
+
+
+## How It Runs
+### The Files
+### A Day In The Life of A Dwarf
+
+
+
 
 ## Version 3.0 Goals
 - [x] Health Bars
