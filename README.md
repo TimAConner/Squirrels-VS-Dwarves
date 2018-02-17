@@ -1,11 +1,13 @@
-# Squirrels-VS-Dwarves
-This is the testing ground for my front end capstone at the [Nashville Software School](http://nashvillesoftwareschool.com/)
+# Squirrels-VS-Dwarves: 
+## The Primordial Feud: The Dwirrel Wars
+This is my front-end capstone made at [Nashville Software School](http://nashvillesoftwareschool.com/)
 
+## My Goals - Why I made furry forest dwellers and mythical mine dwellers murder eachother for my pleasure
+My previous programming experience was making little games in Unity 3D, so I decided that I wanted to make the foundations of one of those games, but I wanted to do it purely in JavaScript.  My goals (listed in the MVP defenition at the bottom of the Readme) were to make a real time multiplayer game in pure Javascript using Firebase Realtime Database.
 
-
-## How To Contribute
+## How To Contribute - The mysterious ways to be a cool Dwirrel
 1. Clone down locally
-1. Run: npm init -y
+1. Run: npm init
 1. Run: npm install
 1. Run: grunt
 1. Start local sever
@@ -23,12 +25,13 @@ This is the testing ground for my front end capstone at the [Nashville Software 
             1. Your ip must be added to the list of acceptable ips in Authorized Domains under Sign In Methods in Authentication.
 1. You're ready to starting editing!
 
-## Debugging Tips
+## Debugging Tips - How to ram your face into a brick wall
 1. If something is not happening that should be happening:
     1. Check if firebase is being updated, if it is, the issue is most likely in view or mergeData().
+        1. Enjoy punching the brick wall.  I'm not a sadist, but you might be.
     1. If firebase is not being updated, check in model or checkInput().
 
-## How It Runs -- A Day In The Life of A Dwarf or Squirrel
+## How It Runs - A Day In The Life of A Dwirrel
 1. main.js executes automatically, triggering startGame() in controller.js
 1. startGame() activates the listeners of the firbase realtime server and begains the mainLoop()
 1. mainLoop() checks for which screen the player is on (loading, login, main menu, game, etc.)
@@ -52,7 +55,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
     * Draws game onto screen
 * model.js
     * Interacts with firebase
-* game.j.s
+* game.js
     * Holds globally used functions and variables
 * animationController.js
     * Deals with choosing the correct animation for a player
@@ -70,19 +73,19 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 
 
 
-
-## Version 3.0 Goals
+## Version Goals
+### Version 3.0 Goals
 - [x] Health Bars
 - [ ] Can't move through allies
 - [x] Create player and join through Google
 - [x] Block being destroyed animation
 - [x] Player Animation?
 - [x] Lobbies for multiple Games?
-- [ ] Refactor to use auth.currentUser()
-- [ ] Implement logout
+- [x] Refactor to use auth.currentUser()
+- [x] Implement logout
 - [ ] ? Health regen or..?
 
-## Version 2.0 Goals
+### Version 2.0 Goals
 - [x] Restrict movement to map
 - [x] Streamline adding a player and starting game as player
 - [x] Ability to kill enemey
@@ -94,7 +97,7 @@ This is the testing ground for my front end capstone at the [Nashville Software 
 - [x] See direction player is facing
 - [x] Face direction of keys even if cant move
 
-## MVP Goals
+### MVP Goals
 - [x] Pickup enemy gem and move it
 - [x] Drop enemy gem
 - [x] Mine through blocks
