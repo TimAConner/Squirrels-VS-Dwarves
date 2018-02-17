@@ -2,6 +2,13 @@
 ## The Primordial Feud: The Dwirrel Wars
 This is my front-end capstone made at [Nashville Software School](http://nashvillesoftwareschool.com/)
 
+
+### A Dwirrel, you say?
+> Dwirrel \
+> /dwʌ'ɹ̩'(ə)l/  \
+> *noun* a ficticous word to be used when Squirrel and Dwarf should occur next to each other, but they sound bad in said sentence.
+
+
 ## My Goals - Why I made furry forest dwellers and mythical mine dwellers murder eachother for my pleasure
 My previous programming experience was making little games in Unity 3D, so I decided that I wanted to make the foundations of one of those games, but I wanted to do it purely in JavaScript.  My goals (listed in the MVP defenition at the bottom of the Readme) were to make a real time multiplayer game in pure Javascript using Firebase Realtime Database.
 
@@ -45,7 +52,7 @@ My previous programming experience was making little games in Unity 3D, so I dec
             1. view.printDataCount prints lag and other extra data on the screen.
             1. view.draw draws the players, tiles, gems, and healthbars.
         1. requestAnimationFrame(mainLoop) is called to run the loop again.
-### The Files
+### The Files - I couldn't think of something funny here
 * main.js
     * Triggers controller
 * controller.js
