@@ -28,10 +28,22 @@ This is the testing ground for my front end capstone at the [Nashville Software 
     1. Check if firebase is being updated, if it is, the issue is most likely in view or mergeData().
     1. If firebase is not being updated, check in model or checkInput().
 
-
-## How It Runs
+## How It Runs -- A Day In The Life of A Dwarf or Squirrel
+1. main.js executes automatically, triggering startGame() in controller.js
+1. startGame() activates the listeners of the firbase realtime server and begains the mainLoop()
+1. mainLoop() checks for which screen the player is on (loading, login, main menu, game, etc.)
+    1. If on the game, 
+        1. Check if the game should be updated this frame and calculate how many steps must be taken to  keep the game at 60 fps.
+            1. shouldMergeDataThisFrame checks if new data has been sent form the listeners,
+                1. If so, merge the data (tiles, gems, and players) with current data, making sure only to use NEW data and not data already integrated into the game.
+            1. updateGemPosition checks if gems are being carried and updates their pos
+            1. checkInput checks for player input, calculates if they can do it, and excecutes it.
+        1. Once the amount of times this frame the game should be run to maintain 60 fps is completed,
+            1. view.printDataCount prints lag and other extra data on the screen.
+            1. view.draw draws the players, tiles, gems, and healthbars.
+        1. requestAnimationFrame(mainLoop) is called to run the loop again.
 ### The Files
-### A Day In The Life of A Dwarf
+
 
 
 
