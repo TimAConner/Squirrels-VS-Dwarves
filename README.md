@@ -43,6 +43,29 @@ This is the testing ground for my front end capstone at the [Nashville Software 
             1. view.draw draws the players, tiles, gems, and healthbars.
         1. requestAnimationFrame(mainLoop) is called to run the loop again.
 ### The Files
+* main.js
+    * Triggers controller
+* controller.js
+    * Deals with bulk of game logic
+    * Calls view and model
+* view.js
+    * Draws game onto screen
+* model.js
+    * Interacts with firebase
+* game.j.s
+    * Holds globally used functions and variables
+* animationController.js
+    * Deals with choosing the correct animation for a player
+    * Displays the animation
+* apiKey.json
+    * Holds the firebase api key
+* gameMaker.js
+    * Creates the lobby, tiles, players, gems, and gameState tables on firebase.
+* mapMaker.js
+    * Creates the tiles for the map
+* login.js
+    * Logic for google login and logout.
+
 
 
 
