@@ -1,5 +1,5 @@
 # Squirrels-VS-Dwarves: 
-## The Primordial Feud: The Dwirrel Wars
+## The Primordial Feud: Dwirrel Wars
 This is my front-end capstone made at [Nashville Software School](http://nashvillesoftwareschool.com/)
 
 
@@ -42,7 +42,7 @@ My previous programming experience was making little games in Unity 3D, so I dec
 1. main.js executes automatically, triggering startGame() in controller.js
 1. startGame() activates the listeners of the firbase realtime server and begains the mainLoop()
 1. mainLoop() checks for which screen the player is on (loading, login, main menu, game, etc.)
-    1. If on the game, 
+    1. If the game is being displayed, 
         1. Check if the game should be updated this frame and calculate how many steps must be taken to  keep the game at 60 fps.
             1. shouldMergeDataThisFrame checks if new data has been sent form the listeners,
                 1. If so, merge the data (tiles, gems, and players) with current data, making sure only to use NEW data and not data already integrated into the game.
@@ -52,7 +52,7 @@ My previous programming experience was making little games in Unity 3D, so I dec
             1. view.printDataCount prints lag and other extra data on the screen.
             1. view.draw draws the players, tiles, gems, and healthbars.
         1. requestAnimationFrame(mainLoop) is called to run the loop again.
-### The Files - I couldn't think of something funny here
+### The Files
 * main.js
     * Triggers controller
 * controller.js
