@@ -11,9 +11,9 @@ canvas {
 #loading-screen h3 {
   animation: pulse 2s infinite alternate; }
 
-#game-canvas {
-  display: block;
-  margin: 0 auto; }
+.game-ui {
+  display: grid;
+  grid-template-columns: 20% 80%; }
 
 .completeGames {
   overflow-y: scroll;

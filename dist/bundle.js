@@ -1092,17 +1092,24 @@ module.exports.startGame = () => {
 let c = document.getElementById('game-canvas');
 let ctx = c.getContext("2d");
 
-ctx.canvas.width  = window.innerWidth;
-ctx.canvas.height = window.innerHeight;
+const mapWidth = 21;
+const mapHeight = 21;
+const tileSize = 30;
+
+
+// Compensate for >= with +1
+ctx.canvas.width  = (mapWidth+1)*tileSize;
+ctx.canvas.height = (mapHeight+1)*tileSize;
 
 const playerSpeed = 1;
 const playerWithGemSpeed = 0.75;
-const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
 const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
+
+
 
 const team1 = "Dwarf";
 const team2 = "Squirrel";
@@ -1165,6 +1172,8 @@ module.exports = {
     c,
     ctx,
     playerSpeed,
+    mapWidth,
+    mapHeight,
     playerWithGemSpeed,
     tileSize,
     playerSize,
@@ -1221,7 +1230,7 @@ module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
         // Size should be odd numbers so that the flipping of the map can happen.
-        let createdTiles = mapMaker.generateTiles(21, 21);
+        let createdTiles = mapMaker.generateTiles(g.mapWidth, g.mapHeight);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);
