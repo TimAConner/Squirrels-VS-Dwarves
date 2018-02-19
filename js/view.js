@@ -309,7 +309,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     drawHealth(thisPlayer.health.points);
     drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players);
+    drawTiles(tiles, players, true);
     drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };

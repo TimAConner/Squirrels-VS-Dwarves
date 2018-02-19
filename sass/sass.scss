@@ -21,6 +21,23 @@ canvas {
     margin: 0 auto;
 }
 
+.completeGames {
+    overflow-y: scroll;
+    height: 30vh;
+}
+
+.lobbies {
+    display: grid;
+    grid-template-columns: 50% 50%;
+}
+
+.completeGameButton {
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+
 @keyframes pulse {
     0% {
         opacity: 1;

@@ -197,7 +197,7 @@ initialPlayerDraw = true,
 initialGemDraw = true,
 initialGameState = true;
 
-let mergeDataThisFrame = false;
+let shouldMergeDataThisFrame = false;
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -665,11 +665,11 @@ const mainLoop = (timestamp) => {
             // console.log('delta, timestep', delta, timestep);
 
             // Merge new data with current data stored
-            if(mergeDataThisFrame){
+            if(shouldMergeDataThisFrame){
                 mergeData(players, newPlayers, ["health", "pos"]);
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
-                mergeDataThisFrame = false;
+                shouldMergeDataThisFrame = false;
             }
             
             // Updates gem position if a player is carrying one
@@ -764,14 +764,14 @@ const activateServerListeners = () => {
             totalDataRecieved++;
             newGems = filteredGems;
         }        
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
     });
 
     // Updates the list of lobbies
     g.c.addEventListener("serverUpdateGames", ({detail:  lobbyData}) => {
         games = lobbyData;
         initialLobbyLoad = false;
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
     });
 
     // Updat the list of players in the current game
@@ -796,7 +796,7 @@ const activateServerListeners = () => {
         
 
         initialPlayerDraw = false;
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
     });
 
     // Update the list of tiles in the current game
@@ -815,7 +815,7 @@ const activateServerListeners = () => {
             newTiles = filteredTiles;
         }
 
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
 
     });
 
@@ -836,7 +836,7 @@ const activateServerListeners = () => {
                 model.savePlayerStats(localPlayerStats);
                 model.finishGame(Date.now(), winnerTeamId);
             }
-            mergeDataThisFrame = true;
+            shouldMergeDataThisFrame = true;
         }
     });
 
@@ -880,11 +880,45 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         _.defer(function(){
             $scope.$apply(function(){
                 if(players !== null){
-                    $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
-                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => isDefined(playerOwner) && playerOwner != thisPlayer);
+                    // Add dwarf players    
+                    $scope.dwarfPlayers = Object.keys(players)
+                    .filter(id => players[id].team == 0)
+                    .map(dwarfId => {
+                        let playerObj = players[dwarfId];
+                        let owned = playerObj.uid === g.uid;
+                        let alive = g.isPlayerAlive(players[dwarfId]);
+                            
+                        let dwarfObj = {
+                            id: dwarfId,
+                            uid: playerObj.uid,
+                            owned,
+                            alive
+                        };
+
+                        return dwarfObj;
+                    });
+
+                    // Add squirrel players
+                    $scope.squirrelPlayers = Object.keys(players)
+                    .filter(id => players[id].team == 1)
+                    .map(squirrelId => {
+                        let playerObj = players[squirrelId];
+                        let owned = playerObj.uid === g.uid;
+                        let alive = g.isPlayerAlive(players[squirrelId]);
+                            
+                        let squirrelObj = {
+                            id: squirrelId,
+                            uid: playerObj.uid,
+                            owned,
+                            alive
+                        };
+
+                        return squirrelObj;
+                    });
+
                 } else {
-                    $scope.otherPlayers = [];
-                    $scope.ownedPlayers = [];
+                    $scope.dwarfPlayers = [];
+                    $scope.squirrelPlayers = [];
                 }
             });
         });
@@ -935,10 +969,11 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         });
     });
 
-    $scope.selectGame = id => {
+    $scope.selectGame = (id, name) => {
         model.detachGameListeners(); // Detach previous game listeners
         resetInitialDraw();
         model.setGameId(id);
+        $scope.lobbyName = name;
         if(isDefined(id) && id !== "") {
             model.listenToCurGame();// Listen to new game data
         }
@@ -986,7 +1021,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         gameMaker.addPlayer(1, tiles, players.length);
     };
 
-    $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
+    // $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
 
     $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
@@ -1036,6 +1071,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
             } else {
                 g.uid = "timaconner1@gmail.com";
                 g.fullName = "Tim Conner";
+                model.listenToLobbys();
+                view.showSignIn();
             }
             
 
@@ -2096,7 +2133,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     drawHealth(thisPlayer.health.points);
     drawLag(lag);
     g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players);
+    drawTiles(tiles, players, true);
     drawPlayers(players, playerId, tiles);
     drawGems(gems, players);
 };
