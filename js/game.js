@@ -35,13 +35,19 @@ const battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "S
 const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill", "Skwir'el Village", "Skwir'el Ford", "The Great Hoard", "The Tiny Hoard"];
 
 
-const isPlayerAlive = player => 
-    typeof player.health !== "undefined" 
-        ? (player.health.points > 0 
-            ? true 
-            : false)
-        : false;
+// const battleAdjective = [""];
+// const battleNoun = ["", ""];
 
+
+const isPlayerAlive = player => {
+    if(typeof player !== "undefined" && typeof player.health !== "undefined"){
+        if(player.health.points > 0 ){
+            return true;
+        }
+    }
+
+    return false;
+};
 
 
 // Returns tile position based on their x and y and tilesize

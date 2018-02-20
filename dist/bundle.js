@@ -711,6 +711,10 @@ const resetInitialDraw = () => {
     countDataReturned = 0;
     countDataSent = 0;
     totalDataRecieved = 0;
+
+    tiles = [];
+    players = [];
+    gems = [];
 };
 
 const resetGameState = () => {
@@ -979,7 +983,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         }
     };
 
-    $scope.deleteGame = id => {
+    $scope.deleteGame = () => {
+        let id = model.getGameId();
         model.deleteLobby(id);
         model.deleteMap(id);
         // If you are in the lobby that you are deleting, detach game listeners.
@@ -1013,12 +1018,27 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     
     $scope.isThisLobbySelected = id => model.getGameId() === id;
 
+    const addPlayer = teamId => {
+        let player = players.find(({uid, team}) => uid === g.uid && team === teamId);
+        // If player exists, join as player.
+        if(isDefined(player)){
+            $scope.selectPlayer(player.id);
+        } 
+        
+        else {
+            gameMaker.addPlayer(teamId, tiles, players.length)
+            .then(playerId => {
+                $scope.selectPlayer(playerId);
+            });
+        }
+    };
+
     $scope.addDwarf = () => {
-        gameMaker.addPlayer(0, tiles, players.length);
+        addPlayer(0);
     };
 
     $scope.addSquirrel = () => {
-        gameMaker.addPlayer(1, tiles, players.length);
+        addPlayer(1);
     };
 
     // $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
@@ -1029,13 +1049,13 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     // Add a lobby and map to the lobby and listen to that game once it is done.
     $scope.addGame = () =>  {
-        model.addLobby(Date.now(), generateBattleName())
+        let gameName = generateBattleName();
+        model.addLobby(Date.now(), gameName)
         .then(gameId => {
-            resetInitialDraw();
             model.setGameId(gameId);
             gameMaker.addGame()
             .then(() => {
-                model.listenToCurGame();
+                $scope.selectGame(gameId, gameName);
             });
         });
     };
@@ -1123,13 +1143,19 @@ const battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "S
 const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill", "Skwir'el Village", "Skwir'el Ford", "The Great Hoard", "The Tiny Hoard"];
 
 
-const isPlayerAlive = player => 
-    typeof player.health !== "undefined" 
-        ? (player.health.points > 0 
-            ? true 
-            : false)
-        : false;
+// const battleAdjective = [""];
+// const battleNoun = ["", ""];
 
+
+const isPlayerAlive = player => {
+    if(typeof player !== "undefined" && typeof player.health !== "undefined"){
+        if(player.health.points > 0 ){
+            return true;
+        }
+    }
+
+    return false;
+};
 
 
 // Returns tile position based on their x and y and tilesize
@@ -1200,31 +1226,32 @@ const model = require("./model");
 const g = require("./game");
 
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
-    let spawnPoint = tiles.find(x => x.teamBase === teamId); 
-    console.log('spawnPoint', spawnPoint);
-    let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
+    return new Promise(function (resolve, reject){
+        let spawnPoint = tiles.find(x => x.teamBase === teamId); 
+        let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
 
-    let player = {
-        "id": newPlayerId,
-        "team": teamId,
-        "pos": {
-            "x": spawnPoint.pos.x*g.tileSize,
-            "y": spawnPoint.pos.y*g.tileSize,
-            "z": 0,
-            "requestId": "0--0",
-            "dir": "up",
-            "animDirHorizontal": "right",
-            "animDirVertical": "none"
-        },
-        "health": {
-            "points": 100,
-            "requestId": "0--0"
-        },
-        "uid": g.uid
-    };
+        let player = {
+            "id": newPlayerId,
+            "team": teamId,
+            "pos": {
+                "x": spawnPoint.pos.x*g.tileSize,
+                "y": spawnPoint.pos.y*g.tileSize,
+                "z": 0,
+                "requestId": "0--0",
+                "dir": "up",
+                "animDirHorizontal": "right",
+                "animDirVertical": "none"
+            },
+            "health": {
+                "points": 100,
+                "requestId": "0--0"
+            },
+            "uid": g.uid
+        };
 
-    model.addNewPlayer(player);  
-    g.playerId = newPlayerId;
+        model.addNewPlayer(player)
+        .then(({name: playerId}) => resolve(playerId));
+    });
 };
 
 module.exports.addGame = () => {
@@ -2139,12 +2166,14 @@ const drawLag = (lag) => {
 module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
-    drawHealth(thisPlayer.health.points);
-    drawLag(lag);
-    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players, true);
-    drawPlayers(players, playerId, tiles);
-    drawGems(gems, players);
+    if(isDefined(thisPlayer)){
+        drawHealth(thisPlayer.health.points);
+        drawLag(lag);
+        g.ctx.clearRect(0, 0, g.c.width, g.c.height);
+        drawTiles(tiles, players);
+        drawPlayers(players, playerId, tiles);
+        drawGems(gems, players);
+    }
 };
 
 

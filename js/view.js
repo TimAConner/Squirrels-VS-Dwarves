@@ -306,12 +306,14 @@ const drawLag = (lag) => {
 module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
-    drawHealth(thisPlayer.health.points);
-    drawLag(lag);
-    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players, true);
-    drawPlayers(players, playerId, tiles);
-    drawGems(gems, players);
+    if(isDefined(thisPlayer)){
+        drawHealth(thisPlayer.health.points);
+        drawLag(lag);
+        g.ctx.clearRect(0, 0, g.c.width, g.c.height);
+        drawTiles(tiles, players);
+        drawPlayers(players, playerId, tiles);
+        drawGems(gems, players);
+    }
 };
 
 

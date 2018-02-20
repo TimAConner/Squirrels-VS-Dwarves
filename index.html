@@ -46,19 +46,22 @@
                 <button ng-click="signOut()">Logout</button>
                 <p id="signInText"></p>
                 <div id="player-lobby">
-                    <button ng-hide="isLobbySelected()" ng-click="addGame()">New Game</button>
+                    <!-- Lobby is Selected -->
                     <div ng-show="isLobbySelected()">
                         <button ng-click="goToMainMenu()">Back</button>
                         <h3>{{lobbyName}}</h3>
-                        <div class="lobbies">                
+                        <button ng-click="deleteGame()">End</button>
+                        <div class="playerSelection">                
                             <div>
                                 <h3>Dwarves</h3>
-                                <button ng-show="isLobbySelected()" ng-click="addDwarf()">Add New Dwarf</button>
+                                <button ng-show="isLobbySelected()" ng-click="addDwarf()">Join Dwarves</button>
                                 <ul ng-repeat="dwarf in dwarfPlayers">
                                     <li>
+                                        
                                         <div ng-show="dwarf.alive && dwarf.owned">
-                                            <button ng-click="selectPlayer(dwarf.id)">Select Player {{dwarf.uid}}</button>
-                                            <button  ng-click="removePlayer(dwarf.id)">Delete Player {{dwarf.uid}}</button>
+                                            <p>You: {{dwarf.uid}}</p>
+                                            <!-- <button ng-click="selectPlayer(dwarf.id)">Select Player {{dwarf.uid}}</button>
+                                            <button  ng-click="removePlayer(dwarf.id)">Delete Player {{dwarf.uid}}</button> -->
                                         </div>
                                         <div ng-show="dwarf.alive && !dwarf.owned">
                                             <p>{{dwarf.uid}}</p>
@@ -72,12 +75,13 @@
                             </div>
                             <div>
                                 <h3>Squirrels</h3>
-                                <button ng-show="isLobbySelected()" ng-click="addSquirrel()">Add New Squirrel</button>
+                                <button ng-show="isLobbySelected()" ng-click="addSquirrel()">Join Squirrels</button>
                                 <ul ng-repeat="squirrel in squirrelPlayers">
                                     <li>
                                         <div ng-show="squirrel.alive && squirrel.owned">
-                                            <button ng-click="selectPlayer(squirrel.id)">Select Player {{squirrel.uid}}</button>
-                                            <button  ng-click="removePlayer(squirrel.id)">Delete Player {{squirrel.uid}}</button>
+                                            <p>You: {{squirrel.uid}}</p>
+                                            <!-- <button ng-click="selectPlayer(squirrel.id)">Select Player {{squirrel.uid}}</button>
+                                            <button  ng-click="removePlayer(squirrel.id)">Delete Player {{squirrel.uid}}</button> -->
                                         </div>
                                         <div ng-show="squirrel.alive && !squirrel.owned">
                                             <p>{{squirrel.uid}}</p>
@@ -90,43 +94,46 @@
                                 </ul>
                             </div>
                     </div>
+
                     </div>
-                    <div ng-hide="isLobbySelected()">
-                        <h3>Lobbies</h3>
-                        <ul ng-repeat="lobby in lobbyList" >
-                            <li ng-show="!isFinished(lobby.gameEnd)">
-                                <hr ng-show="isThisLobbySelected(lobby.key)">
-                                <p>{{lobby.name}}</p>
-                                <button ng-click="selectGame(lobby.key, lobby.name)">Select</button>
-                                <button ng-click="deleteGame(lobby.key)">Delete</button>
-                                <hr ng-show="isThisLobbySelected(lobby.key)">
-                            </li>
-                        </ul>
-                    </div>
-                    <div ng-show="!isLobbySelected()">
-                        <h3>Complete Games</h3>
-                        <div class="completeGames">
+                    <div> <!-- Main Menu Showing All Lobbies -->
+                        <div ng-hide="isLobbySelected()">
+                            <button ng-click="addGame()">New Game</button>
+                            <button ng-click="showPreviousGames = !showPreviousGames">
+                                {{showPreviousGames ? 'Hide Previous Games' : 'Show Previous Games'}}
+                            </button>
+                            <h3>Lobbies</h3>
                             <ul ng-repeat="lobby in lobbyList" >
-                                <li ng-show="isFinished(lobby.gameEnd)">
-                                    <p class="completeGameButton" ng-click="isLobbyOpened = !isLobbyOpened">{{lobby.name}} {{lobby.date}}</p>
-                                    <div ng-show="isLobbyOpened">
-                                        <p>A {{lobby.winner}} Victory</p>
-                                        <p>Game Length: {{lobby.gameLength}}</p>
-                                        <p>Players:</p>
-                                        <ol ng-repeat="player in lobby.players" >
-                                            <li>
-                                                <p>Name: {{player.uid}}</p>
-                                                <p ng-show="player.deathTime !== 0">Dead</p>
-                                                <p ng-show="player.deathTime === 0">Alive</p>
-                                                <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
-                                                <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
-                                                <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
-                                                <p>Life Time: {{player.lifeTime}}</p>
-                                            </li>
-                                        </ol>
-                                    </div>
+                                <li ng-show="!isFinished(lobby.gameEnd)">
+                                    <button ng-click="selectGame(lobby.key, lobby.name)">{{lobby.name}}</button>
                                 </li>
                             </ul>
+                        </div>
+                        <div ng-show="!isLobbySelected() && showPreviousGames">
+                            <h3>Complete Games</h3>
+                            <div class="completeGames">
+                                <ul ng-repeat="lobby in lobbyList" >
+                                    <li ng-show="isFinished(lobby.gameEnd)">
+                                        <p class="completeGameButton" ng-click="isLobbyOpened = !isLobbyOpened">{{lobby.name}} {{lobby.date}}</p>
+                                        <div ng-show="isLobbyOpened">
+                                            <p>A {{lobby.winner}} Victory</p>
+                                            <p>Game Length: {{lobby.gameLength}}</p>
+                                            <p>Players:</p>
+                                            <ol ng-repeat="player in lobby.players" >
+                                                <li>
+                                                    <p>Name: {{player.uid}}</p>
+                                                    <p ng-show="player.deathTime !== 0">Dead</p>
+                                                    <p ng-show="player.deathTime === 0">Alive</p>
+                                                    <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
+                                                    <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
+                                                    <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
+                                                    <p>Life Time: {{player.lifeTime}}</p>
+                                                </li>
+                                            </ol>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>

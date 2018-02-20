@@ -589,6 +589,10 @@ const resetInitialDraw = () => {
     countDataReturned = 0;
     countDataSent = 0;
     totalDataRecieved = 0;
+
+    tiles = [];
+    players = [];
+    gems = [];
 };
 
 const resetGameState = () => {
@@ -857,7 +861,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         }
     };
 
-    $scope.deleteGame = id => {
+    $scope.deleteGame = () => {
+        let id = model.getGameId();
         model.deleteLobby(id);
         model.deleteMap(id);
         // If you are in the lobby that you are deleting, detach game listeners.
@@ -891,12 +896,27 @@ app.controller("menuCtrl", ['$scope', function($scope) {
     
     $scope.isThisLobbySelected = id => model.getGameId() === id;
 
+    const addPlayer = teamId => {
+        let player = players.find(({uid, team}) => uid === g.uid && team === teamId);
+        // If player exists, join as player.
+        if(isDefined(player)){
+            $scope.selectPlayer(player.id);
+        } 
+        // If player does not exists, create player.
+        else {
+            gameMaker.addPlayer(teamId, tiles, players.length)
+            .then(playerId => {
+                $scope.selectPlayer(playerId);
+            });
+        }
+    };
+
     $scope.addDwarf = () => {
-        gameMaker.addPlayer(0, tiles, players.length);
+        addPlayer(0);
     };
 
     $scope.addSquirrel = () => {
-        gameMaker.addPlayer(1, tiles, players.length);
+        addPlayer(1);
     };
 
     // $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
