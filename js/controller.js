@@ -955,14 +955,12 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     $scope.signIn = (testingWithoutGoogle = true) => {
         model.initFirebase().then(() => {
-
             // Commented out for testing purpose.  Comment back in to test with multiple users.
             if(testingWithoutGoogle){
                 login.signIn().then(({email, displayName}) => {
                     g.uid = email;
                     g.fullName = displayName;
                     model.listenToLobbys();
-    
                     // Initialize firebase and start listening to the list of lobbys
                     view.showSignIn();
                 });
@@ -972,8 +970,6 @@ app.controller("menuCtrl", ['$scope', function($scope) {
                 model.listenToLobbys();
                 view.showSignIn();
             }
-            
-
         });
     };
 }]);

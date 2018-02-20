@@ -319,7 +319,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
 
 
 module.exports.drawSignIn = () => {
-    $("#signInText").text(`${g.fullName}`);
+    $("#signInText").text(`${g.uid}`);
 };
 
 

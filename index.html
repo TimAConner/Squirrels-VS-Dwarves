@@ -6,6 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Squirrels V Dwarves</title>
     <link rel="stylesheet" href="css/main.css">
+
+    <link rel="stylesheet" href="node_modules/bulma/css/bulma.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.0/js/all.js"></script>
+
 </head>
 <body>
     <main>
@@ -14,11 +18,22 @@
 
         </div> -->
 
+        <section class="section">
+            <div class="container">
+                <!-- <h1 class="title">
+                Hello World
+                </h1>
+                <p class="subtitle">
+                My first website with <strong>Bulma</strong>!
+                </p> -->
+            </div>
+        </section>
+              
 
         <div ng-app="menuApp" ng-controller="menuCtrl">
 
-            <h1>Squirrels V Dwarves</h1>
-            <h5>The Primordial Feud: An Experience</h5>
+            <h1 class="title" >Squirrels V Dwarves</h1>
+            <h5 class="subtitle">The Primordial Feud: An Experience</h5>
             
             <div id="game-screen" class="hide">
                 <div class="game-ui">
@@ -44,7 +59,7 @@
             </div>
             <div id="main-menu-screen" class="hide">
                 <button ng-click="signOut()">Logout</button>
-                <p id="signInText"></p>
+                <p>Signed In As: <span id="signInText"></span></p>
                 <div id="player-lobby">
                     <!-- Lobby is Selected -->
                     <div ng-show="isLobbySelected()">
@@ -148,8 +163,12 @@
         </div>
         
         <div  class="hide" id="loading-screen">
-            <h3>Loading</h3>
-        </div>
+            <div id="loader">
+                <div id="box"></div>
+                <div id="hill"></div>
+                <h3>Loading</h3>
+            </div>
+        </div>s
     </main>
     <script type="text/javascript" src="dist/bundle.js"></script>
 </body>
