@@ -907,13 +907,13 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     // Add a lobby and map to the lobby and listen to that game once it is done.
     $scope.addGame = () =>  {
-        model.addLobby(Date.now(), generateBattleName())
+        let gameName = generateBattleName();
+        model.addLobby(Date.now(), gameName)
         .then(gameId => {
-            resetInitialDraw();
             model.setGameId(gameId);
             gameMaker.addGame()
             .then(() => {
-                model.listenToCurGame();
+                $scope.selectGame(gameId, gameName);
             });
         });
     };
