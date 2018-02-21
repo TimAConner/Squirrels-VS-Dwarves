@@ -8,36 +8,116 @@
     display: none;
 }
 
+
+$text-color: whitesmoke;
+
+
+html {
+    background-color: #4a4a4a !important;
+}
+
+body {
+    margin: 0 2em !important;
+}
+
 canvas {
     background-color: black;
 }
 
+.margin-bottom {
+    margin-bottom: 0.25em;
+}
 
-// .game-ui {
-    //     display: grid;
-    //     grid-template-columns: 20% 80%;
-    // }
+
+.underline {
+    border-bottom: 1px solid whitesmoke;
+    margin-bottom:  0.25em;
+    display: inline-block;
+}
+
+.svdTitle {
+    text-align:  center;
+}
+
+@media screen and (min-width: 600px) {
+
+    .side-panel {
+        float: left;
+        width: 20%;
+        position: absolute !important;
+        margin-top: 2em;
+        border: 1px solid whitesmoke;
+        display: inline-block;
+        border-radius: 0.25em;
+        padding: 0.25em;
+    }
+
+    .custom-tabs {
+        li {
+            display: inline-block;
+            &:hover {
+                border-bottom: 1px solid whitesmoke;
+            }
+            cursor: pointer;
+
+            
+        }
+        margin-bottom: 2em;
+    }
+
+    .is-active {
+        border-bottom: 1px solid whitesmoke !important;
+    }
+
+    .float-right {
+        float: right;
+    }
     
-    // .completeGames {
-        //     overflow-y: scroll;
-        //     height: 30vh;
-        // }
-        
-// .playerSelection {
-    //     display: grid;
-    //     grid-template-columns: 50% 50%;
-// }
+    .center {
+        display: block;
+        margin: 0 auto;
+    }
+    .signOut {
+        position: absolute !important;
+        top: 1em;
+        left: 1em;
+    }
 
-// .completeGameButton {
-    //     &:hover {
-        //         cursor: pointer;
-//     }
-// }
+    .greetingText {
+
+    }
+
+    .game-ui {
+        display: grid;
+        grid-template-columns: 20% 80%;
+    }
+
+    .playerSelection {
+        width: 70%;
+        margin-left: 15%;
+        display: grid !important;
+        grid-template-columns: 50% 50%;
+    }
+
+    #sign-in-screen{
+        display: flex;
+        justify-content: center;
+    }
+
+    .squirrelsPlayerSelection {
+        text-align: right;
+    }
+
+    .panel-block {
+        color: $text-color !important;
+    }
+}
 
 #loader h3 {
     animation: pulse 2s infinite alternate;
     margin-top: 100px;
     margin-left: 25px;
+    color: $text-color
 }
 
 @keyframes pulse {
@@ -69,7 +149,7 @@ canvas {
   top: 1.7em;
   left: 1.7em;
   background-color: transparent;
-  border-left: .25em solid whitesmoke;
+  border-left: .25em solid $text-color;
   transform: rotate(45deg);
 }
 
@@ -88,7 +168,7 @@ canvas {
   width: 1em;
   height: 1em;
   background-color: transparent;
-  border: .25em solid whitesmoke;
+  border: .25em solid $text-color;
   border-radius: 15%;
   transform: translate(0, -1em) rotate(-45deg);
   animation: push 2.5s cubic-bezier(.79, 0, .47, .97) infinite;

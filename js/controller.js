@@ -806,6 +806,21 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         });
     });
 
+    $("#game-canvas").on("serverUpdatePlayer", ({detail: playerData}) => {
+        // Apply players so angular ui can update with amount of players in game
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                $scope.playersInGame = Object.keys(playerData).map(player => {
+                    return {
+                        uid: playerData[player].uid, 
+                        team: playerData[player].team
+                    };
+                });
+                console.log('$scope.playersInGame', $scope.playersInGame);
+            });
+        });
+    });
+
     $("#game-canvas").on("serverUpdateGames", ({detail: lobbies}) => {
         // Force Angular to digest new lobbies to update the html
         _.defer(function(){ 
@@ -892,6 +907,11 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         model.deletePlayer({id});
     };
     
+
+    $scope.isSignedIn = () => g.uid !== "" ? true  : false;
+
+    $scope.getUserId = () => g.uid;
+
     $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
     
     $scope.isThisLobbySelected = id => model.getGameId() === id;
