@@ -17,21 +17,24 @@
         <!-- <div id="actions">
 
         </div> -->
-
         <div ng-app="menuApp" ng-controller="menuCtrl">
 
             <h1 class="title has-text-light svdTitle" >Squirrels V Dwarves</h1>
             <h5 class="subtitle has-text-light svdTitle">The Primordial Feud: An Experience</h5>
             <div >
 
-                <div ng-show="isSignedIn()" class="signOut">
-                    <a ng-click="signOut()" class="button is-light is-outlined is-small">Logout</a>
+                <div ng-show="isSignedIn()" ng-cloak  class="signOut">
+                    <a ng-click="signOut()"" class="button is-light is-outlined is-small">
+                        <i class="fas fa-sign-out-alt"></i>
+                        &nbsp
+                        Logout
+                    </a>
                     <span id="signInText" class="has-text-light">{{getUserId()}}</span>
                 </div>
 
                 <div id="game-screen" class="hide">
                         <nav class="side-panel has-text-light">
-                            <div class="custom-tabs">
+                            <div class="custom-tabs" ng-init="currentTab = 'players'">
                                 <ul>
                                     <li ng-click="currentTab = 'players'" class="{{currentTab === 'players' ? 'is-active' : ''}}">Players & Health</li>
                                     <li ng-click="currentTab = 'connection'" class="{{currentTab === 'connection' ? 'is-active' : ''}}">Connection Stats</li>
@@ -47,16 +50,16 @@
                             </div>
                             <div ng-show="currentTab === 'players'">
                                 <p class="">
-                                        <span class="has-text-light underline" id="player-health"></span>
+                                        <span class="has-text-light bold" id="player-health"></span>
                                     </p>
                                 <p class="">
-                                    <h4 class="has-text-light underline">Dwarves</h4>
+                                    <h4 class="has-text-light bold">Dwarves</h4>
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 0}">
                                         <li>{{player.uid}}</li>
                                     </ul>
                                 </p>
                                 <p class="">
-                                    <h4 class="has-text-light underline">Squirrels</h4>
+                                    <h4 class="has-text-light bold">Squirrels</h4>
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 1}">
                                         <li>{{player.uid}}</li>
                                     </ul>
@@ -66,7 +69,7 @@
                         </nav>
                     <div>
                         <div>
-                            <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small">Main Menu</a>
+                            <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small"><i class="fas fa-arrow-circle-left"></i></a>
                         </div>
                         <canvas id="game-canvas" class="center">
             
@@ -78,19 +81,29 @@
                     <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small">Main Menu</a>
                 </div>
                 <div id="sign-in-screen" ng-show="!isSignedIn()">
-                    <a ng-click="signIn(false)" class="button is-light is-outlined">Sign In / Register</a>
+                    <a ng-click="signIn(false)" class="button is-light is-outlined">
+                        <i class="fas fa-sign-in-alt"></i> 
+                        &nbsp
+                        Sign In / Register</a>
                 </div>
                 <div id="main-menu-screen" class="hide has-text-light">
                     <div id="player-lobby">
                         <!-- Lobby is Selected -->
                         <div ng-show="isLobbySelected()">
-                            <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small">Back</a>
-                            <a class="button is-danger is-outlined float-right is-small" ng-click="deleteGame()">Delete Game</a>
+                            <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small"><i class="fas fa-arrow-circle-left"></i></a>
+                            <a class="button is-danger is-outlined float-right is-small" ng-click="deleteGame()">
+                                <i class="fas fa-trash-alt red-svg "></i>
+                                &nbsp
+                                Delete Game
+                            </a>
                             <h3 class="title is-4 has-text-light svdTitle">{{lobbyName}}</h3>
                             <div class="playerSelection">                
                                 <div>
                                     <h3 class="title is-6 has-text-light">Dwarves</h3>
-                                    <a ng-show="isLobbySelected()" ng-click="addDwarf()" class="button is-success is-outlined is-small">Join Dwarves</a>
+                                    <a ng-show="isLobbySelected()" ng-click="addDwarf()" class="button is-success is-outlined is-small">
+                                            <i class="fas fa-plus green-svg"></i>
+                                            &nbsp
+                                            Join Dwarves</a>
                                     <ul ng-repeat="dwarf in dwarfPlayers">
                                         <li>
                                             
@@ -111,7 +124,10 @@
                                 </div>
                                 <div class="squirrelsPlayerSelection">
                                     <h3 class="title is-6 has-text-light">Squirrels</h3>
-                                    <a ng-show="isLobbySelected()" ng-click="addSquirrel()" class="button is-success is-outlined is-small">Join Squirrels</a>
+                                    <a ng-show="isLobbySelected()" ng-click="addSquirrel()" class="button is-success is-outlined is-small">
+                                            <i class="fas fa-plus green-svg"></i>
+                                            &nbsp
+                                            Join Squirrels</a>
                                     <ul ng-repeat="squirrel in squirrelPlayers">
                                         <li>
                                             <div ng-show="squirrel.alive && squirrel.owned">
@@ -132,43 +148,67 @@
                             </div>
 
                         </div>
-                        <div> <!-- Main Menu Showing All Lobbies -->
-                            <div ng-hide="isLobbySelected()">
-                                <a ng-click="showPreviousGames = !showPreviousGames" class="button is-light is-outlined"> {{showPreviousGames ? 'Hide Previous Games' : 'Show Previous Games'}}</a>
-                                <h3 class="title is-4 has-text-light">Lobbies</h3>
-                                <a ng-click="addGame()" class="button is-light is-outlined margin-bottom">New Game</a>
-                                <ul ng-repeat="lobby in lobbyList" >
-                                    <li ng-show="!isFinished(lobby.gameEnd)">
-                                        <a ng-click="selectGame(lobby.key, lobby.name)"class="button is-light is-outlined margin-bottom is-small">{{lobby.name}}</a>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div ng-show="!isLobbySelected() && showPreviousGames">
-                                <h3 class="title is-4 has-text-light">Complete Games</h3>
-                                <div class="completeGames">
+                        <div class="two-column-grid"> <!-- Main Menu Showing All Lobbies -->
+                            <div>
+                                <h3  ng-hide="isLobbySelected()" class="title is-4 has-text-light">Lobbies</h3>
+                                <div ng-hide="isLobbySelected()" class="scroll-bar">
+                                    <a ng-click="addGame()" class="button is-light is-outlined margin-bottom">
+                                            <i class="fas fa-plus"></i>
+                                            &nbsp
+                                            New Game</a>
                                     <ul ng-repeat="lobby in lobbyList" >
-                                        <li ng-show="isFinished(lobby.gameEnd)">
-                                            <a ng-click="isLobbyOpened = !isLobbyOpened" class="button is-light is-outlined is-small ">{{lobby.name}} {{lobby.date}}</a>
-
-
-                                            <div ng-show="isLobbyOpened">
-                                                <p>A {{lobby.winner}} Victory</p>
-                                                <p>Game Length: {{lobby.gameLength}}</p>
-                                                <p>Players:</p>
-                                                <ol ng-repeat="player in lobby.players" >
-                                                    <li>
-                                                        <p>Name: {{player.uid}}</p>
-                                                        <p ng-show="player.deathTime !== 0">Dead</p>
-                                                        <p ng-show="player.deathTime === 0">Alive</p>
-                                                        <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
-                                                        <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
-                                                        <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
-                                                        <p>Life Time: {{player.lifeTime}}</p>
-                                                    </li>
-                                                </ol>
-                                            </div>
+                                        <li ng-show="!isFinished(lobby.gameEnd)">
+                                            <a ng-click="selectGame(lobby.key, lobby.name)"class="button is-light is-outlined margin-bottom is-small">{{lobby.name}}</a>
                                         </li>
                                     </ul>
+                                </div>
+                            </div>
+                            <div>
+                                    
+                                <h3 ng-click="shouldShowPreviousGames = !shouldShowPreviousGames" ng-show="!isLobbySelected()" class="title is-4 has-text-light cursor-pointer">
+                                    <a class="button is-light is-outlined">
+                                        Complete Games 
+                                        &nbsp
+                                        <!-- Up Arrow -->
+                                        <span ng-hide="shouldShowPreviousGames">
+                                            <i class="fas fa-arrow-circle-up"></i>
+                                        </span>
+
+                                        <!-- Down Arrow -->
+                                        <span ng-show="shouldShowPreviousGames">
+                                            <i class="fas fa-arrow-circle-down"></i>
+                                        </span>
+                                    </a>
+                                </h3>
+
+                                
+
+                                <div class="scroll-bar" ng-show="!isLobbySelected() && shouldShowPreviousGames">
+                                    <div class="completeGames">
+                                        <ul ng-repeat="lobby in lobbyList" >
+                                            <li ng-show="isFinished(lobby.gameEnd)">
+                                                <a ng-click="isLobbyOpened = !isLobbyOpened" class="button is-light is-outlined is-small ">{{lobby.name}} {{lobby.date}}</a>
+
+
+                                                <div ng-show="isLobbyOpened">
+                                                    <p>A {{lobby.winner}} Victory</p>
+                                                    <p>Game Length: {{lobby.gameLength}}</p>
+                                                    <p>Players:</p>
+                                                    <ol ng-repeat="player in lobby.players" >
+                                                        <li>
+                                                            <p>Name: {{player.uid}}</p>
+                                                            <p ng-show="player.deathTime !== 0">Dead</p>
+                                                            <p ng-show="player.deathTime === 0">Alive</p>
+                                                            <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
+                                                            <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
+                                                            <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
+                                                            <p>Life Time: {{player.lifeTime}}</p>
+                                                        </li>
+                                                    </ol>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>

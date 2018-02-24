@@ -292,6 +292,7 @@ const drawGems = (gems, players) => {
 
 
 const drawHealth = (health) => {
+    health = Number(health).toFixed(0);
     if(health > 0){
         $("#player-health").html("Health: " + health);
     } else {
@@ -300,7 +301,7 @@ const drawHealth = (health) => {
 };
 
 const drawLag = (lag) => {
-    $("#lag").text("Lag (miliseconds): " + lag);
+    $("#lag").text("Lag (miliseconds): " + Math.abs(lag));
 };
 
 module.exports.draw = (playerId, tiles, players, gems, lag) => {

@@ -11,6 +11,29 @@
 
 $text-color: whitesmoke;
 
+// Set font awesome icon colors from black to white
+svg {
+    color: $text-color;
+    font-size: 1.25em !important;
+}
+
+.red-svg{
+    color: #ff3860;;
+}
+
+.green-svg{
+    color: #23d160;;;
+}
+
+a:hover {
+    svg {
+        color: #363636;
+    }
+    .red-svg,
+    .green-svg {
+        color: whitesmoke;
+    }
+}
 
 html {
     background-color: #4a4a4a !important;
@@ -28,6 +51,10 @@ canvas {
     margin-bottom: 0.25em;
 }
 
+.margin-top {
+    margin-top:  1em;
+}
+
 
 .underline {
     border-bottom: 1px solid whitesmoke;
@@ -35,10 +62,17 @@ canvas {
     display: inline-block;
 }
 
+.bold {
+    font-weight: 600;
+}
+
 .svdTitle {
     text-align:  center;
 }
 
+.cursor-pointer {
+    cursor: pointer;
+}
 @media screen and (min-width: 600px) {
 
     .side-panel {
@@ -58,11 +92,9 @@ canvas {
             &:hover {
                 border-bottom: 1px solid whitesmoke;
             }
-            cursor: pointer;
-
-            
+            cursor: pointer;            
         }
-        margin-bottom: 2em;
+        margin-bottom: 1em;
     }
 
     .is-active {
@@ -97,6 +129,17 @@ canvas {
         margin-left: 15%;
         display: grid !important;
         grid-template-columns: 50% 50%;
+    }
+
+    .two-column-grid {
+        display: grid !important;
+        grid-template-columns: 50% 50%;
+    }
+
+    .scroll-bar {
+        overflow-y: auto;
+        height: 75vh;
+        margin-right: 1em;
     }
 
     #sign-in-screen{

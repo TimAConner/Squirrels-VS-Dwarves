@@ -87,6 +87,12 @@ countDataSent = 0, // Count of data sent to  firebase.
 totalDataRecieved = 0, // Total data recieved from anywhere
 countDataDropped = 0; // Any data that XHR failed
 
+let sentDataRecieved = [];
+let allDataRecieved = [];
+let allDataRecievedA = [];
+let allDataRecievedB = [];
+let allDataMerged = [];
+
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
 const toTwoDigits = number => (Math.round(number * 100) / 100);
@@ -192,6 +198,46 @@ const calcLag = miliseconds => {
     if(+miliseconds !== 0) lag = Date.now() - +miliseconds;
 };
 
+const resendDroppedToughnessData = tile => {
+    let sentData = sentDataRecieved.filter(({id}) => id === tile.id);
+
+    // // Remove duplicate
+    // for(let tileA in sentData){
+    //     for(let tileB in sentData){
+    //         if(tileA.id !== tileB.id && tileA.pos === tileB.pos){
+    //             _.remove(sentData, ({id}) => id === tileB.id);
+    //         }
+    //     }
+    // }
+
+
+    // for(let i = 0; i < sentData.length; i++){
+        if(sentData.length > 1){
+            let maxIndex = sentData.length-1;
+            let secondFromMaxIndex = sentData.length-2;
+            if(sentData[maxIndex].tough.points > sentData[secondFromMaxIndex].tough.points){
+                addRequestId(sentData[secondFromMaxIndex].tough, calcCurRequestId());
+                console.log('sentData[maxIndex].tough.points ', sentData[maxIndex].tough.points );
+                console.log('sentData[secondFromMaxIndex].tough.points', sentData[secondFromMaxIndex].tough.points);
+                countDataSent++;
+
+                model.saveTileTough(sentData[secondFromMaxIndex])
+                .then(data => {
+                    console.log('successful data resend', data);
+                    sentDataRecieved.push(Object.assign({}, data));
+                    sentDataRecieved.length = 0;
+                    countDataReturned ++;
+                    calcLag(parseRequestId(data.tough.requestId));
+                })
+                .catch(data => {
+                    console.log('not sent');
+                    countDataDropped++;
+                });
+            }
+        }
+    // }
+};
+
 // Merges currentData and newData where there are differences not caused by local player.
 const mergeData = (currentData, newData, valuesToCheck) => {
     if(newData !== null && isDefined(newData) && newData.length !== 0){
@@ -246,9 +292,14 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             // If specific values should be proccesed, update only those values. 
             else { 
                 for(let value of valuesToCheck){
+                    // if(value === "tough"){
+                    //     allDataRecieved.push(Object.assign({}, newPiece));
+                    // }
                     let curPiece = currentData.find(({id}) => id === newPiece.id);
                     if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){ 
-
+                        // if(value === "tough"){
+                        //     allDataRecievedA.push(Object.assign({}, newPiece));
+                        // }
                         let newRequestId = +parseRequestId(newPiece[value].requestId);
                         let curRequestId = +parseRequestId(curPiece[value].requestId);
 
@@ -256,11 +307,18 @@ const mergeData = (currentData, newData, valuesToCheck) => {
 
                         if(!proccessedActions.includes(newPiece[value].requestId)){
                             
+                            // if(value === "tough"){
+                            //     allDataRecievedB.push(Object.assign({}, newPiece));
+                            // }
                             // If this game has not proccessed it and the value is not an old one,
                             // Copy the proccessed piece of data into the current data.
-
+                            // if(newRequestId < curRequestId){
+                            //     console.log('curPiece', curPiece);
+                            // }
                             if(newRequestId >= curRequestId){ 
-
+                                // if(value === "tough"){
+                                //     allDataMerged.push(Object.assign({}, newPiece));
+                                // }
                                 proccessedActions.push(newPiece[value].requestId);
                                 curPiece[value] = Object.assign({}, newPiece[value]);
 
@@ -349,6 +407,7 @@ const checkInput = delta => {
                     // If there is a player in the direction within 1, then attack.
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && g.isPlayerAlive(targetPlayer)){
                         targetPlayer.health.points -= g.attackStrength;
+                        targetPlayer.health.points = (targetPlayer.health.points).toFixed(3);
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, requestId);
@@ -365,17 +424,37 @@ const checkInput = delta => {
                         //  If the tile has not been mined
                         if(selectedTile.tough.points >= 0){ 
                             selectedTile.tough.points -= g.mineStrength;
+                            selectedTile.tough.points = (selectedTile.tough.points).toFixed(3);
+                            
+
+                            // Rounding it does not fix it.  Meaning???  The data is not being proccessed or not being  sent?
+
+                            // THe player destroying it, it says 0.00 toughness
+                            // Local request id "1519341127625--L5zmNAkv0Su9EDrlKFwmine"
+
+                            
+                            // The server and other players have 0.04 toughness
+                            // Server request id "1519341127616--L5zmNAkv0Su9EDrlKFwmine"
+                            
+                            // Meaning local request id was saved but the id never got to the server. 
+
+                            // Could it be the send order? B is arriving before A, and then A arrives, setting it to 0.
+
                             localPlayerStats.mined += g.mineStrength;
 
-                            addRequestId(selectedTile.tough, `${requestId}mine`);
-                            countDataSent++;
+                            addRequestId(selectedTile.tough, `${requestId}`);
 
+                            countDataSent++;
+                            
                             model.saveTileTough(selectedTile)
                             .then(data => {
+                                sentDataRecieved.push(Object.assign({}, data));
+                                // resendDroppedToughnessData(selectedTile);
                                 countDataReturned ++;
                                 calcLag(parseRequestId(data.tough.requestId));
                             })
                             .catch(data => {
+                                console.log('not sent');
                                 countDataDropped++;
                             });
                         }
@@ -508,7 +587,7 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
 
     
     // console.log('pos.dir', pos.dir);
-    addRequestId(pos, `${requestId}move`);
+    addRequestId(pos, `${requestId}`);
     
     countDataSent ++;
     
@@ -548,6 +627,7 @@ const mainLoop = (timestamp) => {
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
                 shouldMergeDataThisFrame = false;
+                // resendDroppedToughnessData();
             }
             
             // Updates gem position if a player is carrying one
@@ -623,14 +703,19 @@ const activateDebugListeners = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-        let tile = tiles.filter(data => {
+        let tile = tiles.find(data => {
             let t = g.calcObjBounds(data, g.tileSize);
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
 
-        view.setTileDebugId(tile[0].id);
+        view.setTileDebugId(tile.id);
     
         console.log(tile);
+        // console.log("sentDataRecieved", sentDataRecieved.filter(data => data.id === tile.id));
+        // console.log("allDataRecieved", allDataRecieved.filter(data => data.id === tile.id));
+        // console.log("allDataRecievedA", allDataRecievedA.filter(data => data.id === tile.id));
+        // console.log("allDataRecievedB", allDataRecievedB.filter(data => data.id === tile.id));
+        // console.log("allDataMerged", allDataMerged.filter(data => data.id === tile.id));
     });
 };
 
@@ -810,13 +895,14 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         // Apply players so angular ui can update with amount of players in game
         _.defer(function(){ 
             $scope.$apply(function(){
-                $scope.playersInGame = Object.keys(playerData).map(player => {
-                    return {
-                        uid: playerData[player].uid, 
-                        team: playerData[player].team
-                    };
-                });
-                console.log('$scope.playersInGame', $scope.playersInGame);
+                if(isDefined(playerData)){
+                    $scope.playersInGame = Object.keys(playerData).map(player => {
+                        return {
+                            uid: playerData[player].uid, 
+                            team: playerData[player].team
+                        };
+                    });
+                }
             });
         });
     });

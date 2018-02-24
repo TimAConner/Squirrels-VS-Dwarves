@@ -65,8 +65,6 @@
     let tiles = [];
 
     let halfW = Math.floor(w/2);
-    console.log('halfW', halfW);
-    console.log('h', h);
 
     let id = 0;
 
@@ -117,13 +115,9 @@
     });
 
     // Join both sides of the map.
-    // console.log('[...tiles]', [...tiles]);
-    // console.log('[...tilesCopy]', [...tilesCopy]);
     tiles = [...tiles, ...tilesCopy];
-    // console.log('tiles', tiles);
-    // Set teams bases and map boundaries.
 
-    
+    // Set teams bases and map boundaries.
     tiles.map(tile => {
         let x = tile.pos.x;
         let y = tile.pos.y;
@@ -148,8 +142,6 @@
         return tile;
     });
     
-    // console.log("pos", _.uniqBy(tiles.map(({pos: {x, y}}) => {return {x,y};}), ['x', 'y']));
-    // console.log("tough", _.uniqBy(tiles, 'tough'));
 
     // Remove duplicate tiles where the seem overlaps in the middle of the map.
     for(let tileA in tiles){
@@ -159,7 +151,6 @@
             }
         }
     }
-    console.log('tiles', tiles);
     
     return tiles;
   };

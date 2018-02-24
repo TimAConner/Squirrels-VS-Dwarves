@@ -191,8 +191,12 @@ module.exports.saveTileTough = (tile) => {
                 tough: tile.tough
             })
         })
-        .done(data => resolve(data))
-        .fail(data => reject(data));
+        .done(data => {
+            let debugData = Object.assign({}, data);
+            debugData.id = tile.id;    
+            resolve(debugData);
+        })
+        .fail(data => {console.log("failed");reject(data);});
     });
 };
 

@@ -1,6 +1,22 @@
 .hide {
   display: none; }
 
+svg {
+  color: whitesmoke;
+  font-size: 1.25em !important; }
+
+.red-svg {
+  color: #ff3860; }
+
+.green-svg {
+  color: #23d160; }
+
+a:hover svg {
+  color: #363636; }
+a:hover .red-svg,
+a:hover .green-svg {
+  color: whitesmoke; }
+
 html {
   background-color: #4a4a4a !important; }
 
@@ -13,13 +29,22 @@ canvas {
 .margin-bottom {
   margin-bottom: 0.25em; }
 
+.margin-top {
+  margin-top: 1em; }
+
 .underline {
   border-bottom: 1px solid whitesmoke;
   margin-bottom: 0.25em;
   display: inline-block; }
 
+.bold {
+  font-weight: 600; }
+
 .svdTitle {
   text-align: center; }
+
+.cursor-pointer {
+  cursor: pointer; }
 
 @media screen and (min-width: 600px) {
   .side-panel {
@@ -33,7 +58,7 @@ canvas {
     padding: 0.25em; }
 
   .custom-tabs {
-    margin-bottom: 2em; }
+    margin-bottom: 1em; }
     .custom-tabs li {
       display: inline-block;
       cursor: pointer; }
@@ -64,6 +89,15 @@ canvas {
     margin-left: 15%;
     display: grid !important;
     grid-template-columns: 50% 50%; }
+
+  .two-column-grid {
+    display: grid !important;
+    grid-template-columns: 50% 50%; }
+
+  .scroll-bar {
+    overflow-y: auto;
+    height: 75vh;
+    margin-right: 1em; }
 
   #sign-in-screen {
     display: flex;
