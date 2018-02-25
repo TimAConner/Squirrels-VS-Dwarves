@@ -11,6 +11,21 @@ svg {
 .green-svg {
   color: #23d160; }
 
+.player-icons {
+  width: 25px;
+  display: inline; }
+
+.playerStatsGrid {
+  display: grid;
+  grid-template-columns: 4fr 1fr 1fr 1fr; }
+
+.large-icon {
+  width: 50px; }
+
+.xlarge-icon {
+  width: 65px;
+  font-size: 3em !important; }
+
 a:hover svg {
   color: #363636; }
 a:hover .red-svg,
@@ -20,6 +35,10 @@ a:hover .green-svg {
 html {
   background-color: #4a4a4a !important; }
 
+html, body {
+  height: 100%;
+  margin: 0; }
+
 body {
   margin: 0 2em !important; }
 
@@ -28,6 +47,9 @@ canvas {
 
 .margin-bottom {
   margin-bottom: 0.25em; }
+
+.large-margin-bottom {
+  margin-bottom: 1em; }
 
 .margin-top {
   margin-top: 1em; }
@@ -40,8 +62,19 @@ canvas {
 .bold {
   font-weight: 600; }
 
-.svdTitle {
+.center-text {
   text-align: center; }
+
+.small-font {
+  font-size: 0.5em !important; }
+
+.wrapper {
+  min-height: 100%;
+  margin-bottom: -35px; }
+
+footer,
+.push {
+  height: 35px; }
 
 .cursor-pointer {
   cursor: pointer; }
