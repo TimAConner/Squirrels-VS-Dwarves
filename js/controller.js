@@ -94,7 +94,7 @@ let allDataRecievedB = [];
 let allDataMerged = [];
 
 let currentDataSending = {};
-let dataToSend = [];
+let dataQueue = [];
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
@@ -201,88 +201,56 @@ const calcLag = miliseconds => {
     if(+miliseconds !== 0) lag = Date.now() - +miliseconds;
 };
 
-const resendDroppedToughnessData = tile => {
-    let sentData = sentDataRecieved.filter(({id}) => id === tile.id);
 
-    // // Remove duplicate
-    // for(let tileA in sentData){
-    //     for(let tileB in sentData){
-    //         if(tileA.id !== tileB.id && tileA.pos === tileB.pos){
-    //             _.remove(sentData, ({id}) => id === tileB.id);
-    //         }
-    //     }
-    // }
-
-
-    // for(let i = 0; i < sentData.length; i++){
-        if(sentData.length > 1){
-            let maxIndex = sentData.length-1;
-            let secondFromMaxIndex = sentData.length-2;
-            if(sentData[maxIndex].tough.points > sentData[secondFromMaxIndex].tough.points){
-                addRequestId(sentData[secondFromMaxIndex].tough, calcCurRequestId());
-                console.log('sentData[maxIndex].tough.points ', sentData[maxIndex].tough.points );
-                console.log('sentData[secondFromMaxIndex].tough.points', sentData[secondFromMaxIndex].tough.points);
-                countDataSent++;
-
-                model.saveTileTough(sentData[secondFromMaxIndex])
-                .then(data => {
-                    console.log('successful data resend', data);
-                    sentDataRecieved.push(Object.assign({}, data));
-                    sentDataRecieved.length = 0;
-                    countDataReturned ++;
-                    calcLag(parseRequestId(data.tough.requestId));
-                })
-                .catch(data => {
-                    console.log('not sent');
-                    countDataDropped++;
-                });
-            }
-        }
-    // }
-};
-
-const updateCurrentDataSending = () => {
-    if(dataToSend.length !== 0){
+const sendQueuedData = () => {
+    if(dataQueue.length !== 0){
     let distinctIds = [];
-    // console.log('dataToSend', [...dataToSend]);
-    
+
     // Create distinct list of tile ids
-    for(let data of dataToSend){
+    for(let data of dataQueue){
         if(!distinctIds.includes(data.obj.id)){
             distinctIds.push(data.obj.id);
         }
     }
     
+    // Loop through distinct list and send one peice of data at a time.  When it is recieved, delete that value from the list and send the next value that is newer.
     for(let id of distinctIds){
-        let objectData = dataToSend.filter(data => data.obj.id === id);
-        if(!isDefined(currentDataSending[id]) && objectData.length !== 0){
+        let objectData = dataQueue.filter(data => data.obj.id === id);
+        let mostRecentObjData = objectData[objectData.length-1];
+        let promiseId = `${id}${mostRecentObjData.obj.stat}`;
+        
+        if(!isDefined(currentDataSending[promiseId]) && objectData.length !== 0){
             countDataSent++;
 
-            let mostRecentObjData = objectData[objectData.length-1];
 
-            currentDataSending[id] = mostRecentObjData.func(mostRecentObjData.obj)
-            .then(obj => {
-                console.log('sent currentDataSending[id]', obj.id,  obj[mostRecentObjData.stat].points);    
+            currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
+            .then(obj => {  
                 countDataReturned ++;
 
                 calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
-                dataToSend = dataToSend.filter(x => {
-                    if(x.obj.id !== obj.id || (x.obj.id === obj.id && +parseRequestId(x.obj[mostRecentObjData.stat].requestId) > +parseRequestId(obj[mostRecentObjData.stat].requestId))){
+                console.log('obj[mostRecentObjData.stat].points', obj[mostRecentObjData.stat].points);
+                dataQueue = dataQueue.filter(x => {
+                    let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
+                    let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
+
+                    if(x.obj.id !== obj.id || (x.obj.id === obj.id &&  xRequestId > objRequestId)){
                         return x;
                     }
                 });
                 
-                // console.log('dataToSend', [...dataToSend]);
-                currentDataSending[id] = undefined;
-                })
-                .catch(err => console.log("updateCurrentDataSending Error",  err));
+                // Set the current data being sent for that id to nothing so, on the next mainLoop, it will now that the promise has finished and a new value can be sent.
+                currentDataSending[promiseId] = undefined;
+            }).catch(error => {
+                countDataDropped++;
+                console.log("error",  error);
+            });
             }
         }
     }
 };
 
 // Merges currentData and newData where there are differences not caused by local player.
-const mergeData = (currentData, newData, valuesToCheck) => {
+const mergeData = (currentData, newData, valuesToCheck, debug = false) => {
     if(newData !== null && isDefined(newData) && newData.length !== 0){
 
         // Create an array of new and olds ids
@@ -308,7 +276,7 @@ const mergeData = (currentData, newData, valuesToCheck) => {
 
         // Change existing values
         for(let newPiece of newData){
-            newPiece.debug = 1;
+            if(debug) newPiece.debug = 1;
             // If no specific value should be proccessed, update the whole object
             if(!isDefined(valuesToCheck)){
                 let curPiece = currentData.find(({id}) => id === newPiece.id);
@@ -336,61 +304,44 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             // If specific values should be proccesed, update only those values. 
             else { 
                 for(let value of valuesToCheck){
-                    newPiece.debug = 2;
-                    // if(value == "tough" && newPiece[value] == "0.000"){
-                    //     console.log('newPiece[value]', newPiece[value]);
-                    // }
-                    // if(value === "tough"){
-                    //     allDataRecieved.push(Object.assign({}, newPiece));
-                    // }
+                    if(debug) newPiece.debug = 2;
+
                     let curPiece = currentData.find(({id}) => id === newPiece.id);
-                    if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){ 
-                        // if(value === "tough"){
-                            newPiece.debug = 3;
-                        //     allDataRecievedA.push(Object.assign({}, newPiece));
-                        // }
+
+                    // If the new value is different than the current value
+                    if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){
+                        if(debug) newPiece.debug = 3;
                         let newRequestId = +parseRequestId(newPiece[value].requestId);
                         let curRequestId = +parseRequestId(curPiece[value].requestId);
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
                         if(!proccessedActions.includes(newPiece[value].requestId)){
-                            newPiece.debug = 4;
-                            // if(value === "tough"){
-                            //     allDataRecievedB.push(Object.assign({}, newPiece));
-                            // }
+                            if(debug) newPiece.debug = 4;
+
                             // If this game has not proccessed it and the value is not an old one,
                             // Copy the proccessed piece of data into the current data.
-                            // if(newRequestId < curRequestId){
-                            //     console.log('curPiece', curPiece);
-                            // }
-                            console.log('A curPiece[value]', curPiece[value]);
                             if(newRequestId >= curRequestId){ 
-                                // if(value === "tough"){
-                                    newPiece.debug = 5;
-                                //     allDataMerged.push(Object.assign({}, newPiece));
-                                // }
+                                if(debug)  newPiece.debug = 5;
+                                
+                                // Add value to list of values that have been calculated
                                 proccessedActions.push(newPiece[value].requestId);
+                                // Set cur value to new value
                                 curPiece[value] = Object.assign({}, newPiece[value]);
-                                console.log('update curPiece[value]', curPiece[value]);
-
-                                //TODO: Fix issue where older piece of data is replacing newer data.
-                                // Is move being replaced by mine?  Didin't pick up a move.
-                                // Is move replacing mine?  Only a move of same timestamp, not a mine.
-                                // console.log('newRequestId, lag', newRequestId, lag);
                             }
                         } else {
-                            newPiece.debugComments = [...proccessedActions];
-                            newPiece.debugInfo = newPiece[value].requestId;
-                            newPiece.debugBool = !proccessedActions.includes(newPiece[value].requestId);
-                            newPiece.indexOf = proccessedActions.indexOf(newPiece[value].requestId);
+                            if(debug) {
+                                newPiece.debugComments = [...proccessedActions];
+                                newPiece.debugInfo = newPiece[value].requestId;
+                                newPiece.debugBool = !proccessedActions.includes(newPiece[value].requestId);
+                                newPiece.indexOf = proccessedActions.indexOf(newPiece[value].requestId);
+                            }
                         }
                     }
                 }
             }
         }
     }
-    console.log('newData', [...newData]);
     // Delete new data because it has already been proccessed into the current data
     newData.length = 0;
 };
@@ -456,7 +407,7 @@ const checkInput = delta => {
                         // TODO: Refactor to select the nearest object
 
                         let objectDistance = g.calcDistance(g.calcObjBounds(selectedTile, g.tileSize), g.calcObjBounds(otherPlayersTile, g.tileSize))/g.tileSize;
-                        if(objectDistance <= g.attackDistance && aPlayer.id !== player.id){
+                        if(objectDistance <= g.attackDistance && aPlayer.id !== player.id && aPlayer.team !== player.team){
                             targetPlayer = aPlayer;
                             break;
                         }
@@ -469,70 +420,37 @@ const checkInput = delta => {
                         localPlayerStats.damageDelt += g.attackStrength;
 
                         addRequestId(targetPlayer.health, `${requestId}atk`);
-                        countDataSent++;
 
-                        model.savePlayerHealth(targetPlayer).then(data => {
-                            countDataReturned ++;
-                            calcLag(parseRequestId(data.health.requestId));
-                        });
+                        dataQueue.push(Object.assign({}, {
+                            obj: targetPlayer,
+                            stat: "health",
+                            func: model.savePlayerHealth
+                        }));
+
+                        // countDataSent++;
+
+                        // model.savePlayerHealth(targetPlayer).then(data => {
+                        //     countDataReturned ++;
+                        //     calcLag(parseRequestId(data.health.requestId));
+                        // });
 
                     } 
                     // If there is not a player, then mine a block.
                     else {
                         //  If the tile has not been mined
                         if(selectedTile.tough.points >= g.mineStrength){ 
+
                             selectedTile.tough.points -= g.mineStrength;
                             selectedTile.tough.points = (selectedTile.tough.points).toFixed(3);
-                            
-
-                            // Rounding it does not fix it.  Meaning???  The data is not being proccessed or not being  sent?
-
-                            // THe player destroying it, it says 0.00 toughness
-                            // Local request id "1519341127625--L5zmNAkv0Su9EDrlKFwmine"
-
-                            
-                            // The server and other players have 0.04 toughness
-                            // Server request id "1519341127616--L5zmNAkv0Su9EDrlKFwmine"
-                            
-                            // Meaning local request id was saved but the id never got to the server. 
-
-                            // Could it be the send order? B is arriving before A, and then A arrives, setting it to 0.
-
                             localPlayerStats.mined += g.mineStrength;
 
                             addRequestId(selectedTile.tough, `${requestId}mine`);
 
-                           
-
-                            // if(isDefined(dataToSend[selectedTile.id])){
-                            //     dataToSend[selectedTile.id].push(Object.assign({}, selectedTile));
-                            //     console.log('dataToSend', [...dataToSend]);
-                            //     console.log('dataToSend[selectedTile.id]', dataToSend[selectedTile.id]);
-                            //     console.log('a');
-                            // } else {
-                            //     dataToSend[selectedTile.id] = [];
-                                dataToSend.push(Object.assign({}, {
-                                    obj: selectedTile,
-                                    stat: "tough",
-                                    func: model.saveTileTough
-                                }));
-                            //     console.log('dataToSend[selectedTile.id]', dataToSend[selectedTile.id]);
-                            //     console.log('dataToSend', [...dataToSend]);
-                            //     console.log('b');
-                            // }
-
-                            
-                            // model.saveTileTough(selectedTile)
-                            // .then(data => {
-                            //     sentDataRecieved.push(Object.assign({}, data));
-                            //     // resendDroppedToughnessData(selectedTile);
-                            //     countDataReturned ++;
-                            //     calcLag(parseRequestId(data.tough.requestId));
-                            // })
-                            // .catch(data => {
-                            //     console.log('not sent');
-                            //     countDataDropped++;
-                            // });
+                            dataQueue.push(Object.assign({}, {
+                                obj: selectedTile,
+                                stat: "tough",
+                                func: model.saveTileTough
+                            }));
                         }
                     }
                     
@@ -714,7 +632,7 @@ const mainLoop = (timestamp) => {
             checkInput(timestep);
 
             // Check if patch to server is done, if so, send next.
-            updateCurrentDataSending();
+            sendQueuedData();
 
             // Update delta
             delta -= timestep;

@@ -166,7 +166,11 @@ module.exports.savePlayerHealth = (player) => {
                 "health": player.health
             }),
         })
-        .done(data => resolve(data));
+        .done(data => {
+            let debugData = Object.assign({}, data);
+            debugData.id = player.id;    
+            resolve(debugData);
+        });
     });
 };
 
