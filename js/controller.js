@@ -93,6 +93,9 @@ let allDataRecievedA = [];
 let allDataRecievedB = [];
 let allDataMerged = [];
 
+let currentDataSending = {};
+let dataToSend = [];
+
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
 const toTwoDigits = number => (Math.round(number * 100) / 100);
@@ -236,6 +239,46 @@ const resendDroppedToughnessData = tile => {
             }
         }
     // }
+};
+
+const updateCurrentDataSending = () => {
+    if(dataToSend.length !== 0){
+    let distinctTileIds = [];
+    // console.log('dataToSend', [...dataToSend]);
+    
+    // Create distinct list of tile ids
+    for(let tile of dataToSend){
+        if(!distinctTileIds.includes(tile.id)){
+            distinctTileIds.push(tile.id);
+        }
+    }
+    
+    for(let id of distinctTileIds){
+        let tileData = dataToSend.filter(tile => tile.id === id);
+        // console.log('tileData', tileData.length);
+        if(!isDefined(currentDataSending[id]) && tileData.length !== 0){
+            // console.log('currentDataSending[id]', currentDataSending[id]);
+            countDataSent++;
+            currentDataSending[id] = 
+            model.saveTileTough(tileData[tileData.length-1])
+            .then(data => {
+                console.log('sent currentDataSending[id]', data.id,  data.tough.points);
+                countDataReturned ++;
+                calcLag(parseRequestId(data.tough.requestId));
+                
+                dataToSend = dataToSend.filter(x => {
+                    if(x.id !== data.id || (x.id === data.id && +parseRequestId(x.tough.requestId) > +parseRequestId(data.tough.requestId))){
+                        return x;
+                    }
+                });
+                
+                // console.log('dataToSend', [...dataToSend]);
+                currentDataSending[id] = undefined;
+                })
+                .catch(err => console.log("updateCurrentDataSending Error",  err));
+            }
+        }
+    }
 };
 
 // Merges currentData and newData where there are differences not caused by local player.
@@ -422,7 +465,7 @@ const checkInput = delta => {
                     // If there is not a player, then mine a block.
                     else {
                         //  If the tile has not been mined
-                        if(selectedTile.tough.points >= 0){ 
+                        if(selectedTile.tough.points >= g.mineStrength){ 
                             selectedTile.tough.points -= g.mineStrength;
                             selectedTile.tough.points = (selectedTile.tough.points).toFixed(3);
                             
@@ -444,19 +487,33 @@ const checkInput = delta => {
 
                             addRequestId(selectedTile.tough, `${requestId}`);
 
-                            countDataSent++;
+                           
+
+                            // if(isDefined(dataToSend[selectedTile.id])){
+                            //     dataToSend[selectedTile.id].push(Object.assign({}, selectedTile));
+                            //     console.log('dataToSend', [...dataToSend]);
+                            //     console.log('dataToSend[selectedTile.id]', dataToSend[selectedTile.id]);
+                            //     console.log('a');
+                            // } else {
+                            //     dataToSend[selectedTile.id] = [];
+                                dataToSend.push(Object.assign({}, selectedTile));
+                            //     console.log('dataToSend[selectedTile.id]', dataToSend[selectedTile.id]);
+                            //     console.log('dataToSend', [...dataToSend]);
+                            //     console.log('b');
+                            // }
+
                             
-                            model.saveTileTough(selectedTile)
-                            .then(data => {
-                                sentDataRecieved.push(Object.assign({}, data));
-                                // resendDroppedToughnessData(selectedTile);
-                                countDataReturned ++;
-                                calcLag(parseRequestId(data.tough.requestId));
-                            })
-                            .catch(data => {
-                                console.log('not sent');
-                                countDataDropped++;
-                            });
+                            // model.saveTileTough(selectedTile)
+                            // .then(data => {
+                            //     sentDataRecieved.push(Object.assign({}, data));
+                            //     // resendDroppedToughnessData(selectedTile);
+                            //     countDataReturned ++;
+                            //     calcLag(parseRequestId(data.tough.requestId));
+                            // })
+                            // .catch(data => {
+                            //     console.log('not sent');
+                            //     countDataDropped++;
+                            // });
                         }
                     }
                     
@@ -636,6 +693,9 @@ const mainLoop = (timestamp) => {
             
             // Check input and execute it
             checkInput(timestep);
+
+            // Check if patch to server is done, if so, send next.
+            updateCurrentDataSending();
 
             // Update delta
             delta -= timestep;
