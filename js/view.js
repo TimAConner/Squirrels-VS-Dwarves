@@ -1,9 +1,5 @@
 "use strict";
 
-// module.exports.showTiles = (tiles) => {
-//     console.log(tiles);
-// };
-
 
 let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 

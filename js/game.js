@@ -62,7 +62,6 @@ const calcObjBounds = (obj, size, convertFromGrid = false) => {
 
 // Takes two pos and deals with distance.
 const calcDistance = (posA,  posB) => {
-    // console.log('posA, posB', posA, posB);
     let a = (posA.x) - (posB.x),
     b = (posA.y) - (posB.y);
 

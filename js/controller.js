@@ -94,7 +94,7 @@ let allDataRecievedB = [];
 let allDataMerged = [];
 
 let currentDataSending = {};
-let dataQueue = [];
+let outboundDataQueue = [];
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
@@ -169,6 +169,9 @@ const findTileInPlayerDir = ({pos: playerPos, pos: {dir: playerDirection}}) => {
 // Returns true if a key is being pressed down
 const isKeyOn = key => keys[key];
 
+// is(Key)On
+// Arguments should be able to come before noun to be read easily in english.
+
 const findClosestGem = player => gems.find(gem => g.calcDistance(player.pos, gem.pos) <= g.gemPickupDistance);
 
 
@@ -202,12 +205,12 @@ const calcLag = miliseconds => {
 };
 
 
-const sendQueuedData = () => {
-    if(dataQueue.length !== 0){
+const monitorOutboundDataQueue = () => {
+    if(outboundDataQueue.length !== 0){
     let distinctIds = [];
 
     // Create distinct list of tile ids
-    for(let data of dataQueue){
+    for(let data of outboundDataQueue){
         if(!distinctIds.includes(data.obj.id)){
             distinctIds.push(data.obj.id);
         }
@@ -215,7 +218,7 @@ const sendQueuedData = () => {
     
     // Loop through distinct list and send one peice of data at a time.  When it is recieved, delete that value from the list and send the next value that is newer.
     for(let id of distinctIds){
-        let objectData = dataQueue.filter(data => data.obj.id === id);
+        let objectData = outboundDataQueue.filter(data => data.obj.id === id);
         let mostRecentObjData = objectData[objectData.length-1];
         let promiseId = `${id}${mostRecentObjData.obj.stat}`;
         
@@ -225,11 +228,11 @@ const sendQueuedData = () => {
 
             currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
             .then(obj => {  
-                countDataReturned ++;
 
+                countDataReturned ++;
                 calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
-                console.log('obj[mostRecentObjData.stat].points', obj[mostRecentObjData.stat].points);
-                dataQueue = dataQueue.filter(x => {
+
+                outboundDataQueue = outboundDataQueue.filter(x => {
                     let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
                     let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
 
@@ -242,7 +245,7 @@ const sendQueuedData = () => {
                 currentDataSending[promiseId] = undefined;
             }).catch(error => {
                 countDataDropped++;
-                console.log("error",  error);
+                console.log("Error: ",  error);
             });
             }
         }
@@ -356,7 +359,7 @@ const dropGem = gem => {
 };
 
 // Updates the positoin of the gems if they are on a player
-const updateGemPosition = () => {
+const updateLocalGemPosition = () => {
     for(let gem of gems){
         // If the gem is being carried
         if(gem.carrier !== -1){
@@ -372,7 +375,7 @@ const updateGemPosition = () => {
     }
 };
 
-const checkInput = delta => {
+const monitorInput = delta => {
     if(isDefined(g.playerId)){
 
         let player = players.find(player => player.id == g.playerId);
@@ -393,7 +396,6 @@ const checkInput = delta => {
             };
 
             if(isKeyOn(" ")){
-                console.log('g.playerId', g.playerId);
                 let selectedTile = findTileInPlayerDir(player);
 
                 if(isDefined(selectedTile)){
@@ -421,7 +423,7 @@ const checkInput = delta => {
 
                         addRequestId(targetPlayer.health, `${requestId}atk`);
 
-                        dataQueue.push(Object.assign({}, {
+                        outboundDataQueue.push(Object.assign({}, {
                             obj: targetPlayer,
                             stat: "health",
                             func: model.savePlayerHealth
@@ -446,7 +448,7 @@ const checkInput = delta => {
 
                             addRequestId(selectedTile.tough, `${requestId}mine`);
 
-                            dataQueue.push(Object.assign({}, {
+                            outboundDataQueue.push(Object.assign({}, {
                                 obj: selectedTile,
                                 stat: "tough",
                                 func: model.saveTileTough
@@ -479,7 +481,7 @@ const checkInput = delta => {
                 if(isDefined(selectedTile)){
 
                     let gemOnTile = getGemOnTile(selectedTile);
-
+                    
                     // if the gem is not on a tile
                     if(!isDefined(gemOnTile)){
                          // If player has gem,
@@ -549,7 +551,7 @@ const addRequestId = (object, requestId) => {
     object.requestId = requestId;
 };
 
-const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
+const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}, useDataQueue = true) => {
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
     
@@ -583,12 +585,25 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
     // console.log('pos.dir', pos.dir);
     addRequestId(pos, `${requestId}move`);
     
-    countDataSent ++;
-    
-    model.savePlayerPos(player).then(({pos: {requestId}}) => {
-        countDataReturned ++;
-        calcLag(parseRequestId(requestId));
-    });
+    if(useDataQueue){
+        outboundDataQueue.push(Object.assign({}, {
+            obj: player,
+            stat: "pos",
+            func: model.savePlayerPos
+        }));
+    } else {
+        countDataSent ++;
+        
+        model.savePlayerPos(player).then(({pos: {requestId}}) => {
+            countDataReturned ++;
+            calcLag(parseRequestId(requestId));
+        });
+    }
+   
+
+
+
+
 };
 
 
@@ -621,18 +636,16 @@ const mainLoop = (timestamp) => {
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
                 shouldMergeDataThisFrame = false;
-                // resendDroppedToughnessData();
             }
             
             // Updates gem position if a player is carrying one
-            updateGemPosition();    
-            // console.log('gems', gems);
+            updateLocalGemPosition();    
             
-            // Check input and execute it
-            checkInput(timestep);
+            // Check input and executes it or adds it to the outboundDataQueue
+            monitorInput(timestep);
 
-            // Check if patch to server is done, if so, send next.
-            sendQueuedData();
+            // Check if an individual patch to the server is done, if so, send next most recent (by timestamp)
+            monitorOutboundDataQueue();
 
             // Update delta
             delta -= timestep;
@@ -640,7 +653,7 @@ const mainLoop = (timestamp) => {
         
         // Updates lag & data sent / returned ui
         view.printDataCount(countDataReturned, countDataSent, totalDataRecieved, countDataDropped);
-        // view.printGemInfo(gems);
+        
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
     } else if (localGameState === 0){ // Menu
