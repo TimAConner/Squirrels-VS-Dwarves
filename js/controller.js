@@ -243,31 +243,31 @@ const resendDroppedToughnessData = tile => {
 
 const updateCurrentDataSending = () => {
     if(dataToSend.length !== 0){
-    let distinctTileIds = [];
+    let distinctIds = [];
     // console.log('dataToSend', [...dataToSend]);
     
     // Create distinct list of tile ids
-    for(let tile of dataToSend){
-        if(!distinctTileIds.includes(tile.id)){
-            distinctTileIds.push(tile.id);
+    for(let data of dataToSend){
+        if(!distinctIds.includes(data.obj.id)){
+            distinctIds.push(data.obj.id);
         }
     }
     
-    for(let id of distinctTileIds){
-        let tileData = dataToSend.filter(tile => tile.id === id);
-        // console.log('tileData', tileData.length);
-        if(!isDefined(currentDataSending[id]) && tileData.length !== 0){
-            // console.log('currentDataSending[id]', currentDataSending[id]);
+    for(let id of distinctIds){
+        let objectData = dataToSend.filter(data => data.obj.id === id);
+        if(!isDefined(currentDataSending[id]) && objectData.length !== 0){
             countDataSent++;
-            currentDataSending[id] = 
-            model.saveTileTough(tileData[tileData.length-1])
-            .then(data => {
-                console.log('sent currentDataSending[id]', data.id,  data.tough.points);
+
+            let mostRecentObjData = objectData[objectData.length-1];
+
+            currentDataSending[id] = mostRecentObjData.func(mostRecentObjData.obj)
+            .then(obj => {
+                console.log('sent currentDataSending[id]', obj.id,  obj[mostRecentObjData.stat].points);    
                 countDataReturned ++;
-                calcLag(parseRequestId(data.tough.requestId));
-                
+
+                calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
                 dataToSend = dataToSend.filter(x => {
-                    if(x.id !== data.id || (x.id === data.id && +parseRequestId(x.tough.requestId) > +parseRequestId(data.tough.requestId))){
+                    if(x.obj.id !== obj.id || (x.obj.id === obj.id && +parseRequestId(x.obj[mostRecentObjData.stat].requestId) > +parseRequestId(obj[mostRecentObjData.stat].requestId))){
                         return x;
                     }
                 });
@@ -308,6 +308,7 @@ const mergeData = (currentData, newData, valuesToCheck) => {
 
         // Change existing values
         for(let newPiece of newData){
+            newPiece.debug = 1;
             // If no specific value should be proccessed, update the whole object
             if(!isDefined(valuesToCheck)){
                 let curPiece = currentData.find(({id}) => id === newPiece.id);
@@ -335,12 +336,17 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             // If specific values should be proccesed, update only those values. 
             else { 
                 for(let value of valuesToCheck){
+                    newPiece.debug = 2;
+                    // if(value == "tough" && newPiece[value] == "0.000"){
+                    //     console.log('newPiece[value]', newPiece[value]);
+                    // }
                     // if(value === "tough"){
                     //     allDataRecieved.push(Object.assign({}, newPiece));
                     // }
                     let curPiece = currentData.find(({id}) => id === newPiece.id);
                     if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){ 
                         // if(value === "tough"){
+                            newPiece.debug = 3;
                         //     allDataRecievedA.push(Object.assign({}, newPiece));
                         // }
                         let newRequestId = +parseRequestId(newPiece[value].requestId);
@@ -349,7 +355,7 @@ const mergeData = (currentData, newData, valuesToCheck) => {
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
                         if(!proccessedActions.includes(newPiece[value].requestId)){
-                            
+                            newPiece.debug = 4;
                             // if(value === "tough"){
                             //     allDataRecievedB.push(Object.assign({}, newPiece));
                             // }
@@ -358,29 +364,38 @@ const mergeData = (currentData, newData, valuesToCheck) => {
                             // if(newRequestId < curRequestId){
                             //     console.log('curPiece', curPiece);
                             // }
+                            console.log('A curPiece[value]', curPiece[value]);
                             if(newRequestId >= curRequestId){ 
                                 // if(value === "tough"){
+                                    newPiece.debug = 5;
                                 //     allDataMerged.push(Object.assign({}, newPiece));
                                 // }
                                 proccessedActions.push(newPiece[value].requestId);
                                 curPiece[value] = Object.assign({}, newPiece[value]);
+                                console.log('update curPiece[value]', curPiece[value]);
 
                                 //TODO: Fix issue where older piece of data is replacing newer data.
                                 // Is move being replaced by mine?  Didin't pick up a move.
                                 // Is move replacing mine?  Only a move of same timestamp, not a mine.
                                 // console.log('newRequestId, lag', newRequestId, lag);
                             }
-                        }   
+                        } else {
+                            newPiece.debugComments = [...proccessedActions];
+                            newPiece.debugInfo = newPiece[value].requestId;
+                            newPiece.debugBool = !proccessedActions.includes(newPiece[value].requestId);
+                            newPiece.indexOf = proccessedActions.indexOf(newPiece[value].requestId);
+                        }
                     }
                 }
             }
         }
     }
-    
+    console.log('newData', [...newData]);
     // Delete new data because it has already been proccessed into the current data
     newData.length = 0;
 };
 
+// playerId is not being set correctly??
 const calcCurRequestId = () => `${Date.now()}-${g.playerId}`;
 
 const dropGem = gem => {
@@ -427,7 +442,7 @@ const checkInput = delta => {
             };
 
             if(isKeyOn(" ")){
-
+                console.log('g.playerId', g.playerId);
                 let selectedTile = findTileInPlayerDir(player);
 
                 if(isDefined(selectedTile)){
@@ -453,7 +468,7 @@ const checkInput = delta => {
                         targetPlayer.health.points = (targetPlayer.health.points).toFixed(3);
                         localPlayerStats.damageDelt += g.attackStrength;
 
-                        addRequestId(targetPlayer.health, requestId);
+                        addRequestId(targetPlayer.health, `${requestId}atk`);
                         countDataSent++;
 
                         model.savePlayerHealth(targetPlayer).then(data => {
@@ -485,7 +500,7 @@ const checkInput = delta => {
 
                             localPlayerStats.mined += g.mineStrength;
 
-                            addRequestId(selectedTile.tough, `${requestId}`);
+                            addRequestId(selectedTile.tough, `${requestId}mine`);
 
                            
 
@@ -496,7 +511,11 @@ const checkInput = delta => {
                             //     console.log('a');
                             // } else {
                             //     dataToSend[selectedTile.id] = [];
-                                dataToSend.push(Object.assign({}, selectedTile));
+                                dataToSend.push(Object.assign({}, {
+                                    obj: selectedTile,
+                                    stat: "tough",
+                                    func: model.saveTileTough
+                                }));
                             //     console.log('dataToSend[selectedTile.id]', dataToSend[selectedTile.id]);
                             //     console.log('dataToSend', [...dataToSend]);
                             //     console.log('b');
@@ -525,7 +544,7 @@ const checkInput = delta => {
                     let gemOnTile = findClosestGem(player);
                     if(isDefined(gemOnTile) && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
-                        addRequestId(gemOnTile, requestId);
+                        addRequestId(gemOnTile, `${requestId}gem`);
                         countDataSent ++;
                         model.saveGem(gemOnTile).then(data => {
                             countDataReturned ++;
@@ -553,7 +572,7 @@ const checkInput = delta => {
                             // Drop gems
                             carriedGem.carrier = -1;
                             
-                            addRequestId(carriedGem, requestId);
+                            addRequestId(carriedGem, `${requestId}win`);
 
                             if(selectedTile.teamBase === player.team){
                                 setWinnerGameState(player.team);
@@ -644,7 +663,7 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
 
     
     // console.log('pos.dir', pos.dir);
-    addRequestId(pos, `${requestId}`);
+    addRequestId(pos, `${requestId}move`);
     
     countDataSent ++;
     
