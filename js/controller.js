@@ -227,18 +227,22 @@ const monitorOutboundDataQueue = () => {
 
 
             currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
-            .then(obj => {  
-
+            .then(obj => {
                 countDataReturned ++;
                 calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
 
                 outboundDataQueue = outboundDataQueue.filter(x => {
-                    let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
-                    let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
-
-                    if(x.obj.id !== obj.id || (x.obj.id === obj.id &&  xRequestId > objRequestId)){
+                    // If stat is not on object, don't delete it.
+                    if(!isDefined(x.obj[mostRecentObjData.stat]) || !isDefined(x.obj[mostRecentObjData.stat].requestId)){
                         return x;
+                    } else {
+                        let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
+                        let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
+                        if(x.obj.id !== obj.id || (x.obj.id === obj.id &&  xRequestId > objRequestId)){
+                            return x;
+                        }
                     }
+                    
                 });
                 
                 // Set the current data being sent for that id to nothing so, on the next mainLoop, it will now that the promise has finished and a new value can be sent.
