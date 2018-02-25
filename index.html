@@ -51,17 +51,26 @@
                             <div ng-show="currentTab === 'players'">
                                 <p class="">
                                         <span class="has-text-light bold" id="player-health"></span>
-                                    </p>
+                                </p>
+                                <h4 class="has-text-light bold margin-top center-text">
+                                    Players
+                                </h4>
                                 <p class="">
-                                    <h4 class="has-text-light bold">Dwarves</h4>
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 0}">
-                                        <li>{{player.uid}}</li>
+                                        <li>
+                                            <img class="player-icons" src="img/dwarf.svg" alt="Dwarves">
+                                            &nbsp;
+                                            {{player.uid}}
+                                        </li>
                                     </ul>
                                 </p>
                                 <p class="">
-                                    <h4 class="has-text-light bold">Squirrels</h4>
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 1}">
-                                        <li>{{player.uid}}</li>
+                                        <li> 
+                                            <img class="player-icons" src="img/squirrel.svg" alt="Squirrel">
+                                            &nbsp;
+                                            {{player.uid}}
+                                        </li>
                                     </ul>
                                 </p>
                             </div>
@@ -99,11 +108,13 @@
                             <h3 class="title is-4 has-text-light center-text">{{lobbyName}}</h3>
                             <div class="playerSelection">                
                                 <div>
-                                    <h3 class="title is-6 has-text-light">Dwarves</h3>
+                                    <h3 class="title is-6 has-text-light">
+                                        <img class="player-icons xlarge-icon" src="img/dwarf.svg" alt="Dwarf">
+                                    </h3>
                                     <a ng-show="isLobbySelected()" ng-click="addDwarf()" class="button is-success is-outlined is-small">
-                                            <i class="fas fa-plus green-svg"></i>
-                                            &nbsp;
-                                            Join Dwarves</a>
+                                        <i class="fas fa-plus green-svg"></i>
+                                        &nbsp;
+                                        Join Dwarves</a>
                                     <ul ng-repeat="dwarf in dwarfPlayers">
                                         <li>
                                             
@@ -123,7 +134,9 @@
                                     </ul>
                                 </div>
                                 <div class="squirrelsPlayerSelection">
-                                    <h3 class="title is-6 has-text-light">Squirrels</h3>
+                                    <h3 class="title is-6 has-text-light">
+                                        <img class="player-icons xlarge-icon" src="img/squirrel.svg" alt="Squirrel">
+                                    </h3>
                                     <a ng-show="isLobbySelected()" ng-click="addSquirrel()" class="button is-success is-outlined is-small">
                                             <i class="fas fa-plus green-svg"></i>
                                             &nbsp;

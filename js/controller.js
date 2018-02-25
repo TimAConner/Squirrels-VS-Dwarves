@@ -844,7 +844,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         let hours = Math.floor(millis / 3600000);
         let minutes = Math.floor(millis / 60000)%60;
         let seconds = ((millis % 60000) / 1000).toFixed(0);
-        return `${hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
+        return `${hours == 0 ? `00` : hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
         // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
     };
 
