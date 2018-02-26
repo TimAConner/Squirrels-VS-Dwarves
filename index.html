@@ -162,7 +162,7 @@
                             </div>
 
                         </div>
-                        <div class="two-column-grid"> <!-- Main Menu Showing All Lobbies -->
+                        <div class="twenty-eighty-grid"> <!-- Main Menu Showing All Lobbies -->
                             <div>
                                 <h3  ng-hide="isLobbySelected()" class="title is-4 has-text-light">Lobbies</h3>
                                 <div ng-hide="isLobbySelected()" class="scroll-bar">
@@ -171,7 +171,7 @@
                                             &nbsp;
                                             New Game</a>
                                     <ul ng-repeat="lobby in lobbyList" >
-                                        <li ng-show="!isFinished(lobby.gameEnd)">
+                                        <li ng-show="!isFinished(lobby.gameEnd)" class="margin-bottom">
                                             <a ng-click="selectGame(lobby.key, lobby.name)"class="button is-light is-outlined margin-bottom is-small">{{lobby.name}}</a>
                                         </li>
                                     </ul>
@@ -197,10 +197,10 @@
 
                                 
 
-                                <div class="scroll-bar" ng-show="!isLobbySelected() && shouldShowPreviousGames">
+                                <div class="scroll-bar padding" ng-show="!isLobbySelected() && shouldShowPreviousGames">
                                     <div class="completeGames">
                                         <ul ng-repeat="lobby in lobbyList" >
-                                            <li ng-show="isFinished(lobby.gameEnd)">
+                                            <li ng-show="isFinished(lobby.gameEnd)" class="large-margin-bottom">
                                                 <a ng-click="isLobbyOpened = !isLobbyOpened" class="button is-light is-outlined is-small ">{{lobby.name}} {{lobby.date}}</a>
 
 
@@ -252,6 +252,8 @@
                                                                 {{player.mined.toFixed(2)}}
                                                             </div>
                                                             <div class="flex-center justify-left">
+                                                                <img class="player-icons" src="img/heart.svg" alt="Alive">
+                                                                &nbsp;
                                                                 <img class="player-icons" src="img/lifetime.svg" alt="Life Time">
                                                                 &nbsp;
                                                                 {{player.lifeTime}}
