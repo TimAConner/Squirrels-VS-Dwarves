@@ -2266,7 +2266,7 @@ const drawGems = (gems, players) => {
 const drawHealth = (health) => {
     health = Number(health).toFixed(0);
     if(health > 0){
-        $("#player-health").html("Health: " + health);
+        $("#player-health").html(health + " HP");
     } else {
         $("#player-health").html("<p>You are Dead</p>");
     }
