@@ -144,7 +144,10 @@
                                                 <p>{{dwarf.uid}}</p>
                                             </div>
                                             <div ng-show="!dwarf.alive">
-                                                <p>{{dwarf.uid}} is dead.</p>
+                                                <p>
+                                                    <img class="player-icons" src="img/skull.svg" alt="Dead"> 
+                                                    {{dwarf.uid}}
+                                                    </p>
                                             </div>
                                         </li>
                                         
@@ -169,7 +172,9 @@
                                                 <p>{{squirrel.uid}}</p>
                                             </div>
                                             <div ng-show="!squirrel.alive">
-                                                <p>{{squirrel.uid}} is dead.</p>
+                                                <img class="player-icons" src="img/skull.svg" alt="Dead"> 
+                                                {{squirrel.uid}}
+                                                </p>
                                             </div>
                                         </li>
                                         
@@ -305,11 +310,8 @@
         <div class="push"></div>
     </main>
     <footer class="center-text small-font has-text-light">
-        <div>Icons made by <a href="http://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
-        <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
-        <div>Icons made by <a href="https://www.flaticon.com/authors/gregor-cresnar" title="Gregor Cresnar">Gregor Cresnar</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
-        <div>Icons made by <a href="https://www.flaticon.com/authors/dinosoftlabs" title="DinosoftLabs">DinosoftLabs</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
         &copy; 2018 Tim A. Conner
+        <div>Icons made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>, <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a>, <a href="https://www.flaticon.com/authors/gregor-cresnar" title="Gregor Cresnar">Gregor Cresnar</a>, and <a href="https://www.flaticon.com/authors/dinosoftlabs" title="DinosoftLabs">DinosoftLabs</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> are licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
     </footer>
     <script type="text/javascript" src="dist/bundle.js"></script>
 </body>
