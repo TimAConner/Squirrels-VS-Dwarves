@@ -4,17 +4,24 @@
 let c = document.getElementById('game-canvas');
 let ctx = c.getContext("2d");
 
-ctx.canvas.width  = window.innerWidth;
-ctx.canvas.height = window.innerHeight;
+const mapWidth = 21;
+const mapHeight = 21;
+const tileSize = 30;
+
+
+// Compensate for >= with +1
+ctx.canvas.width  = (mapWidth+1)*tileSize;
+ctx.canvas.height = (mapHeight+1)*tileSize;
 
 const playerSpeed = 1;
 const playerWithGemSpeed = 0.75;
-const tileSize = 30;
 const playerSize = 25;
 const attackDistance = 1;
 const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
+
+
 
 const team1 = "Dwarf";
 const team2 = "Squirrel";
@@ -28,13 +35,19 @@ const battleTypes = ["Battle of",  "Battle of",  "Battle of",  "Skirmish of", "S
 const battleNames = ["Acorn Hill", "Akourncourt", "Skwir'el", "The Gem Stash", "The Acorn Stash", "Daarvenboro", "Drunken Allies", "Nutloser Pass", "Dwarf's Forge", "Leifcurn", "Skullcrack Hill", "Skwir'el Village", "Skwir'el Ford", "The Great Hoard", "The Tiny Hoard"];
 
 
-const isPlayerAlive = player => 
-    typeof player.health !== "undefined" 
-        ? (player.health.points > 0 
-            ? true 
-            : false)
-        : false;
+// const battleAdjective = [""];
+// const battleNoun = ["", ""];
 
+
+const isPlayerAlive = player => {
+    if(typeof player !== "undefined" && typeof player.health !== "undefined"){
+        if(player.health.points > 0 ){
+            return true;
+        }
+    }
+
+    return false;
+};
 
 
 // Returns tile position based on their x and y and tilesize
@@ -49,7 +62,6 @@ const calcObjBounds = (obj, size, convertFromGrid = false) => {
 
 // Takes two pos and deals with distance.
 const calcDistance = (posA,  posB) => {
-    // console.log('posA, posB', posA, posB);
     let a = (posA.x) - (posB.x),
     b = (posA.y) - (posB.y);
 
@@ -77,6 +89,8 @@ module.exports = {
     c,
     ctx,
     playerSpeed,
+    mapWidth,
+    mapHeight,
     playerWithGemSpeed,
     tileSize,
     playerSize,

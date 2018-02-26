@@ -63,21 +63,16 @@ const shouldIncrementFrame = ({lastFrame, interval}) => {
 // TODO: Link current time in shouldIncrement Frame and selectNextFrame.
 // Selects next frame
 const selectNextFrame = (animation) => {
-    // console.log('curFrame, lastFrame', curFrame, lastFrame);
     animation.curFrame ++;
     animation.lastFrame = currentTime;
-    // console.log('curFrame, lastFrame', curFrame, lastFrame);
 };
 
 // Draws player animation on the canvas then calls updateAnimation to get a new frame.
 // Animations run along x axis, so the animations must be in a horizontal strip.
 const drawPlayerAnimation = (imgName, animationName, position) => {
-    // console.log('position', position);
     if(!position.isMoving){
         let animation = findAnimation(animationName);
-        // console.log('animation', animation);
         g.ctx.drawImage(img(imgName), calcDefaultFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 
-        // console.log('default animation');
     } else {
         let animation = findAnimation(animationName);
         g.ctx.drawImage(img(imgName), calcFrame(animation), 0, animation.w, animation.h, position.x, position.y, g.playerSize, g.playerSize); 

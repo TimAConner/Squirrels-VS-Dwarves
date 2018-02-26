@@ -1,24 +1,214 @@
-#actions {
-    overflow: scroll;
-    height: 100px;
-    
-}
+
+$text-color: whitesmoke;
+$footer-size: 60px;
 
 .hide {
     display: none;
+}
+
+
+// Set font awesome icon colors from black to white
+svg {
+    color: $text-color;
+    font-size: 1.25em !important;
+}
+
+.red-svg{
+    color: #ff3860;;
+}
+
+.green-svg{
+    color: #23d160;;;
+}
+
+.player-icons {
+    width: 25px;
+    display: inline;
+}
+
+.playerStatsGrid {
+    display: grid;
+    grid-template-columns: 4fr 1fr 1fr 1fr;
+}
+
+.large-icon {
+    width: 50px;
+}
+
+.xlarge-icon {
+    width: 65px;
+    font-size: 3em !important;
+}
+
+a:hover {
+    svg {
+        color: #363636;
+    }
+    .red-svg,
+    .green-svg {
+        color: whitesmoke;
+    }
+}
+
+html {
+    background-color: #4a4a4a !important;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    margin: 0 2em !important;
 }
 
 canvas {
     background-color: black;
 }
 
-#loading-screen h3 {
-    animation: pulse 2s infinite alternate;
+.margin-bottom {
+    margin-bottom: 0.25em;
 }
 
-#game-canvas {
-    display: block;
-    margin: 0 auto;
+.large-margin-bottom {
+    margin-bottom: 1em;
+}
+
+.margin-top {
+    margin-top:  1em;
+}
+
+
+.underline {
+    border-bottom: 1px solid whitesmoke;
+    margin-bottom:  0.25em;
+    display: inline-block;
+}
+
+.bold {
+    font-weight: 600;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.justify-left {
+    justify-content: flex-start !important;
+}
+
+.center-text {
+    text-align:  center;
+}
+
+.small-font {
+    font-size: 0.5em !important;
+}
+
+.wrapper {
+    min-height: 100%;
+    margin-bottom: -$footer-size;
+}
+
+footer,
+.push {
+  height: $footer-size;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+@media screen and (min-width: 600px) {
+
+    .side-panel {
+        float: left;
+        width: 20%;
+        position: absolute !important;
+        margin-top: 2em;
+        border: 1px solid whitesmoke;
+        display: inline-block;
+        border-radius: 0.25em;
+        padding: 0.25em;
+    }
+
+    .custom-tabs {
+        li {
+            display: inline-block;
+            &:hover {
+                border-bottom: 1px solid whitesmoke;
+            }
+            cursor: pointer;            
+        }
+        margin-bottom: 1em;
+    }
+
+    .is-active {
+        border-bottom: 1px solid whitesmoke !important;
+    }
+
+    .float-right {
+        float: right;
+    }
+    
+    .center {
+        display: block;
+        margin: 0 auto;
+    }
+    .signOut {
+        position: absolute !important;
+        top: 1em;
+        left: 1em;
+    }
+
+    .greetingText {
+
+    }
+
+    .game-ui {
+        display: grid;
+        grid-template-columns: 20% 80%;
+    }
+
+    .playerSelection {
+        width: 70%;
+        margin-left: 15%;
+        display: grid !important;
+        grid-template-columns: 50% 50%;
+    }
+
+    .two-column-grid {
+        display: grid !important;
+        grid-template-columns: 50% 50%;
+    }
+
+    .scroll-bar {
+        overflow-y: auto;
+        height: 75vh;
+        margin-right: 1em;
+    }
+
+    #sign-in-screen{
+        display: flex;
+        justify-content: center;
+    }
+
+    .squirrelsPlayerSelection {
+        text-align: right;
+    }
+
+    .panel-block {
+        color: $text-color !important;
+    }
+}
+
+#loader h3 {
+    animation: pulse 2s infinite alternate;
+    margin-top: 100px;
+    margin-left: 25px;
+    color: $text-color
 }
 
 @keyframes pulse {
@@ -29,3 +219,88 @@ canvas {
         opacity: 0;
     }
 }
+
+/* 
+    LOADING SCREEN START
+*/
+#loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -2.7em;
+  margin-left: -2.7em;
+  width: 5.4em;
+  height: 5.4em;
+}
+
+#hill {
+  position: absolute;
+  width: 7.1em;
+  height: 7.1em;
+  top: 1.7em;
+  left: 1.7em;
+  background-color: transparent;
+  border-left: .25em solid $text-color;
+  transform: rotate(45deg);
+}
+
+#hill:after {
+  content: '';
+  position: absolute;
+  width: 7.1em;
+  height: 7.1em;
+  left: 0;
+}
+
+#box {
+  position: absolute;
+  left: 0;
+  bottom: -.1em;
+  width: 1em;
+  height: 1em;
+  background-color: transparent;
+  border: .25em solid $text-color;
+  border-radius: 15%;
+  transform: translate(0, -1em) rotate(-45deg);
+  animation: push 2.5s cubic-bezier(.79, 0, .47, .97) infinite;
+}
+
+@keyframes push {
+  0% {
+    transform: translate(0, -1em) rotate(-45deg);
+  }
+  5% {
+    transform: translate(0, -1em) rotate(-50deg);
+  }
+  20% {
+    transform: translate(1em, -2em) rotate(47deg);
+  }
+  25% {
+    transform: translate(1em, -2em) rotate(45deg);
+  }
+  30% {
+    transform: translate(1em, -2em) rotate(40deg);
+  }
+  45% {
+    transform: translate(2em, -3em) rotate(137deg);
+  }
+  50% {
+    transform: translate(2em, -3em) rotate(135deg);
+  }
+  55% {
+    transform: translate(2em, -3em) rotate(130deg);
+  }
+  70% {
+    transform: translate(3em, -4em) rotate(217deg);
+  }
+  75% {
+    transform: translate(3em, -4em) rotate(220deg);
+  }
+  100% {
+    transform: translate(0, -1em) rotate(-225deg);
+  }
+}
+
+/*
+LOADING SCREEN END
+*/

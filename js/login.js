@@ -8,8 +8,8 @@ module.exports.signIn = () => {
         firebase.auth()
         .signInWithPopup(provider).then((userData) => {
             resolve(userData.user);
-        }).catch(err => {
-            console.log('err', err);
+        }).catch(error => {
+            console.log('Error: ', error);
             reject();
         });
     });
@@ -21,8 +21,8 @@ module.exports.signOut = (logOutFunction) => {
         .signOut().then(
         () => {
             resolve();
-        }, err => {
-            console.log(err);
+        }, error => {
+            console.log("Error: ", error);
             reject();
         });
     });

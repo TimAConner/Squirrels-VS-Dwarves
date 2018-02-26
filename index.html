@@ -6,122 +6,292 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Squirrels V Dwarves</title>
     <link rel="stylesheet" href="css/main.css">
+
+    <link rel="stylesheet" href="node_modules/bulma/css/bulma.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.0/js/all.js"></script>
+
 </head>
 <body>
-    <main>
+    <main class="wrapper">
         <!-- <h1>Squirrels vs Dwarves Test</h1> -->
         <!-- <div id="actions">
 
         </div> -->
-
-
         <div ng-app="menuApp" ng-controller="menuCtrl">
 
-            <h1>Squirrels V Dwarves</h1>
-            <h5>The Primordial Feud: An Experience</h5>
-
-            <div id="game-screen" class="hide">
-                <p id="lag">0</p>
-                <p id="dataCount">0</p>
-                <p id="gemInfo"></p>
-                <p id="player-health"></p>
-                <button ng-click="signOut()">Logout</button>
-                <button ng-click="goToMainMenu()">Main Menu</button>
-                <canvas id="game-canvas">
-    
-                </canvas>
-            </div>
-            <div id="victory-screen" class="hide">
-                <h1>The <span id="winner"></span> claim victory! <br/> Yet the feud is not over.</h1>
-                <button ng-click="goToMainMenu()">Main Menu</button>
-            </div>
-            <div id="sign-in-screen" class="hide">
-                <button ng-click="signIn()">Sign In / Register</button>
-            </div>
-            <div id="main-menu-screen" class="hide">
-                <p id="signInText"></p>
-                <button ng-click="signOut()">Logout</button>
-                <div id="player-lobby">
-                    <button ng-click="addGame()">New Game</button>
-                    
-                    <div ng-show="isLobbySelected()">
-                        <button ng-click="addDwarf()">Add New Dwarf</button>
-                        <button ng-click="addSquirrel()">Add New Squirrel</button>
-                        <!-- <button id="main-menu-play">Continue</button> -->
-                    </div>
-
-                    <div ng-show="isLobbySelected()">
-                        <h3>Your Players</h3>
-                        <ul ng-repeat="x in ownedPlayers" >
-                            <li>
-                                <div ng-show="isAlive(x.id)">
-                                    <button ng-click="selectPlayer(x.id)">Select Player {{x.id}}</button>
-                                    <button  ng-click="removePlayer(x.id)">Delete Player {{x.id}}</button>
-                                </div>
-                                <div ng-show="!isAlive(x.id)">
-                                    <p>{{x.id}} is dead.</p>
-                                </div>
-                            </li>
-                            
-                        </ul>
-                    </div>
-                    <div ng-show="isLobbySelected()">
-                        <h3>Other Players</h3>
-                        <ul ng-repeat="y in otherPlayers" >
-                            <li>
-                                <p>{{y.id}}</p>
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3>Lobbies</h3>
-                        <ul ng-repeat="lobby in lobbyList" >
-                            <li ng-show="!isFinished(lobby.gameEnd)">
-                                <hr ng-show="isThisLobbySelected(lobby.key)">
-                                <p>{{lobby.name}}</p>
-                                <button ng-click="selectGame(lobby.key)">Select</button>
-                                <button ng-click="deleteGame(lobby.key)">Delete</button>
-                                <hr ng-show="isThisLobbySelected(lobby.key)">
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3>Complete Games</h3>
-                        <ul ng-repeat="lobby in lobbyList" >
-                            <li ng-show="isFinished(lobby.gameEnd)">
-                                <p>{{lobby.name}} {{lobby.date}}</p>
-                                <p>A {{lobby.winner}} Victory</p>
-                                <p>Game Length: {{lobby.gameLength}}</p>
-                                <p>Players:</p>
-                                <ol ng-repeat="player in lobby.players" >
-                                    <li>
-                                        <p>Name: {{player.uid}}</p>
-                                        <p ng-show="player.deathTime !== 0">Dead</p>
-                                        <p ng-show="player.deathTime === 0">Alive</p>
-                                        <p>Team: {{player.team ? "Squirrel" : "Dwarf"}}</p>
-                                        <p>Damage Delt: {{player.damageDelt.toFixed(2)}}</p>
-                                        <p>Blocks Mined: {{player.mined.toFixed(2)}}</p>
-                                        <p>Life Time: {{player.lifeTime}}</p>
-                                    </li>
-                                </ol>
-                            </li>
-                        </ul>
-                    </div>
+            <h1 class="title has-text-light center-text" >Squirrels V Dwarves</h1>
+            <h5 class="subtitle has-text-light center-text">The Primordial Feud: An Experience</h5>
+            <div >
+                <div ng-show="isSignedIn()" ng-cloak  class="signOut">
+                    <a ng-click="signOut()" ng-cloak class="button is-light is-outlined is-small">
+                        <i class="fas fa-sign-out-alt"></i>
+                        &nbsp;
+                        Logout
+                    </a>
+                    <span id="signInText" class="has-text-light">{{getUserId()}}</span>
                 </div>
 
-                
-            </div>
-
+                <div id="game-screen" class="hide">
+                        <h3 class="title is-4 has-text-light center-text">{{lobbyName}}</h3>
+                        <nav class="side-panel has-text-light">
+                            <div class="custom-tabs" ng-init="currentTab = 'players'">
+                                <ul>
+                                    <li ng-click="currentTab = 'players'" class="{{currentTab === 'players' ? 'is-active' : ''}}">Players & Health</li>
+                                    <li ng-click="currentTab = 'connection'" class="{{currentTab === 'connection' ? 'is-active' : ''}}">Connection Stats</li>
+                                </ul>
+                            </div>
+                            <div ng-show="currentTab === 'connection'">
+                                <p class="">
+                                    <span class="has-text-light" id="lag">0</span>
+                                </p>
+                                <p class="">
+                                    <span class="has-text-light"id="dataCount">0</span>
+                                </p>
+                            </div>
+                            <div ng-show="currentTab === 'players'">
+                                <p class="">
+                                        <span class="has-text-light bold" id="player-health"></span>
+                                </p>
+                                <h4 class="has-text-light bold margin-top center-text">
+                                    Players
+                                </h4>
+                                <p class="">
+                                    <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 0}">
+                                        <li>
+                                            <img class="player-icons" src="img/dwarf.svg" alt="Dwarves">
+                                            &nbsp;
+                                            {{player.uid}}
+                                        </li>
+                                    </ul>
+                                </p>
+                                <p class="">
+                                    <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 1}">
+                                        <li> 
+                                            <img class="player-icons" src="img/squirrel.svg" alt="Squirrel">
+                                            &nbsp;
+                                            {{player.uid}}
+                                        </li>
+                                    </ul>
+                                </p>
+                            </div>
+                            
+                        </nav>
+                    <div>
+                        <div>
+                            <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small"><i class="fas fa-arrow-circle-left"></i></a>
+                        </div>
+                        <canvas id="game-canvas" class="center">
             
+                        </canvas>
+                    </div>
+                </div>
+                <div id="victory-screen" class="hide">
+                    <h1 class="title is-4 has-text-light">The <span id="winner"></span> claim victory! <br/> Yet the feud is not over.</h1>
+                    <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small">Main Menu</a>
+                </div>
+                <div id="sign-in-screen" ng-show="!isSignedIn()">
+                    <a ng-click="signIn(true)" class="button is-light is-outlined">
+                        <i class="fas fa-sign-in-alt"></i> 
+                        &nbsp;
+                        Sign In / Register</a>
+                </div>
+                <div id="main-menu-screen" class="hide has-text-light">
+                    <div id="player-lobby">
+                        <!-- Lobby is Selected -->
+                        <div ng-show="isLobbySelected()">
+                            <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small"><i class="fas fa-arrow-circle-left"></i></a>
+                            <a class="button is-danger is-outlined float-right is-small" ng-click="deleteGame()">
+                                <i class="fas fa-trash-alt red-svg "></i>
+                                &nbsp;
+                                Delete Game
+                            </a>
+                            <h3 class="title is-4 has-text-light center-text">{{lobbyName}}</h3>
+                            <div class="playerSelection">                
+                                <div>
+                                    <h3 class="title is-6 has-text-light">
+                                        <img class="player-icons xlarge-icon" src="img/dwarf.svg" alt="Dwarf">
+                                    </h3>
+                                    <a ng-show="isLobbySelected()" ng-click="addDwarf()" class="button is-success is-outlined is-small">
+                                        <i class="fas fa-plus green-svg"></i>
+                                        &nbsp;
+                                        Join Dwarves</a>
+                                    <ul ng-repeat="dwarf in dwarfPlayers">
+                                        <li>
+                                            
+                                            <div ng-show="dwarf.alive && dwarf.owned">
+                                                <p>You: {{dwarf.uid}}</p>
+                                                <!-- <button ng-click="selectPlayer(dwarf.id)">Select Player {{dwarf.uid}}</button>
+                                                <button  ng-click="removePlayer(dwarf.id)">Delete Player {{dwarf.uid}}</button> -->
+                                            </div>
+                                            <div ng-show="dwarf.alive && !dwarf.owned">
+                                                <p>{{dwarf.uid}}</p>
+                                            </div>
+                                            <div ng-show="!dwarf.alive">
+                                                <p>{{dwarf.uid}} is dead.</p>
+                                            </div>
+                                        </li>
+                                        
+                                    </ul>
+                                </div>
+                                <div class="squirrelsPlayerSelection">
+                                    <h3 class="title is-6 has-text-light">
+                                        <img class="player-icons xlarge-icon" src="img/squirrel.svg" alt="Squirrel">
+                                    </h3>
+                                    <a ng-show="isLobbySelected()" ng-click="addSquirrel()" class="button is-success is-outlined is-small">
+                                            <i class="fas fa-plus green-svg"></i>
+                                            &nbsp;
+                                            Join Squirrels</a>
+                                    <ul ng-repeat="squirrel in squirrelPlayers">
+                                        <li>
+                                            <div ng-show="squirrel.alive && squirrel.owned">
+                                                <p>You: {{squirrel.uid}}</p>
+                                                <!-- <button ng-click="selectPlayer(squirrel.id)">Select Player {{squirrel.uid}}</button>
+                                                <button  ng-click="removePlayer(squirrel.id)">Delete Player {{squirrel.uid}}</button> -->
+                                            </div>
+                                            <div ng-show="squirrel.alive && !squirrel.owned">
+                                                <p>{{squirrel.uid}}</p>
+                                            </div>
+                                            <div ng-show="!squirrel.alive">
+                                                <p>{{squirrel.uid}} is dead.</p>
+                                            </div>
+                                        </li>
+                                        
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="two-column-grid"> <!-- Main Menu Showing All Lobbies -->
+                            <div>
+                                <h3  ng-hide="isLobbySelected()" class="title is-4 has-text-light">Lobbies</h3>
+                                <div ng-hide="isLobbySelected()" class="scroll-bar">
+                                    <a ng-click="addGame()" class="button is-light is-outlined margin-bottom">
+                                            <i class="fas fa-plus"></i>
+                                            &nbsp;
+                                            New Game</a>
+                                    <ul ng-repeat="lobby in lobbyList" >
+                                        <li ng-show="!isFinished(lobby.gameEnd)">
+                                            <a ng-click="selectGame(lobby.key, lobby.name)"class="button is-light is-outlined margin-bottom is-small">{{lobby.name}}</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                    
+                                <h3 ng-click="shouldShowPreviousGames = !shouldShowPreviousGames" ng-show="!isLobbySelected()" class="title is-4 has-text-light cursor-pointer">
+                                    <a class="button is-light is-outlined">
+                                        Complete Games 
+                                        &nbsp;
+                                        <!-- Up Arrow -->
+                                        <span ng-hide="shouldShowPreviousGames">
+                                            <i class="fas fa-arrow-circle-up"></i>
+                                        </span>
+
+                                        <!-- Down Arrow -->
+                                        <span ng-show="shouldShowPreviousGames">
+                                            <i class="fas fa-arrow-circle-down"></i>
+                                        </span>
+                                    </a>
+                                </h3>
+
+                                
+
+                                <div class="scroll-bar" ng-show="!isLobbySelected() && shouldShowPreviousGames">
+                                    <div class="completeGames">
+                                        <ul ng-repeat="lobby in lobbyList" >
+                                            <li ng-show="isFinished(lobby.gameEnd)">
+                                                <a ng-click="isLobbyOpened = !isLobbyOpened" class="button is-light is-outlined is-small ">{{lobby.name}} {{lobby.date}}</a>
+
+
+                                                <div ng-show="isLobbyOpened">
+                                                    <div class="two-column-grid margin-top large-margin-bottom">
+                                                        <div class="flex-center">
+                                                            <img class="player-icons xlarge-icon" src="img/trophy.svg" alt="Winner">
+                                                            &nbsp;
+                                                            <span ng-show="lobby.winner === 'Squirrel'">
+                                                                <img class="player-icons xlarge-icon" src="img/squirrel.svg" alt="Squirrel Team">
+                                                            </span>
+                                                            <span ng-show="lobby.winner === 'Dwarf'">
+                                                                <img class="player-icons xlarge-icon" src="img/dwarf.svg" alt="Dwarf Team">
+                                                            </span>
+                                                        </div>
+                                                        <div class="flex-center">
+                                                            <img class="player-icons xlarge-icon" src="img/lifetime.svg" alt="Life Time">
+                                                            &nbsp;
+                                                            {{lobby.gameLength}}
+                                                        </div>
+                                                    </div>
+                                                    <ol ng-repeat="player in lobby.players" class="margin-bottom">
+                                                        <li class="playerStatsGrid">
+                                                            <div class="flex-center justify-left">
+                                                                <span ng-hide="player.deathTime === 0">
+                                                                    <img class="player-icons" src="img/skull.svg" alt="Dead">
+                                                                </span>
+                                                                <span ng-show="player.deathTime === 0">
+                                                                    <img class="player-icons" src="img/heart.svg" alt="Alive">
+                                                                </span>
+                                                                &nbsp;
+                                                                <span ng-show="player.team === 1">
+                                                                    <img class="player-icons" src="img/squirrel.svg" alt="Squirrel Team">
+                                                                </span>
+                                                                <span ng-show="player.team === 0">
+                                                                    <img class="player-icons" src="img/dwarf.svg" alt="Dwarf Team">
+                                                                </span>
+                                                                &nbsp;
+                                                                {{player.uid}}
+                                                            </div>
+                                                            <div class="flex-center justify-left">
+                                                                <img class="player-icons" src="img/knife.svg" alt="Damage Dealt">
+                                                                &nbsp;
+                                                                {{player.damageDelt.toFixed(2)}}
+                                                            </div>
+                                                            <div class="flex-center justify-left">
+                                                                <img class="player-icons" src="img/pickaxe.svg" alt="Blocks Mined">
+                                                                &nbsp;
+                                                                {{player.mined.toFixed(2)}}
+                                                            </div>
+                                                            <div class="flex-center justify-left">
+                                                                <img class="player-icons" src="img/lifetime.svg" alt="Life Time">
+                                                                &nbsp;
+                                                                {{player.lifeTime}}
+                                                            </div>
+                                                        </li>
+                                                    </ol>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                </div>
+
+            </div>
             <!-- <div id="player-list">
 
             </div> -->
         </div>
         
-        <div  class="hide" id="loading-screen">
-            <h3>Loading</h3>
+        <div class="hide" id="loading-screen">
+            <div id="loader">
+                <div id="box"></div>
+                <div id="hill"></div>
+                <h3>Loading</h3>
+            </div>
         </div>
+
+        <div class="push"></div>
     </main>
+    <footer class="center-text small-font has-text-light">
+        <div>Icons made by <a href="http://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/gregor-cresnar" title="Gregor Cresnar">Gregor Cresnar</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/dinosoftlabs" title="DinosoftLabs">DinosoftLabs</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+        &copy; 2018 Tim A. Conner
+    </footer>
     <script type="text/javascript" src="dist/bundle.js"></script>
 </body>
 </html>

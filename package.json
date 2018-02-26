@@ -19,7 +19,9 @@
   "homepage": "https://github.com/TimAConner/Squirrels-VS-Dwarves#readme",
   "dependencies": {
     "angular": "^1.6.8",
+    "bulma": "^0.6.2",
     "firebase": "^4.8.1",
+    "font-awesome": "^4.7.0",
     "grunt": "^1.0.1",
     "grunt-browserify": "^5.2.0",
     "grunt-contrib-jshint": "^1.1.0",

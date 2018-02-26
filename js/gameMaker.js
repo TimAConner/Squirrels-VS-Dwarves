@@ -5,37 +5,38 @@ const model = require("./model");
 const g = require("./game");
 
 module.exports.addPlayer = (teamId, tiles, playersLength) =>  {
-    let spawnPoint = tiles.find(x => x.teamBase === teamId); 
-    console.log('spawnPoint', spawnPoint);
-    let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
+    return new Promise(function (resolve, reject){
+        let spawnPoint = tiles.find(x => x.teamBase === teamId); 
+        let newPlayerId = typeof playersLength !== undefined ? playersLength : 0;
 
-    let player = {
-        "id": newPlayerId,
-        "team": teamId,
-        "pos": {
-            "x": spawnPoint.pos.x*g.tileSize,
-            "y": spawnPoint.pos.y*g.tileSize,
-            "z": 0,
-            "requestId": "0--0",
-            "dir": "up",
-            "animDirHorizontal": "right",
-            "animDirVertical": "none"
-        },
-        "health": {
-            "points": 100,
-            "requestId": "0--0"
-        },
-        "uid": g.uid
-    };
+        let player = {
+            "id": newPlayerId,
+            "team": teamId,
+            "pos": {
+                "x": spawnPoint.pos.x*g.tileSize,
+                "y": spawnPoint.pos.y*g.tileSize,
+                "z": 0,
+                "requestId": "0--0",
+                "dir": "up",
+                "animDirHorizontal": "right",
+                "animDirVertical": "none"
+            },
+            "health": {
+                "points": 100,
+                "requestId": "0--0"
+            },
+            "uid": g.uid
+        };
 
-    model.addNewPlayer(player);  
-    g.playerId = newPlayerId;
+        model.addNewPlayer(player)
+        .then(({name: playerId}) => resolve(playerId));
+    });
 };
 
 module.exports.addGame = () => {
     return new Promise(function (resolve, reject){
         // Size should be odd numbers so that the flipping of the map can happen.
-        let createdTiles = mapMaker.generateTiles(21, 21);
+        let createdTiles = mapMaker.generateTiles(g.mapWidth, g.mapHeight);
         
         let teamBaseZero = createdTiles.find(x => x.teamBase === 0),
         teamBaseOne = createdTiles.find(x => x.teamBase === 1);

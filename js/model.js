@@ -113,7 +113,12 @@ module.exports.savePlayerPos = (player) => {
                 "pos": player.pos
             }),
         })
-        .done(data => resolve(data));
+        .done(data => {
+            // Add the id to the resolved information
+            let dataCopy = Object.assign({}, data);
+            dataCopy.id = player.id;    
+            resolve(dataCopy);
+        });
     });
 };
 
@@ -166,7 +171,12 @@ module.exports.savePlayerHealth = (player) => {
                 "health": player.health
             }),
         })
-        .done(data => resolve(data));
+        .done(data => {
+            // Add the id to the resolved information
+            let dataCopy = Object.assign({}, data);
+            dataCopy.id = player.id;    
+            resolve(dataCopy);
+        });
     });
 };
 
@@ -191,8 +201,13 @@ module.exports.saveTileTough = (tile) => {
                 tough: tile.tough
             })
         })
-        .done(data => resolve(data))
-        .fail(data => reject(data));
+        .done(data => {
+            // Add the id to the resolved information
+            let dataCopy = Object.assign({}, data);
+            dataCopy.id = tile.id;    
+            resolve(dataCopy);
+        })
+        .fail(data => {console.log("failed");reject(data);});
     });
 };
 

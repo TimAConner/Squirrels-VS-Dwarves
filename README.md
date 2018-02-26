@@ -1,6 +1,6 @@
 # Squirrels-VS-Dwarves: 
 ## The Primordial Feud: Dwirrel Wars
-This is my front-end capstone made at [Nashville Software School](http://nashvillesoftwareschool.com/)
+This is my front-end capstone made at the [Nashville Software School](http://nashvillesoftwareschool.com/)
 
 
 ### A Dwirrel, you say?

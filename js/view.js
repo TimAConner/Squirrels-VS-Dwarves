@@ -1,9 +1,5 @@
 "use strict";
 
-// module.exports.showTiles = (tiles) => {
-//     console.log(tiles);
-// };
-
 
 let screens = ["#victory-screen", "#main-menu-screen", "#game-screen", "#loading-screen", "#sign-in-screen"];
 
@@ -292,6 +288,7 @@ const drawGems = (gems, players) => {
 
 
 const drawHealth = (health) => {
+    health = Number(health).toFixed(0);
     if(health > 0){
         $("#player-health").html("Health: " + health);
     } else {
@@ -300,24 +297,20 @@ const drawHealth = (health) => {
 };
 
 const drawLag = (lag) => {
-    $("#lag").text("Lag (miliseconds): " + lag);
+    $("#lag").text("Lag (miliseconds): " + Math.abs(lag));
 };
 
 module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
-    drawHealth(thisPlayer.health.points);
-    drawLag(lag);
-    g.ctx.clearRect(0, 0, g.c.width, g.c.height);
-    drawTiles(tiles, players);
-    drawPlayers(players, playerId, tiles);
-    drawGems(gems, players);
-};
-
-
-
-module.exports.drawSignIn = () => {
-    $("#signInText").text(`${g.fullName}`);
+    if(isDefined(thisPlayer)){
+        drawHealth(thisPlayer.health.points);
+        drawLag(lag);
+        g.ctx.clearRect(0, 0, g.c.width, g.c.height);
+        drawTiles(tiles, players);
+        drawPlayers(players, playerId, tiles);
+        drawGems(gems, players);
+    }
 };
 
 
@@ -327,7 +320,6 @@ module.exports.showLoadingScreen = () => {
 
 module.exports.viewMainMenu = () => {
     showScreen("#main-menu-screen");
-    module.exports.drawSignIn();
 };
 
 module.exports.viewWinnerScreen =  winnerId => {

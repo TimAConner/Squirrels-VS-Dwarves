@@ -75,7 +75,7 @@ initialPlayerDraw = true,
 initialGemDraw = true,
 initialGameState = true;
 
-let mergeDataThisFrame = false;
+let shouldMergeDataThisFrame = false;
 
 let timestep = 1000 / 60,
 delta = 0,
@@ -86,6 +86,15 @@ let countDataReturned = 0, // Count of data returned after sending information.
 countDataSent = 0, // Count of data sent to  firebase.
 totalDataRecieved = 0, // Total data recieved from anywhere
 countDataDropped = 0; // Any data that XHR failed
+
+let sentDataRecieved = [];
+let allDataRecieved = [];
+let allDataRecievedA = [];
+let allDataRecievedB = [];
+let allDataMerged = [];
+
+let currentDataSending = {};
+let outboundDataQueue = [];
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
@@ -160,6 +169,9 @@ const findTileInPlayerDir = ({pos: playerPos, pos: {dir: playerDirection}}) => {
 // Returns true if a key is being pressed down
 const isKeyOn = key => keys[key];
 
+// is(Key)On
+// Arguments should be able to come before noun to be read easily in english.
+
 const findClosestGem = player => gems.find(gem => g.calcDistance(player.pos, gem.pos) <= g.gemPickupDistance);
 
 
@@ -192,8 +204,60 @@ const calcLag = miliseconds => {
     if(+miliseconds !== 0) lag = Date.now() - +miliseconds;
 };
 
+
+const monitorOutboundDataQueue = () => {
+    if(outboundDataQueue.length !== 0){
+    let distinctIds = [];
+
+    // Create distinct list of tile ids
+    for(let data of outboundDataQueue){
+        if(!distinctIds.includes(data.obj.id)){
+            distinctIds.push(data.obj.id);
+        }
+    }
+    
+    // Loop through distinct list and send one peice of data at a time.  When it is recieved, delete that value from the list and send the next value that is newer.
+    for(let id of distinctIds){
+        let objectData = outboundDataQueue.filter(data => data.obj.id === id);
+        let mostRecentObjData = objectData[objectData.length-1];
+        let promiseId = `${id}${mostRecentObjData.obj.stat}`;
+        
+        if(!isDefined(currentDataSending[promiseId]) && objectData.length !== 0){
+            countDataSent++;
+
+
+            currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
+            .then(obj => {
+                countDataReturned ++;
+                calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
+
+                outboundDataQueue = outboundDataQueue.filter(x => {
+                    // If stat is not on object, don't delete it.
+                    if(!isDefined(x.obj[mostRecentObjData.stat]) || !isDefined(x.obj[mostRecentObjData.stat].requestId)){
+                        return x;
+                    } else {
+                        let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
+                        let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
+                        if(x.obj.id !== obj.id || (x.obj.id === obj.id &&  xRequestId > objRequestId)){
+                            return x;
+                        }
+                    }
+                    
+                });
+                
+                // Set the current data being sent for that id to nothing so, on the next mainLoop, it will now that the promise has finished and a new value can be sent.
+                currentDataSending[promiseId] = undefined;
+            }).catch(error => {
+                countDataDropped++;
+                console.log("Error: ",  error);
+            });
+            }
+        }
+    }
+};
+
 // Merges currentData and newData where there are differences not caused by local player.
-const mergeData = (currentData, newData, valuesToCheck) => {
+const mergeData = (currentData, newData, valuesToCheck, debug = false) => {
     if(newData !== null && isDefined(newData) && newData.length !== 0){
 
         // Create an array of new and olds ids
@@ -219,6 +283,7 @@ const mergeData = (currentData, newData, valuesToCheck) => {
 
         // Change existing values
         for(let newPiece of newData){
+            if(debug) newPiece.debug = 1;
             // If no specific value should be proccessed, update the whole object
             if(!isDefined(valuesToCheck)){
                 let curPiece = currentData.find(({id}) => id === newPiece.id);
@@ -246,40 +311,49 @@ const mergeData = (currentData, newData, valuesToCheck) => {
             // If specific values should be proccesed, update only those values. 
             else { 
                 for(let value of valuesToCheck){
-                    let curPiece = currentData.find(({id}) => id === newPiece.id);
-                    if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){ 
+                    if(debug) newPiece.debug = 2;
 
+                    let curPiece = currentData.find(({id}) => id === newPiece.id);
+
+                    // If the new value is different than the current value
+                    if(isDefined(newPiece[value]) && newPiece[value].requestId !== curPiece[value].requestId){
+                        if(debug) newPiece.debug = 3;
                         let newRequestId = +parseRequestId(newPiece[value].requestId);
                         let curRequestId = +parseRequestId(curPiece[value].requestId);
 
                         if((newRequestId >= curRequestId)) calcLag(newRequestId);
 
                         if(!proccessedActions.includes(newPiece[value].requestId)){
-                            
+                            if(debug) newPiece.debug = 4;
+
                             // If this game has not proccessed it and the value is not an old one,
                             // Copy the proccessed piece of data into the current data.
-
                             if(newRequestId >= curRequestId){ 
-
+                                if(debug)  newPiece.debug = 5;
+                                
+                                // Add value to list of values that have been calculated
                                 proccessedActions.push(newPiece[value].requestId);
+                                // Set cur value to new value
                                 curPiece[value] = Object.assign({}, newPiece[value]);
-
-                                //TODO: Fix issue where older piece of data is replacing newer data.
-                                // Is move being replaced by mine?  Didin't pick up a move.
-                                // Is move replacing mine?  Only a move of same timestamp, not a mine.
-                                // console.log('newRequestId, lag', newRequestId, lag);
                             }
-                        }   
+                        } else {
+                            if(debug) {
+                                newPiece.debugComments = [...proccessedActions];
+                                newPiece.debugInfo = newPiece[value].requestId;
+                                newPiece.debugBool = !proccessedActions.includes(newPiece[value].requestId);
+                                newPiece.indexOf = proccessedActions.indexOf(newPiece[value].requestId);
+                            }
+                        }
                     }
                 }
             }
         }
     }
-    
     // Delete new data because it has already been proccessed into the current data
     newData.length = 0;
 };
 
+// playerId is not being set correctly??
 const calcCurRequestId = () => `${Date.now()}-${g.playerId}`;
 
 const dropGem = gem => {
@@ -289,7 +363,7 @@ const dropGem = gem => {
 };
 
 // Updates the positoin of the gems if they are on a player
-const updateGemPosition = () => {
+const updateLocalGemPosition = () => {
     for(let gem of gems){
         // If the gem is being carried
         if(gem.carrier !== -1){
@@ -305,7 +379,7 @@ const updateGemPosition = () => {
     }
 };
 
-const checkInput = delta => {
+const monitorInput = delta => {
     if(isDefined(g.playerId)){
 
         let player = players.find(player => player.id == g.playerId);
@@ -326,7 +400,6 @@ const checkInput = delta => {
             };
 
             if(isKeyOn(" ")){
-
                 let selectedTile = findTileInPlayerDir(player);
 
                 if(isDefined(selectedTile)){
@@ -340,7 +413,7 @@ const checkInput = delta => {
                         // TODO: Refactor to select the nearest object
 
                         let objectDistance = g.calcDistance(g.calcObjBounds(selectedTile, g.tileSize), g.calcObjBounds(otherPlayersTile, g.tileSize))/g.tileSize;
-                        if(objectDistance <= g.attackDistance && aPlayer.id !== player.id){
+                        if(objectDistance <= g.attackDistance && aPlayer.id !== player.id && aPlayer.team !== player.team){
                             targetPlayer = aPlayer;
                             break;
                         }
@@ -349,35 +422,41 @@ const checkInput = delta => {
                     // If there is a player in the direction within 1, then attack.
                     if(targetPlayer !== null && targetPlayer.id !== player.id && targetPlayer.team !== player.team && g.isPlayerAlive(targetPlayer)){
                         targetPlayer.health.points -= g.attackStrength;
+                        targetPlayer.health.points = (targetPlayer.health.points).toFixed(3);
                         localPlayerStats.damageDelt += g.attackStrength;
 
-                        addRequestId(targetPlayer.health, requestId);
-                        countDataSent++;
+                        addRequestId(targetPlayer.health, `${requestId}atk`);
 
-                        model.savePlayerHealth(targetPlayer).then(data => {
-                            countDataReturned ++;
-                            calcLag(parseRequestId(data.health.requestId));
-                        });
+                        outboundDataQueue.push(Object.assign({}, {
+                            obj: targetPlayer,
+                            stat: "health",
+                            func: model.savePlayerHealth
+                        }));
+
+                        // countDataSent++;
+
+                        // model.savePlayerHealth(targetPlayer).then(data => {
+                        //     countDataReturned ++;
+                        //     calcLag(parseRequestId(data.health.requestId));
+                        // });
 
                     } 
                     // If there is not a player, then mine a block.
                     else {
                         //  If the tile has not been mined
-                        if(selectedTile.tough.points >= 0){ 
+                        if(selectedTile.tough.points >= g.mineStrength){ 
+
                             selectedTile.tough.points -= g.mineStrength;
+                            selectedTile.tough.points = (selectedTile.tough.points).toFixed(3);
                             localPlayerStats.mined += g.mineStrength;
 
                             addRequestId(selectedTile.tough, `${requestId}mine`);
-                            countDataSent++;
 
-                            model.saveTileTough(selectedTile)
-                            .then(data => {
-                                countDataReturned ++;
-                                calcLag(parseRequestId(data.tough.requestId));
-                            })
-                            .catch(data => {
-                                countDataDropped++;
-                            });
+                            outboundDataQueue.push(Object.assign({}, {
+                                obj: selectedTile,
+                                stat: "tough",
+                                func: model.saveTileTough
+                            }));
                         }
                     }
                     
@@ -389,7 +468,7 @@ const checkInput = delta => {
                     let gemOnTile = findClosestGem(player);
                     if(isDefined(gemOnTile) && gemOnTile.carrier === -1 && gemOnTile.team !== player.team){
                         gemOnTile.carrier = player.id;
-                        addRequestId(gemOnTile, requestId);
+                        addRequestId(gemOnTile, `${requestId}gem`);
                         countDataSent ++;
                         model.saveGem(gemOnTile).then(data => {
                             countDataReturned ++;
@@ -406,7 +485,7 @@ const checkInput = delta => {
                 if(isDefined(selectedTile)){
 
                     let gemOnTile = getGemOnTile(selectedTile);
-
+                    
                     // if the gem is not on a tile
                     if(!isDefined(gemOnTile)){
                          // If player has gem,
@@ -417,7 +496,7 @@ const checkInput = delta => {
                             // Drop gems
                             carriedGem.carrier = -1;
                             
-                            addRequestId(carriedGem, requestId);
+                            addRequestId(carriedGem, `${requestId}win`);
 
                             if(selectedTile.teamBase === player.team){
                                 setWinnerGameState(player.team);
@@ -476,7 +555,7 @@ const addRequestId = (object, requestId) => {
     object.requestId = requestId;
 };
 
-const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}) => {
+const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier, delta, requestId, player}, useDataQueue = true) => {
     // If there is movment, set the moving to true.
     pos.isMoving = speedMultiplier !== 0 ? true : false;
     
@@ -510,12 +589,25 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
     // console.log('pos.dir', pos.dir);
     addRequestId(pos, `${requestId}move`);
     
-    countDataSent ++;
-    
-    model.savePlayerPos(player).then(({pos: {requestId}}) => {
-        countDataReturned ++;
-        calcLag(parseRequestId(requestId));
-    });
+    if(useDataQueue){
+        outboundDataQueue.push(Object.assign({}, {
+            obj: player,
+            stat: "pos",
+            func: model.savePlayerPos
+        }));
+    } else {
+        countDataSent ++;
+        
+        model.savePlayerPos(player).then(({pos: {requestId}}) => {
+            countDataReturned ++;
+            calcLag(parseRequestId(requestId));
+        });
+    }
+   
+
+
+
+
 };
 
 
@@ -543,19 +635,21 @@ const mainLoop = (timestamp) => {
             // console.log('delta, timestep', delta, timestep);
 
             // Merge new data with current data stored
-            if(mergeDataThisFrame){
+            if(shouldMergeDataThisFrame){
                 mergeData(players, newPlayers, ["health", "pos"]);
                 mergeData(tiles, newTiles, ["tough"]);
                 mergeData(gems, newGems);
-                mergeDataThisFrame = false;
+                shouldMergeDataThisFrame = false;
             }
             
             // Updates gem position if a player is carrying one
-            updateGemPosition();    
-            // console.log('gems', gems);
+            updateLocalGemPosition();    
             
-            // Check input and execute it
-            checkInput(timestep);
+            // Check input and executes it or adds it to the outboundDataQueue
+            monitorInput(timestep);
+
+            // Check if an individual patch to the server is done, if so, send next most recent (by timestamp)
+            monitorOutboundDataQueue();
 
             // Update delta
             delta -= timestep;
@@ -563,7 +657,7 @@ const mainLoop = (timestamp) => {
         
         // Updates lag & data sent / returned ui
         view.printDataCount(countDataReturned, countDataSent, totalDataRecieved, countDataDropped);
-        // view.printGemInfo(gems);
+        
         // Draws the game on the canvas
         view.draw(g.playerId, tiles, players, gems, lag);
     } else if (localGameState === 0){ // Menu
@@ -589,6 +683,10 @@ const resetInitialDraw = () => {
     countDataReturned = 0;
     countDataSent = 0;
     totalDataRecieved = 0;
+
+    tiles = [];
+    players = [];
+    gems = [];
 };
 
 const resetGameState = () => {
@@ -619,14 +717,19 @@ const activateDebugListeners = () => {
         let rect = g.c.getBoundingClientRect();
         let x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-        let tile = tiles.filter(data => {
+        let tile = tiles.find(data => {
             let t = g.calcObjBounds(data, g.tileSize);
             return x > t.x && x < t.r && y > t.y && y < t.b;
         });
 
-        view.setTileDebugId(tile[0].id);
+        view.setTileDebugId(tile.id);
     
         console.log(tile);
+        // console.log("sentDataRecieved", sentDataRecieved.filter(data => data.id === tile.id));
+        // console.log("allDataRecieved", allDataRecieved.filter(data => data.id === tile.id));
+        // console.log("allDataRecievedA", allDataRecievedA.filter(data => data.id === tile.id));
+        // console.log("allDataRecievedB", allDataRecievedB.filter(data => data.id === tile.id));
+        // console.log("allDataMerged", allDataMerged.filter(data => data.id === tile.id));
     });
 };
 
@@ -642,14 +745,14 @@ const activateServerListeners = () => {
             totalDataRecieved++;
             newGems = filteredGems;
         }        
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
     });
 
     // Updates the list of lobbies
     g.c.addEventListener("serverUpdateGames", ({detail:  lobbyData}) => {
         games = lobbyData;
         initialLobbyLoad = false;
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
     });
 
     // Updat the list of players in the current game
@@ -674,7 +777,7 @@ const activateServerListeners = () => {
         
 
         initialPlayerDraw = false;
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
     });
 
     // Update the list of tiles in the current game
@@ -693,7 +796,7 @@ const activateServerListeners = () => {
             newTiles = filteredTiles;
         }
 
-        mergeDataThisFrame = true;
+        shouldMergeDataThisFrame = true;
 
     });
 
@@ -714,7 +817,7 @@ const activateServerListeners = () => {
                 model.savePlayerStats(localPlayerStats);
                 model.finishGame(Date.now(), winnerTeamId);
             }
-            mergeDataThisFrame = true;
+            shouldMergeDataThisFrame = true;
         }
     });
 
@@ -741,7 +844,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         let hours = Math.floor(millis / 3600000);
         let minutes = Math.floor(millis / 60000)%60;
         let seconds = ((millis % 60000) / 1000).toFixed(0);
-        return `${hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
+        return `${hours == 0 ? `00` : hours}:${minutes >= 10 ? minutes :  `0` + minutes}:${seconds >= 10 ? seconds :  `0` + seconds}`;
         // return `${(hours >= 1 ? `${hours} hour` : ``)} ${ minutes > 0 ? `${minutes} minutes,` : ``} ${seconds} seconds.`;
     };
 
@@ -758,11 +861,61 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         _.defer(function(){
             $scope.$apply(function(){
                 if(players !== null){
-                    $scope.ownedPlayers = filterPlayers(players, (playerOwner, thisPlayer) => playerOwner == thisPlayer);
-                    $scope.otherPlayers = filterPlayers(players, (playerOwner, thisPlayer) => isDefined(playerOwner) && playerOwner != thisPlayer);
+                    // Add dwarf players    
+                    $scope.dwarfPlayers = Object.keys(players)
+                    .filter(id => players[id].team == 0)
+                    .map(dwarfId => {
+                        let playerObj = players[dwarfId];
+                        let owned = playerObj.uid === g.uid;
+                        let alive = g.isPlayerAlive(players[dwarfId]);
+                            
+                        let dwarfObj = {
+                            id: dwarfId,
+                            uid: playerObj.uid,
+                            owned,
+                            alive
+                        };
+
+                        return dwarfObj;
+                    });
+
+                    // Add squirrel players
+                    $scope.squirrelPlayers = Object.keys(players)
+                    .filter(id => players[id].team == 1)
+                    .map(squirrelId => {
+                        let playerObj = players[squirrelId];
+                        let owned = playerObj.uid === g.uid;
+                        let alive = g.isPlayerAlive(players[squirrelId]);
+                            
+                        let squirrelObj = {
+                            id: squirrelId,
+                            uid: playerObj.uid,
+                            owned,
+                            alive
+                        };
+
+                        return squirrelObj;
+                    });
+
                 } else {
-                    $scope.otherPlayers = [];
-                    $scope.ownedPlayers = [];
+                    $scope.dwarfPlayers = [];
+                    $scope.squirrelPlayers = [];
+                }
+            });
+        });
+    });
+
+    $("#game-canvas").on("serverUpdatePlayer", ({detail: playerData}) => {
+        // Apply players so angular ui can update with amount of players in game
+        _.defer(function(){ 
+            $scope.$apply(function(){
+                if(isDefined(playerData)){
+                    $scope.playersInGame = Object.keys(playerData).map(player => {
+                        return {
+                            uid: playerData[player].uid, 
+                            team: playerData[player].team
+                        };
+                    });
                 }
             });
         });
@@ -813,16 +966,18 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         });
     });
 
-    $scope.selectGame = id => {
+    $scope.selectGame = (id, name) => {
         model.detachGameListeners(); // Detach previous game listeners
         resetInitialDraw();
         model.setGameId(id);
+        $scope.lobbyName = name;
         if(isDefined(id) && id !== "") {
             model.listenToCurGame();// Listen to new game data
         }
     };
 
-    $scope.deleteGame = id => {
+    $scope.deleteGame = () => {
+        let id = model.getGameId();
         model.deleteLobby(id);
         model.deleteMap(id);
         // If you are in the lobby that you are deleting, detach game listeners.
@@ -852,19 +1007,39 @@ app.controller("menuCtrl", ['$scope', function($scope) {
         model.deletePlayer({id});
     };
     
+
+    $scope.isSignedIn = () => g.uid !== "" ? true  : false;
+
+    $scope.getUserId = () => g.uid;
+
     $scope.isLobbySelected = () => model.getGameId() !== "" ? true : false;
     
     $scope.isThisLobbySelected = id => model.getGameId() === id;
 
+    const addPlayer = teamId => {
+        let player = players.find(({uid, team}) => uid === g.uid && team === teamId);
+        // If player exists, join as player.
+        if(isDefined(player)){
+            $scope.selectPlayer(player.id);
+        } 
+        // If player does not exists, create player.
+        else {
+            gameMaker.addPlayer(teamId, tiles, players.length)
+            .then(playerId => {
+                $scope.selectPlayer(playerId);
+            });
+        }
+    };
+
     $scope.addDwarf = () => {
-        gameMaker.addPlayer(0, tiles, players.length);
+        addPlayer(0);
     };
 
     $scope.addSquirrel = () => {
-        gameMaker.addPlayer(1, tiles, players.length);
+        addPlayer(1);
     };
 
-    $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
+    // $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
 
     $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
@@ -872,13 +1047,13 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     // Add a lobby and map to the lobby and listen to that game once it is done.
     $scope.addGame = () =>  {
-        model.addLobby(Date.now(), generateBattleName())
+        let gameName = generateBattleName();
+        model.addLobby(Date.now(), gameName)
         .then(gameId => {
-            resetInitialDraw();
             model.setGameId(gameId);
             gameMaker.addGame()
             .then(() => {
-                model.listenToCurGame();
+                $scope.selectGame(gameId, gameName);
             });
         });
     };
@@ -900,23 +1075,21 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     $scope.signIn = (testingWithoutGoogle = true) => {
         model.initFirebase().then(() => {
-
             // Commented out for testing purpose.  Comment back in to test with multiple users.
             if(testingWithoutGoogle){
                 login.signIn().then(({email, displayName}) => {
                     g.uid = email;
                     g.fullName = displayName;
                     model.listenToLobbys();
-    
                     // Initialize firebase and start listening to the list of lobbys
                     view.showSignIn();
                 });
             } else {
                 g.uid = "timaconner1@gmail.com";
                 g.fullName = "Tim Conner";
+                model.listenToLobbys();
+                view.showSignIn();
             }
-            
-
         });
     };
 }]);
