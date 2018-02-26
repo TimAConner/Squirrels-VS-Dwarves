@@ -11,9 +11,26 @@ svg {
 .green-svg {
   color: #23d160; }
 
+.spacebar {
+  margin: 0;
+  padding: 0.05em 0.7em;
+  display: inline-block;
+  border-color: whitesmoke;
+  border-radius: 5px;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 0.7em; }
+
 .player-icons {
   width: 25px;
   display: inline; }
+
+.keyboard-icons {
+  width: 15px;
+  display: inline; }
+
+.controls-legend > * {
+  font-size: 0.7em !important; }
 
 .playerStatsGrid {
   display: grid;
