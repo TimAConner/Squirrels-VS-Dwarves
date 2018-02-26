@@ -90,7 +90,7 @@
                     <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small">Main Menu</a>
                 </div>
                 <div id="sign-in-screen" ng-show="!isSignedIn()">
-                    <a ng-click="signIn(false)" class="button is-light is-outlined">
+                    <a ng-click="signIn(true)" class="button is-light is-outlined">
                         <i class="fas fa-sign-in-alt"></i> 
                         &nbsp;
                         Sign In / Register</a>
@@ -205,8 +205,8 @@
 
                                                 <div ng-show="isLobbyOpened">
                                                     <div class="two-column-grid margin-top large-margin-bottom">
-                                                        <p>
-                                                            <i class="fas fa-trophy xlarge-icon"></i>
+                                                        <div class="flex-center">
+                                                            <img class="player-icons xlarge-icon" src="img/trophy.svg" alt="Winner">
                                                             &nbsp;
                                                             <span ng-show="lobby.winner === 'Squirrel'">
                                                                 <img class="player-icons xlarge-icon" src="img/squirrel.svg" alt="Squirrel Team">
@@ -214,16 +214,16 @@
                                                             <span ng-show="lobby.winner === 'Dwarf'">
                                                                 <img class="player-icons xlarge-icon" src="img/dwarf.svg" alt="Dwarf Team">
                                                             </span>
-                                                        </p>
-                                                        <p>
-                                                            <i class="far fa-clock xlarge-icon"></i>
+                                                        </div>
+                                                        <div class="flex-center">
+                                                            <img class="player-icons xlarge-icon" src="img/lifetime.svg" alt="Life Time">
                                                             &nbsp;
                                                             {{lobby.gameLength}}
-                                                        </p>
+                                                        </div>
                                                     </div>
                                                     <ol ng-repeat="player in lobby.players" class="margin-bottom">
                                                         <li class="playerStatsGrid">
-                                                            <p>
+                                                            <div class="flex-center justify-left">
                                                                 <span ng-hide="player.deathTime === 0">
                                                                     <img class="player-icons" src="img/skull.svg" alt="Dead">
                                                                 </span>
@@ -231,30 +231,30 @@
                                                                     <img class="player-icons" src="img/heart.svg" alt="Alive">
                                                                 </span>
                                                                 &nbsp;
-                                                                <span ng-show="player.team === 0">
+                                                                <span ng-show="player.team === 1">
                                                                     <img class="player-icons" src="img/squirrel.svg" alt="Squirrel Team">
                                                                 </span>
-                                                                <span ng-show="player.team === 1">
+                                                                <span ng-show="player.team === 0">
                                                                     <img class="player-icons" src="img/dwarf.svg" alt="Dwarf Team">
                                                                 </span>
                                                                 &nbsp;
                                                                 {{player.uid}}
-                                                            </p>
-                                                            <p>
+                                                            </div>
+                                                            <div class="flex-center justify-left">
                                                                 <img class="player-icons" src="img/knife.svg" alt="Damage Dealt">
                                                                 &nbsp;
                                                                 {{player.damageDelt.toFixed(2)}}
-                                                            </p>
-                                                            <p>
+                                                            </div>
+                                                            <div class="flex-center justify-left">
                                                                 <img class="player-icons" src="img/pickaxe.svg" alt="Blocks Mined">
                                                                 &nbsp;
                                                                 {{player.mined.toFixed(2)}}
-                                                            </p>
-                                                            <p>
+                                                            </div>
+                                                            <div class="flex-center justify-left">
                                                                 <img class="player-icons" src="img/lifetime.svg" alt="Life Time">
                                                                 &nbsp;
                                                                 {{player.lifeTime}}
-                                                            </p>
+                                                            </div>
                                                         </li>
                                                     </ol>
                                                 </div>
@@ -288,6 +288,8 @@
     <footer class="center-text small-font has-text-light">
         <div>Icons made by <a href="http://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
         <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/gregor-cresnar" title="Gregor Cresnar">Gregor Cresnar</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
+        <div>Icons made by <a href="https://www.flaticon.com/authors/dinosoftlabs" title="DinosoftLabs">DinosoftLabs</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a></div>
         &copy; 2018 Tim A. Conner
     </footer>
     <script type="text/javascript" src="dist/bundle.js"></script>

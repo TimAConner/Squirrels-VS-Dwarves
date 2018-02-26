@@ -1,6 +1,6 @@
 
 $text-color: whitesmoke;
-$footer-size: 35px;
+$footer-size: 60px;
 
 .hide {
     display: none;
@@ -88,6 +88,16 @@ canvas {
 
 .bold {
     font-weight: 600;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.justify-left {
+    justify-content: flex-start !important;
 }
 
 .center-text {
