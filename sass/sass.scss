@@ -21,6 +21,7 @@ svg {
     color: #23d160;;;
 }
 
+
 .player-icons {
     width: 25px;
     display: inline;
@@ -28,7 +29,7 @@ svg {
 
 .playerStatsGrid {
     display: grid;
-    grid-template-columns: 4fr 1fr 1fr 1fr;
+    grid-template-columns: 3fr 1fr 1fr 1fr;
 }
 
 .large-icon {
@@ -184,10 +185,19 @@ footer,
         grid-template-columns: 50% 50%;
     }
 
+    .twenty-eighty-grid {
+        display: grid !important;
+        grid-template-columns: 25% 75%;
+    }
+
     .scroll-bar {
         overflow-y: auto;
         height: 75vh;
         margin-right: 1em;
+    }
+
+    .padding {
+        padding: 3em;
     }
 
     #sign-in-screen{
