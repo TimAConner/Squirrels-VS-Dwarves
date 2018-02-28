@@ -20,6 +20,7 @@ const attackDistance = 1;
 const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
+const respawnTime = 10000;
 
 
 
@@ -94,6 +95,7 @@ module.exports = {
     mapHeight,
     playerWithGemSpeed,
     tileSize,
+    respawnTime,
     playerSize,
     attackDistance,
     attackStrength,

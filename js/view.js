@@ -63,6 +63,8 @@ let thisPlayer;
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
+const parseRequestId = requestId => requestId.match("(.*)-(-.*)")[1];
+
 
 const findPlayerTile = (player) => {
     let tileX = Math.round(player.pos.x / g.tileSize),
@@ -226,6 +228,8 @@ const drawPlayers = (players, playerId, tiles) => {
         // Draw health
         drawHealthBar(player);
 
+        
+
         if(isOnSquirrelTeam(player)){ // Is Squirrel
             g.ctx.drawImage(img('squirrel'), player.pos.x, player.pos.y, g.playerSize, g.playerSize);
         } else if(isOnDwarfTeam(player)){
@@ -287,12 +291,13 @@ const drawGems = (gems, players) => {
 
 
 
-const drawHealth = (health) => {
+const drawHealth = ({health: {points: health, requestId}}) => {
     health = Number(health).toFixed(0);
     if(health > 0){
         $("#player-health").html(health + " HP");
     } else {
-        $("#player-health").html("<p>You are Dead</p>");
+        let timeUntilRespawn = g.respawnTime - (Date.now() - parseRequestId(requestId));
+        $("#player-health").html(`Respawn In: ${(timeUntilRespawn/1000).toFixed(0)}`);
     }
 };
 
@@ -304,7 +309,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
     if(isDefined(thisPlayer)){
-        drawHealth(thisPlayer.health.points);
+        drawHealth(thisPlayer);
         drawLag(lag);
         g.ctx.clearRect(0, 0, g.c.width, g.c.height);
         drawTiles(tiles, players);

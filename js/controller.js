@@ -248,7 +248,6 @@ const monitorOutboundDataQueue = () => {
                             let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
                             let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
                             if(x.obj.queueId !== obj.queueId || (x.obj.queueId === obj.queueId &&  xRequestId > objRequestId)){
-                                console.log('returned', x);
                                 return x;
                             }
                         }
@@ -564,9 +563,10 @@ const monitorInput = delta => {
 // TODO: Player can onlly be on one side of a game.
 
 const checkLocalPlayerRespawn = () => {
-    let respawnTime = 1000;
-    let currentPlayer = players.find(({uid}) => uid === g.uid);
-    if(currentPlayer.health.points == 0 && (Date.now() - parseRequestId(currentPlayer.health.requestId)) > respawnTime){
+    let respawnTime = g.respawnTime;
+    let currentPlayer = players.find(({uid, team}) => uid === g.uid && team === localPlayerStats.team);
+    
+    if(isDefined(currentPlayer) && currentPlayer.health.points == 0 && (Date.now() - parseRequestId(currentPlayer.health.requestId)) > respawnTime){
 
         currentPlayer.health.points = 100;
         addRequestId(currentPlayer.health, `${calcCurRequestId()}health`);
@@ -575,8 +575,6 @@ const checkLocalPlayerRespawn = () => {
             stat: "health",
             func: model.savePlayerHealth
         }));
-
-        console.log('currentPlayer', currentPlayer);
 
         let playerUpdateObject = {
             player: currentPlayer,
@@ -1083,15 +1081,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     // $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
 
-    $scope.calcRespawnTime = () => {
-        let currentPlayer = players.find(({uid}) => uid === g.uid);
-        let respawnText = "";
-        if(isDefined(currentPlayer) && isDefined(currentPlayer.health) && currentPlayer.health.points == 0){
-            respawnText = Date.now() - parseRequestId(currentPlayer.health.requestId);
-        }
-        return respawnText;
-    };
-
+    
     $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
     $scope.isObjectEmpty = obj => !isDefined(obj) || Object.keys(obj).length === 0;
