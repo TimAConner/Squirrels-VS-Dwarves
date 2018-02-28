@@ -50,6 +50,7 @@ const isPlayerAlive = player => {
 };
 
 
+// TODO: Fix convertFromGrid being inverted as to what it really does.
 // Returns tile position based on their x and y and tilesize
 const calcObjBounds = (obj, size, convertFromGrid = false) => {
     let x = convertFromGrid ? obj.pos.x : obj.pos.x * size,// min x (Left)

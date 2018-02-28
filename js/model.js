@@ -1,12 +1,12 @@
 "use strict";
 
-let firebase = require('firebase');
+const firebase = require('firebase');
 
-let c = document.getElementById('game-canvas');
+const c = document.getElementById('game-canvas');
 
 const $ = require("jquery");
 
-let baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
+const baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
 
 let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
 
@@ -162,6 +162,7 @@ module.exports.finishGame = (endTime,  winner) => {
 };
 
 module.exports.savePlayerHealth = (player) => {
+    console.log('player', player);
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${url}/players/${player.id}/.json`,
