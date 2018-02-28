@@ -1070,7 +1070,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
                     $scope.playersInGame = Object.keys(playerData).map(player => {
                         return {
                             uid: playerData[player].uid, 
-                            team: playerData[player].team
+                            team: playerData[player].team,
+                            health: playerData[player].health.points
                         };
                     });
                 }

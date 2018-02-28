@@ -76,6 +76,9 @@
                                 <p class="">
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 0}">
                                         <li>
+                                            <span ng-show="player.health <= 0">
+                                                <img class="player-icons" src="img/skull.svg" alt="Dead"> 
+                                            </span>
                                             <img class="player-icons" src="img/dwarf.svg" alt="Dwarves">
                                             &nbsp;
                                             {{player.uid}}
@@ -85,6 +88,9 @@
                                 <p class="">
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 1}">
                                         <li> 
+                                            <span ng-show="player.health <= 0">
+                                                <img class="player-icons" src="img/skull.svg" alt="Dead"> 
+                                            </span>
                                             <img class="player-icons" src="img/squirrel.svg" alt="Squirrel">
                                             &nbsp;
                                             {{player.uid}}
