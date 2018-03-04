@@ -8,7 +8,7 @@ I enjoy building software from the ground up and understanding each building blo
 ### A Dwirrel, you say?
 > Dwirrel \
 > /dwʌ'ɹ̩'(ə)l/  \
-> *noun* a ficticous word to be used when Squirrel and Dwarf should occur next to each other, but they sound bad in said sentence.
+> *noun* a fictitious word to be used when Squirrel and Dwarf should occur next to each other, but they sound bad in said sentence.
 
 
 ## My Goals - Why I made furry forest dwellers and mythical mine dwellers murder eachother for my pleasure
