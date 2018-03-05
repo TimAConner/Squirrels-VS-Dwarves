@@ -232,11 +232,8 @@ const monitorOutboundDataQueue = () => {
             if(!isDefined(currentDataSending[promiseId]) && objectData.length !== 0){
                 
                 countDataSent++;
-
-                console.log('send', mostRecentObjData);
                 currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
                 .then(obj => {
-                    console.log('done', obj);
                     countDataReturned ++;
                     calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
 
@@ -587,7 +584,6 @@ const checkLocalPlayerRespawn = () => {
         let {x, y} = g.calcObjBounds(spawnPoint, g.tileSize, false);
         currentPlayer.pos.x = x;
         currentPlayer.pos.y = y;
-        console.log('x, y', x, y);
         updatePlayerState("up", "y", playerUpdateObject);
     }
 };
@@ -629,7 +625,6 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
 
 
     
-    // console.log('pos.dir', pos.dir);
     addRequestId(pos, `${requestId}move`);
     
     if(useDataQueue){
@@ -670,8 +665,6 @@ const mainLoop = (timestamp) => {
 
         // Runs update as many times until it catches up with the current time.
         while (delta >= timestep) {
-            // console.log('delta, timestep', delta, timestep);
-
             // Merge new data with current data stored
             if(shouldMergeDataThisFrame){
                 mergeData(players, newPlayers, ["health", "pos"]);
@@ -765,11 +758,6 @@ const activateDebugListeners = () => {
         view.setTileDebugId(tile.id);
     
         console.log(tile);
-        // console.log("sentDataRecieved", sentDataRecieved.filter(data => data.id === tile.id));
-        // console.log("allDataRecieved", allDataRecieved.filter(data => data.id === tile.id));
-        // console.log("allDataRecievedA", allDataRecievedA.filter(data => data.id === tile.id));
-        // console.log("allDataRecievedB", allDataRecievedB.filter(data => data.id === tile.id));
-        // console.log("allDataMerged", allDataMerged.filter(data => data.id === tile.id));
     });
 };
 
