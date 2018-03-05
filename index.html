@@ -68,6 +68,7 @@
                                 </div>
                                 <p class="center-text">
                                     <span class="has-text-light bold" id="player-health"></span>
+                                    <span>{{respawnText}}</span>
                                 </p>
                                 <h4 class="has-text-light bold margin-top center-text">
                                     Players
@@ -75,6 +76,9 @@
                                 <p class="">
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 0}">
                                         <li>
+                                            <span ng-show="player.health <= 0">
+                                                <img class="player-icons" src="img/skull.svg" alt="Dead"> 
+                                            </span>
                                             <img class="player-icons" src="img/dwarf.svg" alt="Dwarves">
                                             &nbsp;
                                             {{player.uid}}
@@ -84,6 +88,9 @@
                                 <p class="">
                                     <ul class="has-text-light" ng-repeat="player in playersInGame | filter:{team: 1}">
                                         <li> 
+                                            <span ng-show="player.health <= 0">
+                                                <img class="player-icons" src="img/skull.svg" alt="Dead"> 
+                                            </span>
                                             <img class="player-icons" src="img/squirrel.svg" alt="Squirrel">
                                             &nbsp;
                                             {{player.uid}}
@@ -107,7 +114,7 @@
                     <a ng-click="goToMainMenu()" class="button is-light is-outlined is-small">Main Menu</a>
                 </div>
                 <div id="sign-in-screen" ng-show="!isSignedIn()">
-                    <a ng-click="signIn(true)" class="button is-light is-outlined">
+                    <a ng-click="signIn(false)" class="button is-light is-outlined">
                         <i class="fas fa-sign-in-alt"></i> 
                         &nbsp;
                         Sign In / Register</a>

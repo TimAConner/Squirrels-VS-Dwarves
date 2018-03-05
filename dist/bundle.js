@@ -324,50 +324,61 @@ const calcLag = miliseconds => {
 
 const monitorOutboundDataQueue = () => {
     if(outboundDataQueue.length !== 0){
-    let distinctIds = [];
+        let distinctIds = [];
 
-    // Create distinct list of tile ids
-    for(let data of outboundDataQueue){
-        if(!distinctIds.includes(data.obj.id)){
-            distinctIds.push(data.obj.id);
+        // Mutate the id to have both the id and the type of value that is being modified.
+        outboundDataQueue.map(data => {
+            if(!isDefined(data.queueId)){
+                data.queueId = `${data.obj.id}${data.stat}`;
+            }
+            return data;
+        });
+
+        // Create distinct list of tile ids
+        for(let data of outboundDataQueue){
+            if(!distinctIds.includes(data.queueId)){
+                distinctIds.push(data.queueId);
+            }
         }
-    }
-    
-    // Loop through distinct list and send one peice of data at a time.  When it is recieved, delete that value from the list and send the next value that is newer.
-    for(let id of distinctIds){
-        let objectData = outboundDataQueue.filter(data => data.obj.id === id);
-        let mostRecentObjData = objectData[objectData.length-1];
-        let promiseId = `${id}${mostRecentObjData.obj.stat}`;
         
-        if(!isDefined(currentDataSending[promiseId]) && objectData.length !== 0){
-            countDataSent++;
-
-
-            currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
-            .then(obj => {
-                countDataReturned ++;
-                calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
-
-                outboundDataQueue = outboundDataQueue.filter(x => {
-                    // If stat is not on object, don't delete it.
-                    if(!isDefined(x.obj[mostRecentObjData.stat]) || !isDefined(x.obj[mostRecentObjData.stat].requestId)){
-                        return x;
-                    } else {
-                        let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
-                        let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
-                        if(x.obj.id !== obj.id || (x.obj.id === obj.id &&  xRequestId > objRequestId)){
-                            return x;
-                        }
-                    }
-                    
-                });
+        // Loop through distinct list and send one peice of data at a time.  When it is recieved, delete that value from the list and send the next value that is newer.
+        for(let id of distinctIds){
+            let objectData = outboundDataQueue.filter(data => data.queueId === id);
+            let mostRecentObjData = objectData[objectData.length-1];
+            let promiseId = objectData[0].queueId;
+            if(!isDefined(currentDataSending[promiseId]) && objectData.length !== 0){
                 
-                // Set the current data being sent for that id to nothing so, on the next mainLoop, it will now that the promise has finished and a new value can be sent.
-                currentDataSending[promiseId] = undefined;
-            }).catch(error => {
-                countDataDropped++;
-                console.log("Error: ",  error);
-            });
+                countDataSent++;
+
+                console.log('send', mostRecentObjData);
+                currentDataSending[promiseId] = mostRecentObjData.func(mostRecentObjData.obj)
+                .then(obj => {
+                    console.log('done', obj);
+                    countDataReturned ++;
+                    calcLag(parseRequestId(obj[mostRecentObjData.stat].requestId));
+
+                    outboundDataQueue = outboundDataQueue.filter(x => {
+                        // If stat is not on object, don't delete it.
+                        if(!isDefined(x.obj[mostRecentObjData.stat]) || !isDefined(x.obj[mostRecentObjData.stat].requestId)){
+                            return x;
+                        } else {
+                            let objRequestId = +parseRequestId(obj[mostRecentObjData.stat].requestId);
+                            let xRequestId = +parseRequestId(x.obj[mostRecentObjData.stat].requestId);
+                            if(x.obj.queueId !== obj.queueId || (x.obj.queueId === obj.queueId &&  xRequestId > objRequestId)){
+                                return x;
+                            }
+                        }
+                        
+                    });
+                    
+                    // CHECK HERE
+                    
+                    // Set the current data being sent for that id to nothing so, on the next mainLoop, it will now that the promise has finished and a new value can be sent.
+                    currentDataSending[promiseId] = undefined;
+                }).catch(error => {
+                    countDataDropped++;
+                    console.log("Error: ",  error);
+                });
             }
         }
     }
@@ -666,6 +677,38 @@ const monitorInput = delta => {
     }
 };
 
+// TODO: Player can onlly be on one side of a game.
+
+const checkLocalPlayerRespawn = () => {
+    let respawnTime = g.respawnTime;
+    let currentPlayer = players.find(({uid, team}) => uid === g.uid && team === localPlayerStats.team);
+    
+    if(isDefined(currentPlayer) && currentPlayer.health.points == 0 && (Date.now() - parseRequestId(currentPlayer.health.requestId)) > respawnTime){
+
+        currentPlayer.health.points = 100;
+        addRequestId(currentPlayer.health, `${calcCurRequestId()}health`);
+        outboundDataQueue.push(Object.assign({}, {
+            obj: currentPlayer,
+            stat: "health",
+            func: model.savePlayerHealth
+        }));
+
+        let playerUpdateObject = {
+            player: currentPlayer,
+            requestId: `${calcCurRequestId()}move`,
+            delta: 0,
+            speedMultiplier: 0,
+        };
+
+        let spawnPoint = tiles.find(tile => tile.teamBase === currentPlayer.team);
+        let {x, y} = g.calcObjBounds(spawnPoint, g.tileSize, false);
+        currentPlayer.pos.x = x;
+        currentPlayer.pos.y = y;
+        console.log('x, y', x, y);
+        updatePlayerState("up", "y", playerUpdateObject);
+    }
+};
+
 // Adds a request id to the object supplied to it.
 const addRequestId = (object, requestId) => {
     proccessedActions.push(requestId);
@@ -720,11 +763,6 @@ const updatePlayerState = (direction,  changeIn, {player: {pos}, speedMultiplier
             calcLag(parseRequestId(requestId));
         });
     }
-   
-
-
-
-
 };
 
 
@@ -758,6 +796,8 @@ const mainLoop = (timestamp) => {
                 mergeData(gems, newGems);
                 shouldMergeDataThisFrame = false;
             }
+            
+            checkLocalPlayerRespawn();
             
             // Updates gem position if a player is carrying one
             updateLocalGemPosition();    
@@ -1030,7 +1070,8 @@ app.controller("menuCtrl", ['$scope', function($scope) {
                     $scope.playersInGame = Object.keys(playerData).map(player => {
                         return {
                             uid: playerData[player].uid, 
-                            team: playerData[player].team
+                            team: playerData[player].team,
+                            health: playerData[player].health.points
                         };
                     });
                 }
@@ -1158,6 +1199,7 @@ app.controller("menuCtrl", ['$scope', function($scope) {
 
     // $scope.isAlive = playerId => g.isPlayerAlive(players.find(({id}) => id === playerId));
 
+    
     $scope.isFinished = gameEnd => isDefined(gameEnd) ? true : false;
 
     $scope.isObjectEmpty = obj => !isDefined(obj) || Object.keys(obj).length === 0;
@@ -1239,6 +1281,7 @@ const attackDistance = 1;
 const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
+const respawnTime = 10000;
 
 
 
@@ -1269,6 +1312,7 @@ const isPlayerAlive = player => {
 };
 
 
+// TODO: Fix convertFromGrid being inverted as to what it really does.
 // Returns tile position based on their x and y and tilesize
 const calcObjBounds = (obj, size, convertFromGrid = false) => {
     let x = convertFromGrid ? obj.pos.x : obj.pos.x * size,// min x (Left)
@@ -1312,6 +1356,7 @@ module.exports = {
     mapHeight,
     playerWithGemSpeed,
     tileSize,
+    respawnTime,
     playerSize,
     attackDistance,
     attackStrength,
@@ -1678,13 +1723,13 @@ controller.startGame();
 },{"./game":3,"lodash":170}],9:[function(require,module,exports){
 "use strict";
 
-let firebase = require('firebase');
+const firebase = require('firebase');
 
-let c = document.getElementById('game-canvas');
+const c = document.getElementById('game-canvas');
 
 const $ = require("jquery");
 
-let baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
+const baseUrl = "https://squirrelsvsdwarves.firebaseio.com";
 
 let url = "https://squirrelsvsdwarves.firebaseio.com/gameData/";
 
@@ -1840,6 +1885,7 @@ module.exports.finishGame = (endTime,  winner) => {
 };
 
 module.exports.savePlayerHealth = (player) => {
+    console.log('player', player);
     return new Promise(function (resolve, reject){
         $.ajax({
             url:`${url}/players/${player.id}/.json`,
@@ -2039,6 +2085,8 @@ let thisPlayer;
 
 const isDefined = obj => typeof obj !== "undefined" && obj !== null;
 
+const parseRequestId = requestId => requestId.match("(.*)-(-.*)")[1];
+
 
 const findPlayerTile = (player) => {
     let tileX = Math.round(player.pos.x / g.tileSize),
@@ -2202,6 +2250,8 @@ const drawPlayers = (players, playerId, tiles) => {
         // Draw health
         drawHealthBar(player);
 
+        
+
         if(isOnSquirrelTeam(player)){ // Is Squirrel
             g.ctx.drawImage(img('squirrel'), player.pos.x, player.pos.y, g.playerSize, g.playerSize);
         } else if(isOnDwarfTeam(player)){
@@ -2263,12 +2313,13 @@ const drawGems = (gems, players) => {
 
 
 
-const drawHealth = (health) => {
+const drawHealth = ({health: {points: health, requestId}}) => {
     health = Number(health).toFixed(0);
     if(health > 0){
         $("#player-health").html(health + " HP");
     } else {
-        $("#player-health").html("<p>You are Dead</p>");
+        let timeUntilRespawn = g.respawnTime - (Date.now() - parseRequestId(requestId));
+        $("#player-health").html(`Respawn In: ${(timeUntilRespawn/1000).toFixed(0)}`);
     }
 };
 
@@ -2280,7 +2331,7 @@ module.exports.draw = (playerId, tiles, players, gems, lag) => {
     thisPlayer = players.find(x => x.id == playerId);
 
     if(isDefined(thisPlayer)){
-        drawHealth(thisPlayer.health.points);
+        drawHealth(thisPlayer);
         drawLag(lag);
         g.ctx.clearRect(0, 0, g.c.width, g.c.height);
         drawTiles(tiles, players);

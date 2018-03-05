@@ -20,6 +20,7 @@ const attackDistance = 1;
 const attackStrength = 1;
 const mineStrength = 0.01;
 const gemPickupDistance = 15;
+const respawnTime = 10000;
 
 
 
@@ -50,6 +51,7 @@ const isPlayerAlive = player => {
 };
 
 
+// TODO: Fix convertFromGrid being inverted as to what it really does.
 // Returns tile position based on their x and y and tilesize
 const calcObjBounds = (obj, size, convertFromGrid = false) => {
     let x = convertFromGrid ? obj.pos.x : obj.pos.x * size,// min x (Left)
@@ -93,6 +95,7 @@ module.exports = {
     mapHeight,
     playerWithGemSpeed,
     tileSize,
+    respawnTime,
     playerSize,
     attackDistance,
     attackStrength,

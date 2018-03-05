@@ -1,12 +1,14 @@
 # Squirrels-VS-Dwarves: 
 ## The Primordial Feud: Dwirrel Wars
-This is my front-end capstone made at the [Nashville Software School](http://nashvillesoftwareschool.com/)
+Squirrels VS Dwarves, a realtime, multiplayer, team based game, is my front-end capstone made at the [Nashville Software School](http://nashvillesoftwareschool.com/).
 
+## Motivation
+I enjoy building software from the ground up and understanding each building block, especially when I can build tools to help others and me along the way.  Combined with the majority of my previous programming experience being in the Unity 3D game engine, I decided to build an app to fuze togethor my enjoyment of building tools and games.
 
 ### A Dwirrel, you say?
 > Dwirrel \
 > /dwʌ'ɹ̩'(ə)l/  \
-> *noun* a ficticous word to be used when Squirrel and Dwarf should occur next to each other, but they sound bad in said sentence.
+> *noun* a fictitious word to be used when Squirrel and Dwarf should occur next to each other, but they sound bad in said sentence.
 
 
 ## My Goals - Why I made furry forest dwellers and mythical mine dwellers murder eachother for my pleasure
