@@ -1,9 +1,9 @@
 # Squirrels-VS-Dwarves: 
 ## The Primordial Feud: Dwirrel Wars
-Squirrels VS Dwarves, a realtime, multiplayer, team based game, is my front-end capstone made at the [Nashville Software School](http://nashvillesoftwareschool.com/).
+Squirrels VS Dwarves, a real-time, multiplayer, team based game, is my front-end capstone made at the [Nashville Software School](http://nashvillesoftwareschool.com/).
 
 ## Motivation
-I enjoy building software from the ground up and understanding each building block, especially when I can build tools to help others and me along the way.  Combined with the majority of my previous programming experience being in the Unity 3D game engine, I decided to build an app to fuze togethor my enjoyment of building tools and games.
+I enjoy building software from the ground up and understanding each building block, especially when I can build tools to help others and me along the way.  Combined with the majority of my previous programming experience being in the Unity 3D game engine, I decided to build an app to fuse together my enjoyment of building tools and games.
 
 ### A Dwirrel, you say?
 > Dwirrel \
@@ -11,8 +11,8 @@ I enjoy building software from the ground up and understanding each building blo
 > *noun* a fictitious word to be used when Squirrel and Dwarf should occur next to each other, but they sound bad in said sentence.
 
 
-## My Goals - Why I made furry forest dwellers and mythical mine dwellers murder eachother for my pleasure
-My previous programming experience was making little games in Unity 3D, so I decided that I wanted to make the foundations of one of those games, but I wanted to do it purely in JavaScript.  My goals (listed in the MVP defenition at the bottom of the Readme) were to make a real time multiplayer game in pure Javascript using Firebase Realtime Database.
+## My Goals - Why I made furry forest dwellers and mythical mine dwellers murder each other for my pleasure
+My previous programming experience was making little games in Unity 3D, so I decided that I wanted to make the foundations of one of those games, but I wanted to do it purely in JavaScript.  My goals (listed in the MVP definition at the bottom of the Readme) were to make a real time multiplayer game in pure Javascript using Firebase Real-time Database.
 
 ## How To Contribute - The mysterious ways to be a cool Dwirrel
 1. Clone down locally
@@ -20,7 +20,7 @@ My previous programming experience was making little games in Unity 3D, so I dec
 1. Run: npm install
 1. Run: grunt
 1. Start local sever
-    1. If you are using my firebase, then you will need to be added to it, othwerise you can create your own.
+    1. If you are using my firebase, then you will need to be added to it, otherwise you can create your own.
     1. If using your own firebase,
         1. Add apiKey.json file in js/
             1. Fill in your api key and sender id
@@ -42,17 +42,17 @@ My previous programming experience was making little games in Unity 3D, so I dec
 
 ## How It Runs - A Day In The Life of A Dwirrel
 1. main.js executes automatically, triggering startGame() in controller.js
-1. startGame() activates the listeners of the firbase realtime server and begains the mainLoop()
+1. startGame() activates the listeners of the Firebase real-time server and begains the mainLoop()
 1. mainLoop() checks for which screen the player is on (loading, login, main menu, game, etc.)
     1. If the game is being displayed, 
         1. Check if the game should be updated this frame and calculate how many steps must be taken to  keep the game at 60 fps.
             1. shouldMergeDataThisFrame checks if new data has been sent form the listeners,
                 1. If so, merge the data (tiles, gems, and players) with current data, making sure only to use NEW data and not data already integrated into the game.
             1. updateGemPosition checks if gems are being carried and updates their pos
-            1. checkInput checks for player input, calculates if they can do it, and excecutes it.
+            1. checkInput checks for player input, calculates if they can do it, and executes  it.
         1. Once the amount of times this frame the game should be run to maintain 60 fps is completed,
             1. view.printDataCount prints lag and other extra data on the screen.
-            1. view.draw draws the players, tiles, gems, and healthbars.
+            1. view.draw draws the players, tiles, gems, and health bars.
         1. requestAnimationFrame(mainLoop) is called to run the loop again.
 ### The Files
 * main.js
@@ -97,7 +97,7 @@ My previous programming experience was making little games in Unity 3D, so I dec
 ### Version 2.0 Goals
 - [x] Restrict movement to map
 - [x] Streamline adding a player and starting game as player
-- [x] Ability to kill enemey
+- [x] Ability to kill enemy
 - [x] Player lobby
 - [x] Smaller Modules / Refactor code
 - [x] See vision around ally
